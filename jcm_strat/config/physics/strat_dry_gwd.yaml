@@ -5,10 +5,14 @@
 # which change the Brewer-Dobson circulation and hence aerosol residence
 # time (handover doc, section 4.5). Hines uses a fixed launch spectrum, so
 # it does not depend on the convection we removed. Lott-Miller needs the
-# sub-grid orography fields carried by terrain=from_file.
+# sub-grid orography fields carried by terrain=from_file. Both read the column
+# diagnostics (pressure_full/half, height_full/half, air_density) that
+# moist_air_state provides, so it must come first (ComposablePhysics checks).
 checkpoint_terms: true
 
 terms:
+  moist_air_state:
+    _target_: jcm.physics.diagnostics.moist_air_state.MoistAirColumnState
   held_suarez:
     _target_: jcm.physics.held_suarez.held_suarez_physics.HeldSuarez
   hines_gwd:
