@@ -46,7 +46,7 @@ echo ">> 3/4 CUDA JAX"
 "$UV" pip install "jax[cuda12]"
 
 echo ">> 4/4 jcm_strat overlay"
-"$UV" pip install -e "$REPO"
+"$UV" pip install -e "$REPO[dev]"
 
 "$UV" pip freeze > "$REPO/env/requirements.lock"
 echo ">> done. lock written to env/requirements.lock; now run scripts/check_env.sh"
