@@ -20,3 +20,6 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | [#13](https://github.com/reflective-org/jcm-strat/issues/13) | Upstream JCM PRs: PassiveTracers term, per-column nudging, level tables | upstream | |
 | [#14](https://github.com/reflective-org/jcm-strat/issues/14) | Pin dinosaur to a release once neuralgcm/dinosaur#135 merges (JCM v2.1) | upstream | Drops `external/dinosaur` and `env/overrides.txt`. |
 | [#15](https://github.com/reflective-org/jcm-strat/issues/15) | Winds-only vs winds+temperature nudging A/B | research | One extra 1-year run of the Phase-2 config. |
+| [#17](https://github.com/reflective-org/jcm-strat/issues/17) | Nudging-check diagnostics for Phase 2 acceptance (RMSE vs ERA5 below 150 hPa, tropopause, SSW) | feature | Needed to close the Phase-2 acceptance table. |
+| [#18](https://github.com/reflective-org/jcm-strat/issues/18) | Global-mean p_s differs between dry and full-physics runs (998.6 vs 985.6 hPa) | research | Understand before comparing tracer burdens across configurations. |
+| [#19](https://github.com/reflective-org/jcm-strat/issues/19) | Output volume / per-chunk overhead dominates the dry model's wall time | feature | Kernel 6000 d/hr vs end-to-end ~1000-2500 d/hr. |

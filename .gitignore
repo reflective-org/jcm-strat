@@ -23,3 +23,4 @@ build/
 dist/
 .pytest_cache/
 .hypothesis/
+.nfs*
