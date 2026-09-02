@@ -1,0 +1,83 @@
+constants: {}
+physics:
+  vectorize_columns: true
+  checkpoint_terms: true
+  terms:
+    moist_air_state:
+      _target_: jcm.physics.diagnostics.moist_air_state.MoistAirColumnState
+    echam_boundary_conditions:
+      _target_: jcm.physics.forcing.echam_boundary_conditions.EchamBoundaryConditions
+    macv2_sp_aerosol:
+      _target_: jcm.physics.aerosol.Macv2SpAerosol
+    simple_chemistry:
+      _target_: jcm.physics.chemistry.SimpleChemistry
+    sundqvist_cloud_fraction:
+      _target_: jcm.physics.clouds.sundqvist.SundqvistCloudFraction
+    rrtmgp_radiation:
+      _target_: jcm.physics.radiation.rrtmgp.RRTMGPRadiation
+    tte_tke_vertical_diffusion:
+      _target_: jcm.physics.vertical_diffusion.tte_tke.TteTkeVerticalDiffusion
+    echam_surface:
+      _target_: jcm.physics.surface.echam.surface_physics.EchamSurface
+    tiedtke_convection:
+      _target_: jcm.physics.convection.tiedtke_nordeng.TiedtkeConvection
+    echam_1m_microphysics:
+      _target_: jcm.physics.clouds.echam_1m.Echam1MMicrophysics
+    hines_gwd:
+      _target_: jcm.physics.gravity_waves.hines.HinesGwd
+    lott_miller_sso:
+      _target_: jcm.physics.gravity_waves.sso.LottMillerSso
+grid:
+  vertical: hybrid
+  layers: 95
+  spectral_truncation: 63
+  spmd_mesh: null
+dycore:
+  name: dinosaur
+  compute_omega: null
+run:
+  time_step: 12
+  save_interval: 5
+  total_time: 10
+  output_averages: true
+  output: longrun.nc
+  log_level: INFO
+  sponge:
+    levels: 10
+    timescale_h: 1.5
+    enspodi: 2.0
+    damp_temperature: true
+    target_T_K: 250.0
+  chunk_days: 5
+  output_prefix: longrun
+  mode: full
+  state_file: null
+  tracer_vars: null
+  column:
+    lat_deg: 0.0
+    lon_deg: 0.0
+init:
+  kind: jw
+  rh: 0.0
+terrain:
+  kind: from_file
+  file: hf://bundles/t63/terrain.nc
+  interpolate: true
+forcing:
+  kind: from_file
+  file: hf://bundles/t63/forcing_pd.nc
+  years: null
+  available_years: null
+  ozone_available_years: null
+  align: auto
+  ozone_file: auto
+  emissions_file: null
+  dms_file: null
+  dust_file: null
+  oxidants_file: null
+nudging:
+  enabled: false
+diffusion:
+  kind: auto
+  scale: 1.0
+  tracer_positivity: auto

@@ -30,8 +30,9 @@ def main(csv_path: str, out_png: str) -> None:
     ax.set_ylabel("simulated days per wall-clock hour (1x H100)")
     ax.set_ylim(0, max(vals) * 1.3)
     ax.axhline(52, color="grey", ls="--", lw=0.8)
-    ax.text(len(rows) - 0.5, 52, " JCM T63L95 full physics, A100 (design doc)", va="bottom",
-            ha="right", fontsize=7, color="grey")
+    ax.text(-0.45, 52, "JCM T63L95 full physics, A100, dt=15 (design doc): 52 d/hr", va="top",
+            ha="left", fontsize=7, color="grey")
+    ax.set_ylim(0, max(vals) * 1.35)
     ax.set_title("jcm-strat throughput by configuration")
     fig.tight_layout()
     fig.savefig(out_png, dpi=130)

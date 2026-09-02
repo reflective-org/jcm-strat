@@ -17,3 +17,5 @@ If `docs/` disagrees with this file, this file is current.
 | 10 | 2026-09-02 | Age-of-air clock tracer reset where **p > 700 hPa** | Standard clock-tracer convention; comparable to CLaMS and WACCM `AOA1` references on `/data`. |
 | 11 | 2026-09-02 | No conservation code in Phase 1 | JCM's dycore already applies a global proportional mass fixer to SL tracers (`_fix_nodal_tracer_mass`, on by default). A `unity` tracer measures what it hides. |
 | 12 | 2026-09-02 | Each phase ships `docs/outputs/<NN>/output.md` + tracked plots | Scientific model: every step is validated and the evidence is reviewable in the PR. |
+| 13 | 2026-09-02 | `env.sh` exports `LD_LIBRARY_PATH` to the containerised driver mount (`/run/nvidia/driver/usr/lib/x86_64-linux-gnu`) | `libcuda.so.1` is off the loader path on this node; without it JAX silently ran on CPU. Same trap AIDE-SAI-link guards against in `run_prod.py`. |
+| 14 | 2026-09-02 | Baseline timed with two 5-day chunks; steady-state number = chunk 1 | Chunk 0 includes JIT compile. The persistent compile cache lives in `scratch/jcm-jax-cache`. |

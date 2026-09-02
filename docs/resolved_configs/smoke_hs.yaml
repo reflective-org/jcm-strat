@@ -1,0 +1,50 @@
+constants: {}
+physics:
+  checkpoint_terms: true
+  terms:
+    held_suarez:
+      _target_: jcm.physics.held_suarez.held_suarez_physics.HeldSuarez
+grid:
+  vertical: sigma
+  layers: 8
+  spectral_truncation: 31
+  spmd_mesh: null
+dycore:
+  name: dinosaur
+  compute_omega: null
+run:
+  time_step: 30
+  save_interval: 1
+  total_time: 1
+  output_averages: false
+  output: smoke_run.nc
+  log_level: INFO
+  sponge:
+    levels: 0
+    timescale_h: 3.0
+    enspodi: 2.0
+  chunk_days: 0
+  output_prefix: smoke_chunked
+  mode: full
+  state_file: null
+  tracer_vars: null
+  column:
+    lat_deg: 0.0
+    lon_deg: 0.0
+init:
+  kind: isothermal
+terrain:
+  kind: aquaplanet
+forcing:
+  kind: default
+  ozone_file: auto
+  emissions_file: null
+  dms_file: null
+  dust_file: null
+  oxidants_file: null
+nudging:
+  enabled: false
+diffusion:
+  kind: auto
+  scale: 1.0
+  tracer_positivity: auto
