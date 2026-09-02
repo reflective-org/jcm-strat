@@ -80,6 +80,8 @@ def main() -> int:
     ap.add_argument("rundir")
     ap.add_argument("--label", default=None, help="row label for --append")
     ap.add_argument("--append", default=None, help="PROGRESS.md-style table to append a row to")
+    ap.add_argument("--csv", default=None, help="CSV (label,grid,dt_min,days_per_hr,ms_per_step,run,date) to append to")
+    ap.add_argument("--grid", default="", help="grid name for the CSV row")
     a = ap.parse_args()
     rundir = a.rundir.rstrip("/")
     dt = _dt_minutes(rundir)
@@ -109,6 +111,16 @@ def main() -> int:
         with open(a.append, "a") as f:
             f.write(row + "\n")
         print("appended:", row)
+    if a.csv:
+        import csv, datetime
+        new = not os.path.exists(a.csv)
+        with open(a.csv, "a", newline="") as f:
+            w = csv.writer(f)
+            if new:
+                w.writerow(["label", "grid", "dt_min", "days_per_hr", "ms_per_step", "run", "date"])
+            w.writerow([a.label or os.path.basename(rundir), a.grid, dt, round(days_per_hr, 1),
+                        round(ms_per_step or 0), os.path.basename(rundir), datetime.date.today().isoformat()])
+        print("csv row appended to", a.csv)
     return 0
 
 
