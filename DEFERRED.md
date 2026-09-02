@@ -23,3 +23,4 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | [#17](https://github.com/reflective-org/jcm-strat/issues/17) | Nudging-check diagnostics for Phase 2 acceptance (RMSE vs ERA5 below 150 hPa, tropopause, SSW) | feature | Needed to close the Phase-2 acceptance table. |
 | [#18](https://github.com/reflective-org/jcm-strat/issues/18) | Global-mean p_s differs between dry and full-physics runs (998.6 vs 985.6 hPa) | research | Understand before comparing tracer burdens across configurations. |
 | [#19](https://github.com/reflective-org/jcm-strat/issues/19) | Output volume / per-chunk overhead dominates the dry model's wall time | feature | Kernel 6000 d/hr vs end-to-end ~1000-2500 d/hr. |
+| [#20](https://github.com/reflective-org/jcm-strat/issues/20) | Gravity-wave drag in the stripped model (needs a column-vectorized Held-Suarez) | feature | Phase-1 GWD A/B dropped; `strat_dry_gwd.yaml` removed until this is solved. |

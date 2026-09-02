@@ -11,14 +11,15 @@ stratosphere survive with only Held-Suarez relaxation and the upper sponge holdi
 
 `+experiment=p1_dry` = `physics=strat_dry` (Held-Suarez only) on `grid=echam_t63_l95_hybrid`,
 `run=longrun` (dt 12 min, 10-level sponge, `target_T_K=250`), `init=jw init.rh=0.0`, real
-terrain, no forcing file, no nudging, no tracers. Variant `physics=strat_dry_gwd` adds Hines
-non-orographic and Lott-Miller orographic gravity-wave drag.
+terrain, no forcing file, no nudging, no tracers. The planned gravity-wave-drag variant
+could not be composed with Held-Suarez (issue #20) and was dropped from this phase.
 
 ## Runs
 
 | run | command | wall | result |
 |---|---|---|---|
-| `p1_dry_30d` | `scripts/launch.sh p1_dry_30d +experiment=p1_dry run.total_time=30 run.chunk_days=10` | _pending_ | _pending_ |
+| `p1_dry_30d` | `scripts/launch.sh p1_dry_30d +experiment=p1_dry run.total_time=30 run.chunk_days=10` | 109 s incl. compile | exit 0, 0 NaN, p_s drift -0.05 hPa, top-level T flat at 249.9 K |
+| `p1_dry_1yr` | `scripts/launch.sh p1_dry_1yr +experiment=p1_dry run.total_time=365` | see results | see results |
 
 ## Acceptance (from PLANS.md)
 
