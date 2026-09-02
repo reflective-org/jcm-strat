@@ -75,6 +75,34 @@ def _chunks_from_log(rundir: str):
     return [{"chunk_end_day": d, "days": None, "wall_s": None} for d in days]
 
 
+def _end_to_end(rundir: str):
+    """Wall time from the first 'Model starting' to the launcher's exit line, from log.txt.
+
+    This includes JIT compile, per-chunk output conversion/writing and health checks --
+    everything the kernel-only chunk attribute leaves out -- so it is the number a user
+    actually waits for. Returns (seconds, n_model_starts) or None.
+    """
+    import datetime as dt
+    log = os.path.join(rundir, "log.txt")
+    if not os.path.exists(log):
+        return None
+    t0 = t1 = None
+    n = 0
+    with open(log, errors="replace") as f:
+        for line in f:
+            m = re.match(r"\[(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)[,.]\d+\].*Model starting", line)
+            if m:
+                n += 1
+                if t0 is None:
+                    t0 = dt.datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+            m = re.match(r"\[launch\] (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)[^ ]* exit=", line)
+            if m:
+                t1 = dt.datetime.strptime(m.group(1), "%Y-%m-%dT%H:%M:%S")
+    if t0 is None or t1 is None:
+        return None
+    return (t1 - t0).total_seconds(), n
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("rundir")
@@ -104,6 +132,13 @@ def main() -> int:
     print(f"throughput:     {days_per_hr:.1f} simulated days / hour")
     if ms_per_step:
         print(f"per step:       {ms_per_step:.0f} ms")
+    e2e = _end_to_end(rundir)
+    total_days = sum(c["days"] for c in chunks)
+    e2e_days_per_hr = None
+    if e2e:
+        e2e_days_per_hr = total_days / (e2e[0] / 3600.0)
+        print(f"end-to-end:     {total_days} d in {e2e[0]:.0f} s incl. compile + output = "
+              f"{e2e_days_per_hr:.0f} days / hour  ({e2e[1]} chunks)")
     if a.append:
         label = a.label or os.path.basename(rundir)
         row = (f"| {label} | {dt:g} | {days_per_hr:.1f} | "
@@ -117,9 +152,11 @@ def main() -> int:
         with open(a.csv, "a", newline="") as f:
             w = csv.writer(f)
             if new:
-                w.writerow(["label", "grid", "dt_min", "days_per_hr", "ms_per_step", "run", "date"])
+                w.writerow(["label", "grid", "dt_min", "days_per_hr", "ms_per_step",
+                            "e2e_days_per_hr", "run", "date"])
             w.writerow([a.label or os.path.basename(rundir), a.grid, dt, round(days_per_hr, 1),
-                        round(ms_per_step or 0), os.path.basename(rundir), datetime.date.today().isoformat()])
+                        round(ms_per_step or 0), round(e2e_days_per_hr or 0),
+                        os.path.basename(rundir), datetime.date.today().isoformat()])
         print("csv row appended to", a.csv)
     return 0
 

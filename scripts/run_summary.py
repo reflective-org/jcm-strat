@@ -48,9 +48,17 @@ def main():
         w = np.cos(np.deg2rad(ds.lat.values)); w = w / w.sum()
         for it in range(nt):
             d = ds.isel(time=it)
-            dp = d["pressure_thickness"]
+            # jcm writes surface_pressure [Pa] with ECHAM physics; the dry configuration writes
+            # only the dycore's normalized_surface_pressure (p_s / 101325 Pa).
+            psurf = d["surface_pressure"] if "surface_pressure" in d else d["normalized_surface_pressure"] * 101325.0
+            if "pressure_thickness" in d:
+                dp = d["pressure_thickness"]
+            else:  # dry runs write no thickness: rebuild layer weights from the hybrid coefficients
+                pf = d["hybrid_a_full"] + d["hybrid_b_full"] * psurf
+                dp = xr.DataArray(np.abs(np.gradient(pf.transpose("level", ...).values, axis=0)),
+                                  dims=pf.transpose("level", ...).dims, coords=pf.transpose("level", ...).coords)
             colw = dp / dp.sum("level")
-            ps.append(float((d["surface_pressure"].mean("lon") * w).sum()) / 100.0)
+            ps.append(float((psurf.mean("lon") * w).sum()) / 100.0)
             ke_col = (0.5 * (d["u_wind"] ** 2 + d["v_wind"] ** 2) * colw).sum("level")
             ke.append(float((ke_col.mean("lon") * w).sum()))
             T = d["temperature"]
