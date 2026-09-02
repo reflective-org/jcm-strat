@@ -19,3 +19,4 @@ If `docs/` disagrees with this file, this file is current.
 | 12 | 2026-09-02 | Each phase ships `docs/outputs/<NN>/output.md` + tracked plots | Scientific model: every step is validated and the evidence is reviewable in the PR. |
 | 13 | 2026-09-02 | `env.sh` exports `LD_LIBRARY_PATH` to the containerised driver mount (`/run/nvidia/driver/usr/lib/x86_64-linux-gnu`) | `libcuda.so.1` is off the loader path on this node; without it JAX silently ran on CPU. Same trap AIDE-SAI-link guards against in `run_prod.py`. |
 | 14 | 2026-09-02 | Baseline timed with two 5-day chunks; steady-state number = chunk 1 | Chunk 0 includes JIT compile. The persistent compile cache lives in `scratch/jcm-jax-cache`. |
+| 15 | 2026-09-02 | Repo public; `dev` is the default branch, phase branches fork from and merge into `dev`, `main` = release points | Requested by Susanne; mirrors jax-gcm's own `dev`/`main` convention. |

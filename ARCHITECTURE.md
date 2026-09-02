@@ -68,3 +68,9 @@ figures *are* tracked (`!docs/outputs/**` in `.gitignore`).
 
 `run.time_step` is in minutes; `run.total_time` in days; `run.save_interval` in days.
 Throughput is reported as *simulated days per wall-clock hour on one H100*.
+
+## Branches
+
+`dev` is the default and integration branch. Every phase or topic branch is created from `dev`
+(`git checkout -b phase1-stripped-dry dev`) and its pull request targets `dev`. `main` only
+receives release points merged from `dev` — the same convention jax-gcm uses.
