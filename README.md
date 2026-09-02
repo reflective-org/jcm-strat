@@ -6,7 +6,7 @@ run the physics dycore with tropospheric physics stripped out, nudge the troposp
 leave the stratosphere free, and measure how fast the simplest possible physics solve can be.
 That number is the baseline against which the ML-emulator route (Approach B, PARADIS) is judged.
 
-Status: **Phase 0 — environment and baseline.** See [PROGRESS.md](PROGRESS.md).
+Status: **Phase 0 done** (environment, baseline timing). Next: Phase 1, the stripped dry model. See [PROGRESS.md](PROGRESS.md).
 
 ## What this repo is, and is not
 
@@ -54,7 +54,7 @@ Filled in as phases complete (see PROGRESS.md for the running version).
 
 | Configuration | Grid | dt | simulated days / hour (1× H100) | notes |
 |---|---|---|---|---|
-| JCM full ECHAM physics (reference) | T63L95 | 12 min | — | Phase 0 baseline |
+| JCM full ECHAM physics (reference) | T63L95 | 12 min | 51.6 (582 ms/step) | Phase 0 baseline; 51.9 at dt = 15 min |
 | stripped, dry Held-Suarez | T63L95 | 12 min | — | Phase 1 |
 | + ERA5 nudging below 150 hPa | T63L95 | 12 min | — | Phase 2 |
 | + passive tracers (age of air etc.) | T63L95 | 12 min | — | Phase 3 |

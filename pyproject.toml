@@ -16,7 +16,7 @@ authors = [{name = "Susanne Baur", email = "susanne@reflective.org"}]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest", "matplotlib", "cartopy"]
+dev = ["pytest", "matplotlib", "pyyaml"]
 
 [tool.setuptools.packages.find]
 include = ["jcm_strat*"]

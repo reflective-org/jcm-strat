@@ -21,7 +21,7 @@ u = json.loads((dist / 'direct_url.json').read_text())['url']
 assert u.endswith('external/dinosaur'), u; print('      dinosaur from', u)"
 check python -c "import jcm_strat"
 check test "$(git -C "$REPO/external/dinosaur" rev-parse HEAD)" = bd99e39b2e256aabb9fb6d94a60be65c9ca8772a
-check test "$(git -C "$REPO/external/jax-gcm"  rev-parse --short HEAD)" = 849893b
+check test "$(git -C "$REPO/external/jax-gcm"  rev-parse HEAD)" = 849893be46372b702c777057713c571675ca90ba
 check test "$CUDA_VISIBLE_DEVICES" = 0
 for v in UV_CACHE_DIR HF_HOME JCM_ERA5_CACHE SCRATCH; do
   check bash -c "[[ \"\${$v}\" == \"$REPO\"/* ]]"
