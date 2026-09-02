@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jcm-strat"
+version = "0.0.1"
+description = "JCM stratosphere-only configuration on the Dinosaur semi-Lagrangian dycore: a Hydra config overlay plus passive-tracer physics for fast stratospheric transport."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+authors = [{name = "Susanne Baur", email = "susanne@reflective.org"}]
+# jcm and dinosaur are installed from the pinned submodules by scripts/bootstrap_env.sh,
+# deliberately not declared here: jcm's own dinosaur requirement is a floating VCS branch
+# and must be overridden, which a static dependency list cannot express.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "cartopy"]
+
+[tool.setuptools.packages.find]
+include = ["jcm_strat*"]
+
+[tool.setuptools.package-data]
+jcm_strat = ["config/**/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

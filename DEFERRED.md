@@ -1,0 +1,22 @@
+# Deferred
+
+Consciously not done yet. Each item is (or will be) a GitHub issue; none starts before Part 1
+of [PLANS.md](PLANS.md) is complete. Ordered by value.
+
+| # | Item | Label | Notes |
+|---|---|---|---|
+| 1 | Dynamical nudging cutoff (follow the model's own tropopause, with a taper) instead of the 150 hPa hard mask | feature | Needs per-column `inv_tau` (JCM's `NudgingConfig` is per-level only). Interim: tanh taper 200→100 hPa. |
+| 2 | RRTMGP radiation with prescribed O3/CO2/CH4 in the stripped configuration | feature | Gives the stratosphere its own radiative equilibrium; radiation is the dominant cost — measure both. |
+| 3 | Time-step sweep 12→30→60→120 min | research | SL PR reports an accuracy knee near 30 min. |
+| 4 | Reduced ~30–44-level grid | feature | New table in `echam_levels.py` + `(63, N)` diffusion orders; ≥ 20 levels over 150–1 hPa. |
+| 5 | Polvani-Kushner 2002 stratosphere (polar-night jet without radiation) | feature | ~150 lines extending `HeldSuarez`. |
+| 6 | QBO nudging of tropical stratospheric wind | blocked | Needs ERA5 above 60 hPa (CDS 37-level or SPARC QBO tape). |
+| 7 | Segment-parallel 30-year runs | research | Only if the project ever needs more than GPU 0. |
+| 8 | Local mass consistency / expose `mass_fixer=False` on the CLI | research | Only if Phase-3 `unity` deviations are large. |
+| 9 | MAM4 aerosol + SO2 injection (`jcm[mam4]`, GPL) | feature | |
+| 10 | TOMAS from AIDE-SAI-link as a PhysicsTerm | feature | |
+| 11 | Pinatubo 1991–1995 validation | research | Thresholds agreed before the runs. |
+| 12 | Shared benchmark vs AIDE-SAI-link (34.9 s/step full physics, 2026-08-28) and PARADIS | research | |
+| 13 | Upstream JCM PRs: PassiveTracers term, per-column nudging, level tables | upstream | |
+| 14 | Pin dinosaur to a release once neuralgcm/dinosaur#135 merges (JCM v2.1) | upstream | Drops `external/dinosaur` and `env/overrides.txt`. |
+| 15 | Winds-only vs winds+temperature nudging A/B | research | One extra 1-year run of the Phase-2 config. |

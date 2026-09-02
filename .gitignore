@@ -1,0 +1,25 @@
+# environment and caches live inside the repo (root disk is full) — never tracked
+.venv/
+cache/
+scratch/
+env/overrides.txt
+# model output
+runs/
+/outputs/
+*.nc
+*.npz
+*.zarr
+*.ckpt
+*.png
+*.gif
+*.pdf
+# except the per-step records, which ARE tracked
+!docs/outputs/**
+# python
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.hypothesis/
