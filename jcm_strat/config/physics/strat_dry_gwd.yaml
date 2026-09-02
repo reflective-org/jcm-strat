@@ -1,0 +1,17 @@
+# Phase 1 variant: Held-Suarez plus the two ECHAM gravity-wave drag terms.
+#
+# Why keep gravity-wave drag in a "stripped" model: without it a coarse
+# stratosphere has a too-strong polar-night jet and a cold pole, both of
+# which change the Brewer-Dobson circulation and hence aerosol residence
+# time (handover doc, section 4.5). Hines uses a fixed launch spectrum, so
+# it does not depend on the convection we removed. Lott-Miller needs the
+# sub-grid orography fields carried by terrain=from_file.
+checkpoint_terms: true
+
+terms:
+  held_suarez:
+    _target_: jcm.physics.held_suarez.held_suarez_physics.HeldSuarez
+  hines_gwd:
+    _target_: jcm.physics.gravity_waves.hines.HinesGwd
+  lott_miller_sso:
+    _target_: jcm.physics.gravity_waves.sso.LottMillerSso

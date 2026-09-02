@@ -1,0 +1,18 @@
+# jcm-strat Phase 1: the stripped, dry configuration.
+#
+# Everything the ECHAM package does in the troposphere (convection, cloud
+# microphysics, TKE diffusion, surface exchange, radiation, aerosol optics,
+# chemistry) is gone. What remains is Held-Suarez (1994) Newtonian relaxation
+# of temperature plus Rayleigh friction near the surface, which is what holds
+# the thermal structure while radiation is off (KEY_DECISIONS #6). Its known
+# limitation: an isothermal ~200 K stratosphere with no polar-night jet
+# (issue #5, Polvani-Kushner; issue #2, RRTMGP).
+#
+# A copy of jcm's own physics/held_suarez.yaml so the term list is ours to
+# extend (strat_dry_gwd.yaml adds gravity-wave drag; strat_passive.yaml adds
+# the tracers in Phase 3).
+checkpoint_terms: true
+
+terms:
+  held_suarez:
+    _target_: jcm.physics.held_suarez.held_suarez_physics.HeldSuarez
