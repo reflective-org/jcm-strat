@@ -1,0 +1,8 @@
+[submodule "external/jax-gcm"]
+	path = external/jax-gcm
+	url = https://github.com/climate-analytics-lab/jax-gcm.git
+	branch = dev
+[submodule "external/dinosaur"]
+	path = external/dinosaur
+	url = https://github.com/shoyer/dinosaur.git
+	branch = semi-lagrangian
