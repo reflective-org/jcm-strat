@@ -1,14 +1,19 @@
 # @package _global_
-# Phase 4 experiment: the Phase-3 configuration run for five years, 2005-01-01 to
-# 2009-12-31 (1826 days), with a restart checkpoint every chunk so an interrupted run
-# resumes. Usage:
-#   scripts/launch.sh p4_5yr +experiment=p4_5yr
-# Requires the 2004-12-31..2010-01-03 ERA5 window in $JCM_ERA5_CACHE (the runner pads the
-# window by one day before and two after; prefetch with exactly those dates or the cache
-# key will not match and the run will try to download 150 GB itself).
+# Phase 4: one calendar-year SEGMENT of the 2005-2009 run. The five years are chained by
+# scripts/chain_years.sh, each segment warm-started from the previous segment's checkpoint
+# (init=from_state), because JCM keeps the whole ERA5 nudging target on the GPU and five
+# years of 6-hourly L95 targets (154 GB) do not fit an 80 GB card (run p4_5yr_oom); one
+# year (31 GB) does. Physics, grid, nudging and tracers are exactly Phase 3.
+#
+#   segment 1:  +experiment=p4_5yr run.start_date=2005-01-01 run.total_time=365
+#   segment n:  +experiment=p4_5yr run.start_date=2006-01-01 run.total_time=365 \
+#               init=from_state init.file=<segment n-1>/checkpoint.ckpt
+#
+# Each segment needs its ERA5 window [start-1 d, start+total_time+2 d] in $JCM_ERA5_CACHE;
+# scripts/slice_era5_years.py cuts them from the prefetched 2004-12-31..2010-01-03 file.
 defaults:
   - /experiment/p3_tracers
 
 run:
-  total_time: 1826
+  total_time: 365
   checkpoint_path: checkpoint.ckpt
