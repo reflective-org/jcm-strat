@@ -145,18 +145,23 @@ def ssw_dates(u60n, times, min_sep_days=20):
 
 
 # ----------------------------------------------------------------------------- plots
-def plot_climatology(label, model, era5, waccm, outdir):
-    fig, axes = plt.subplots(4, 4, figsize=(18, 15), sharex=True, sharey=True)
+def plot_climatology(label, model, era5, waccm, outdir, extra=None):
+    """extra: optional (name, dataset) shown as one more reference row (e.g. the full-ECHAM year)."""
     cols = [("T", "DJF"), ("u", "DJF"), ("T", "JJA"), ("u", "JJA")]
-    rows = [("model: " + label, model, None), ("ERA5", era5, None), ("WACCM6 histSST", waccm, "month"), ("model - ERA5", None, None)]
+    rows = [("model: " + label, model, None), ("ERA5", era5, None), ("WACCM6 histSST", waccm, "month")]
+    if extra is not None:
+        rows.append((extra[0], extra[1], None))
+    nref = len(rows)
+    rows.append(("model - ERA5", None, None))
+    fig, axes = plt.subplots(len(rows), 4, figsize=(18, 3.75 * len(rows)), sharex=True, sharey=True)
     for j, (var, seas) in enumerate(cols):
         fields = {}
-        for i, (name, ds, mc) in enumerate(rows[:3]):
+        for i, (name, ds, mc) in enumerate(rows[:nref]):
             if ds is None: continue
             fields[name] = season_mean(ds[var], SEASONS[seas], mc)
         for i, (name, ds, mc) in enumerate(rows):
             ax = axes[i, j]
-            if i < 3:
+            if i < nref:
                 if name not in fields: ax.set_axis_off(); continue
                 f = fields[name]
                 if var == "T":
@@ -172,10 +177,36 @@ def plot_climatology(label, model, era5, waccm, outdir):
             ax.set_yscale("log"); ax.invert_yaxis(); ax.set_ylim(300, 1)
             if i == 0: ax.set_title(f"{'temperature [K]' if var == 'T' else 'zonal wind [m/s]'}  {seas}")
             if j == 0: ax.set_ylabel(f"{name}\npressure [hPa]")
-            if i == 3: ax.set_xlabel("latitude")
+            if i == len(rows) - 1: ax.set_xlabel("latitude")
             plt.colorbar(cf, ax=ax, shrink=0.85)
     fig.suptitle(f"Zonal-mean stratosphere, {label} vs ERA5 and WACCM6 (300-1 hPa)")
     fig.tight_layout(); out = os.path.join(outdir, f"strat_climatology_{label}.png"); fig.savefig(out, dpi=110); plt.close(fig)
+    print("wrote", out)
+
+
+def plot_climatology_panel(models, era5, waccm, outdir, fname="strat_climatology_panel.png"):
+    """One figure, one row per model version (in the given order) followed by ERA5 and WACCM6."""
+    cols = [("T", "DJF"), ("u", "DJF"), ("T", "JJA"), ("u", "JJA")]
+    rows = [(name, ds, None) for name, ds in models.items()]
+    if era5 is not None: rows.append(("ERA5", era5, None))
+    if waccm is not None: rows.append(("WACCM6 histSST", waccm, "month"))
+    fig, axes = plt.subplots(len(rows), 4, figsize=(18, 3.6 * len(rows)), sharex=True, sharey=True)
+    for j, (var, seas) in enumerate(cols):
+        for i, (name, ds, mc) in enumerate(rows):
+            ax = axes[i, j]
+            f = season_mean(ds[var], SEASONS[seas], mc)
+            if var == "T":
+                cf = ax.contourf(f.lat, f.plev, f, levels=np.arange(180, 301, 10), cmap="RdYlBu_r", extend="both")
+            else:
+                cf = ax.contourf(f.lat, f.plev, f, levels=np.arange(-80, 81, 10), cmap="RdBu_r", extend="both")
+                ax.contour(f.lat, f.plev, f, levels=[0], colors="k", linewidths=0.8)
+            ax.set_yscale("log"); ax.invert_yaxis(); ax.set_ylim(300, 1)
+            if i == 0: ax.set_title(f"{'temperature [K]' if var == 'T' else 'zonal wind [m/s]'}  {seas}")
+            if j == 0: ax.set_ylabel(f"{name}\npressure [hPa]")
+            if i == len(rows) - 1: ax.set_xlabel("latitude")
+            plt.colorbar(cf, ax=ax, shrink=0.85)
+    fig.suptitle("Zonal-mean stratosphere, 300-1 hPa: model versions against ERA5 and WACCM6")
+    fig.tight_layout(); out = os.path.join(outdir, fname); fig.savefig(out, dpi=110); plt.close(fig)
     print("wrote", out)
 
 
@@ -245,6 +276,10 @@ def main():
     ap.add_argument("--years", default=None, help="e.g. 2005-2009; default: the first run's years")
     ap.add_argument("--climatology-for", default=None,
                     help="comma-separated run labels that get a climatology figure (default: all)")
+    ap.add_argument("--panel", action="store_true",
+                    help="also draw one figure with every --run as a row, then ERA5 and WACCM6 (strat_climatology_panel.png)")
+    ap.add_argument("--extra-row", default=None,
+                    help="LABEL=rundir: a run shown as an additional reference row in every climatology figure")
     a = ap.parse_args(); os.makedirs(a.outdir, exist_ok=True)
     runs = dict(r.split("=", 1) for r in a.run)
     first = xr.open_dataset(sorted(glob.glob(os.path.join(list(runs.values())[0], "longrun_day*.nc")))[0])
@@ -261,9 +296,15 @@ def main():
     lines = ["| run | ref | season | RMSE T 100-1 hPa [K] | RMSE u 100-1 hPa [m/s] | u(60N,10hPa) DJF [m/s] | u(60S,10hPa) JJA [m/s] |",
              "|---|---|---|---|---|---|---|"]
     clim_for = set(a.climatology_for.split(",")) if a.climatology_for else set(models)
+    extra = None
+    if a.extra_row:
+        xl, xd = a.extra_row.split("=", 1)
+        extra = (xl, load_model(xd, lat_out))
     for name, m in models.items():
         if name in clim_for:
-            plot_climatology(name, m, era5, waccm, a.outdir)
+            plot_climatology(name, m, era5, waccm, a.outdir, extra=extra)
+    if a.panel:
+        plot_climatology_panel(models, era5, waccm, a.outdir)
         for refname, ref, mc in (("ERA5", era5, None), ("WACCM6", waccm, "month")):
             if ref is None: continue
             for seas in ("DJF", "JJA", "annual"):
