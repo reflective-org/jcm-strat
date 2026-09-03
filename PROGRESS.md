@@ -4,6 +4,7 @@ Newest first. Each row links to the per-phase record in `docs/outputs/`.
 
 | Date | Phase | State | Record |
 |---|---|---|---|
+| 2026-09-03 | 7 — time-step sweep | **done**: 12/30/45/60/90/120 min x 1-2 departure iterations on the Phase 6 configuration; knee at 30 min (2.35x, Antarctic jet -18 percent), >= 60 min unusable | [docs/outputs/07_timestep/output.md](docs/outputs/07_timestep/output.md) |
 | 2026-09-03 | 6 — stratosphere without radiation (Polvani-Kushner, seasonal) | A/B of 8 configurations done, choice fixed as `strat_pk` defaults; **done**: 5-year chain (6.4 K / 5.6 m/s vs ERA5, 2 of 3 SSW winters, AoA pattern vs CLaMS); full-ECHAM reference year: better T (4.3 K) but no Arctic vortex and 9.7 m/s | [docs/outputs/06_stratosphere/output.md](docs/outputs/06_stratosphere/output.md) |
 | 2026-09-03 | 3 — passive tracers | **done**: aoa/unity/sai/e90 term, 1-yr run 2005, all acceptance checks pass; mass-fixer/clock interaction found and fixed | [docs/outputs/03_tracers/output.md](docs/outputs/03_tracers/output.md) |
 | 2026-09-03 | 2 — specified dynamics | runs done (90 d check, 1-yr 2005), PR open | [docs/outputs/02_nudged/output.md](docs/outputs/02_nudged/output.md) |
@@ -24,6 +25,8 @@ Simulated days per wall-clock hour, one H100 (GPU 0), `run=longrun` unless state
 | 3 | P3 SD + passive tracers (aoa, unity, sai, e90) | T63L95 | 12 | 4458.4 (e2e 2082) | 7 | `p3_tracers_1yr` | 2026-09-03 |
 | 6 | P6 SD + tracers + Polvani-Kushner stratosphere | T63L95 | 12 | 4445.3 (e2e 2012) | 7 | `p6_pk_g4_t15_s05_top3` | 2026-09-03 |
 | 6 | reference: full ECHAM physics + SD nudging (12 h target), GPU 1 | T63L95 | 12 | 139.9 (e2e 131) | 214 | `ref_echam_sd_2005` | 2026-09-03 |
+| 7 | P6 configuration, dt 30 | T63L95 | 30 | 10432 (e2e 1891) | 7 | `p7_dt30` | 2026-09-03 |
+| 7 | P6 configuration, dt 45, 2 departure iterations | T63L95 | 45 | 12369 (e2e 3028) | 9 | `p7_dt45_it2` | 2026-09-03 |
 
 (e2e = end-to-end incl. compile and output writing.) Reference from upstream (A100-40GB, `docs/source/design/dinosaur_sl_jam_configuration.md` in
 JCM): T63L47 full science 115 days/hr at dt=15 min; T63L95 full science 52 days/hr.
