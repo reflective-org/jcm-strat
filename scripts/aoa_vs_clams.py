@@ -12,7 +12,11 @@ WACCM: /data/CESM2_REFD1_AOA/...AOA1mf...nc, ``AOA`` (years) relative to a base 
        surface clock everywhere; shown for the pattern, not the level. Values below the base
        point are negative and masked.
 
-Writes <outdir>/<run>_aoa_triptych.png (three zonal-mean panels, one colour scale) and
+PARADIS (optional, --paradis-clock): scripts/paradis_offline_clock.py output — two clocks carried
+       offline by the PARADIS rollout's own winds (issue #29): surface reset (CLaMS convention) and
+       reset below 150 hPa (entry age, WACCM-like). "PARADIS winds + offline advection", not PARADIS.
+
+Writes <outdir>/<run>_aoa_triptych.png (one zonal-mean panel per source, one colour scale) and
 <outdir>/<run>_aoa_profiles.png (latitude profiles at ~55 hPa (20 km) and ~12 hPa (30 km),
 tropical vertical profile), and prints the numbers used in the acceptance table.
 """
@@ -78,6 +82,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("rundir"); ap.add_argument("outdir")
     ap.add_argument("--years", default="2005-2009"); ap.add_argument("--label", default="")
+    ap.add_argument("--paradis-clock", default=None, help="offline_clock.nc from scripts/paradis_offline_clock.py")
     a = ap.parse_args()
     y0, y1 = (int(s) for s in a.years.split("-")); years = list(range(y0, y1 + 1))
     run = os.path.basename(a.rundir.rstrip("/")); os.makedirs(a.outdir, exist_ok=True)
@@ -85,18 +90,24 @@ def main() -> None:
     pm, latm, am, last_day = model_age(a.rundir)
     pc, latc, ac = clams_age(years)
     pw, latw, aw = waccm_age(years)
+    # (p, lat, age, panel title, legend name, line style)
+    sources = [(pm, latm, am, f"model {run}\n(last 12 saves, ends day {last_day})", "model", "-"),
+               (pc, latc, ac, f"CLaMS v3.1 / ERA5, {a.years} mean\n(surface clock)", "CLaMS", "--"),
+               (pw, latw, aw, f"WACCM6 REF-D1, {a.years} mean\n(entry age, base 103 hPa)", "WACCM (entry age)", ":")]
+    if a.paradis_clock:
+        pz = xr.open_dataset(a.paradis_clock); span = f"{pz.attrs.get('start','')[:10]}..{pz.attrs.get('end','')[:10]}"
+        pp, latp = np.asarray(pz.level), np.asarray(pz.lat)
+        sources.append((pp, latp, pz.age_sfc_last12_zm.values, f"PARADIS winds + offline clock, surface reset\n({span}, last 12 months)", "PARADIS offline (surface)", "-."))
+        sources.append((pp, latp, pz.age_150_last12_zm.values, "PARADIS winds + offline clock, reset below 150 hPa\n(entry age)", "PARADIS offline (entry <150 hPa)", (0, (3, 1, 1, 1))))
     vmax = max(1.0, np.ceil(np.nanmax(ac) * 2) / 2)
     levels = np.linspace(0, vmax, int(vmax * 4) + 1)
 
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5), sharey=True)
-    for ax, (p, lat, age, title) in zip(axes, [
-        (pm, latm, am, f"model {run} (last 12 saves, ends day {last_day})"),
-        (pc, latc, ac, f"CLaMS v3.1 / ERA5, {a.years} mean (surface clock)"),
-        (pw, latw, aw, f"WACCM6 REF-D1, {a.years} mean (entry age, base 103 hPa)"),
-    ]):
+    n = len(sources)
+    fig, axes = plt.subplots(1, n, figsize=(5.3 * n, 5), sharey=True)
+    for ax, (p, lat, age, title, _, _) in zip(axes, sources):
         cf = ax.contourf(lat, p, age, levels=levels, cmap="viridis", extend="max")
         ax.contour(lat, p, age, levels=levels[::4], colors="w", linewidths=0.5)
-        ax.set_yscale("log"); ax.set_ylim(300, 1); ax.set_title(title, fontsize=9); ax.set_xlabel("latitude")
+        ax.set_yscale("log"); ax.set_ylim(300, 1); ax.set_title(title, fontsize=8); ax.set_xlabel("latitude")
     axes[0].set_ylabel("pressure (hPa)")
     fig.colorbar(cf, ax=axes, label="mean age (yr)", shrink=0.9)
     fig.suptitle(f"{a.label or 'Phase 4'}: age of air, zonal mean")
@@ -105,21 +116,21 @@ def main() -> None:
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
     rows = []
     for ax, ptarget, label in zip(axes[:2], (55.0, 12.0), ("~55 hPa (~20 km)", "~12 hPa (~30 km)")):
-        for p, lat, age, name, ls in ((pm, latm, am, "model", "-"), (pc, latc, ac, "CLaMS", "--"), (pw, latw, aw, "WACCM (entry age)", ":")):
+        for p, lat, age, _, name, ls in sources:
             k = int(np.argmin(np.abs(p - ptarget))); prof = age[k]
-            ax.plot(lat, prof, ls, label=name)
+            ax.plot(lat, prof, ls=ls, label=name)
             rows.append((label, name, band(lat, prof, 0, 10), band(lat, prof, 50, 70)))
-        ax.set_title(f"mean age at {label}"); ax.set_xlabel("latitude"); ax.set_ylabel("yr"); ax.grid(alpha=.3); ax.legend(fontsize=8)
+        ax.set_title(f"mean age at {label}"); ax.set_xlabel("latitude"); ax.set_ylabel("yr"); ax.grid(alpha=.3); ax.legend(fontsize=7)
     ax = axes[2]
-    for p, lat, age, name, ls in ((pm, latm, am, "model", "-"), (pc, latc, ac, "CLaMS", "--"), (pw, latw, aw, "WACCM (entry age)", ":")):
-        m = np.abs(lat) <= 10; prof = np.nanmean(age[:, m], axis=1); ax.plot(prof, p, ls, label=name)
+    for p, lat, age, _, name, ls in sources:
+        m = np.abs(lat) <= 10; prof = np.nanmean(age[:, m], axis=1); ax.plot(prof, p, ls=ls, label=name)
     ax.set_yscale("log"); ax.set_ylim(300, 1); ax.set_xlabel("yr"); ax.set_ylabel("pressure (hPa)"); ax.set_title("tropical (10S-10N) profile"); ax.grid(alpha=.3); ax.legend(fontsize=8)
     fig.suptitle(f"{a.label or 'Phase 4'}: age-of-air profiles"); fig.tight_layout()
     f2 = os.path.join(a.outdir, f"{run}_aoa_profiles.png"); fig.savefig(f2, dpi=130); print("wrote", f2)
 
-    print(f"{'level':16s} {'source':20s} {'tropics 10S-10N':>16s} {'50-70 deg':>10s} {'contrast':>9s}")
+    print(f"{'level':16s} {'source':34s} {'tropics 10S-10N':>16s} {'50-70 deg':>10s} {'contrast':>9s}")
     for label, name, t, e in rows:
-        print(f"{label:16s} {name:20s} {t:16.2f} {e:10.2f} {e - t:9.2f}")
+        print(f"{label:16s} {name:34s} {t:16.2f} {e:10.2f} {e - t:9.2f}")
 
 
 if __name__ == "__main__":
