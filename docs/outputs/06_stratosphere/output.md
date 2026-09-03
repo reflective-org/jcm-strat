@@ -216,4 +216,4 @@ tracers over 1826 d: unity max |q-1| 2.59e-4, burden drift +1.8e-4; sai -0.77 pe
 ![ECHAM reference climatology](echam_ref/strat_climatology_ECHAM_SD.png)
 
 Decision: `strat_pk` defaults = gamma 4 K/km, tau 15 d, season_offset 0.5, vortex cooling faded
-above 3 hPa (KEY_DECISIONS #19-#21). Phase 7 (time-step sweep) runs on this configuration.
+above 3 hPa (KEY_DECISIONS #23-#25). Phase 7 (time-step sweep) runs on this configuration.

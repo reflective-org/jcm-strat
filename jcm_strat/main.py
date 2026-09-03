@@ -15,7 +15,7 @@ top-level config keys are honoured before the model is built:
     clock tracer must be here: it is not a conserved quantity, and in Phase 3 the fixer's
     global rescaling — compensating spurious mass created by the limiter at the clock's sharp
     700 hPa reset edge — slowed the whole stratospheric clock from 1.00 to 0.44 day/day over
-    one year (docs/outputs/03_tracers/output.md, KEY_DECISIONS #18).
+    one year (docs/outputs/03_tracers/output.md, KEY_DECISIONS #19).
 
 Both are logged in the run header so any log is self-describing. Implemented as a wrapper
 around the dycore method because ``sl_options`` from the runner carries only

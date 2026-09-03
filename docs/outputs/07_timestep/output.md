@@ -102,4 +102,4 @@ ERA5                 -           -           38         78
    the 5-year chain at 30 minutes (65 -> ~30 min on one GPU) would settle it empirically.
 
 Decision proposed: `run.time_step` stays 12 in `p6_pk`; a `p7_fast` experiment with 30 minutes
-is added for throughput work once the group agrees (KEY_DECISIONS #22 pending).
+is added for throughput work once the group agrees (KEY_DECISIONS #26 pending).
