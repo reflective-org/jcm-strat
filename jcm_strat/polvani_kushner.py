@@ -27,6 +27,12 @@ it stands in for, exist. ``epsilon(t) = epsilon_0 s(t)`` in the troposphere eith
 fraction of year comes from ``forcing.solar.tyear`` (populated by ``ForcingData.select`` from the
 run calendar), the same field the SPEEDY shortwave scheme reads.
 
+PK02's vortex profile cools without limit with height (143 K at 3 hPa, 125 K at 1 hPa for
+gamma = 4), whereas the real winter pole warms again above ~10 hPa toward a ~250 K stratopause.
+``p_vortex_top_hpa`` (None = PK02 as published) fades the cap weight out over one e-folding of
+log-pressure above that level, so the cooling is confined to the middle stratosphere and the upper
+stratosphere relaxes to the standard atmosphere everywhere.
+
 The stratospheric relaxation time ``tau_strat_days`` is a separate knob (default 40 d = PK02 =
 Held-Suarez ``k_a``). Duncan's handover argues for the real radiative damping time, 5-20 days,
 once aerosol heating is switched on; the Phase 6 A/B tests 40 vs 15 d.
@@ -94,6 +100,7 @@ class PolvaniKushnerColumns(HeldSuarezColumns):
         epsilon_k: float = 10.0,
         t_peak_year_fraction: float = 0.04,   # ~15 January: NH vortex at full strength
         season_offset: float = 0.0,           # 0: half-year cosine; 0.5: equinox-to-equinox plateau
+        p_vortex_top_hpa: float | None = None,  # fade the vortex cooling out above this pressure
         tau_strat_days: float = 40.0,
         **held_suarez_kwargs,
     ) -> None:
@@ -107,6 +114,7 @@ class PolvaniKushnerColumns(HeldSuarezColumns):
         self.epsilon = float(epsilon_k) * self._k_per_nondim
         self.t_peak = float(t_peak_year_fraction)
         self.season_offset = float(season_offset)
+        self.p_vortex_top_pa = None if p_vortex_top_hpa is None else float(p_vortex_top_hpa) * 100.0
         self.k_strat = nnx.Variable(jnp.asarray(specs.nondimensionalize(1.0 / (float(tau_strat_days) * units.day))))
 
     # --- equilibrium -------------------------------------------------------------------
@@ -139,6 +147,9 @@ class PolvaniKushnerColumns(HeldSuarezColumns):
         w_n = 0.5 * (1.0 + jnp.tanh((lat - self.phi0) / self.delta_phi))
         w_s = 0.5 * (1.0 - jnp.tanh((lat + self.phi0) / self.delta_phi))
         w = a_n * w_n + a_s * w_s                                 # (ncols,), in [0, 1]
+        if self.p_vortex_top_pa is not None:                      # fade out above p_vortex_top
+            taper = 0.5 * (1.0 + jnp.tanh(jnp.log(p_pa / self.p_vortex_top_pa)))
+            w = w * taper                                         # (nlev, ncols)
         t_strat = (1.0 - w) * t_us + w * t_pv
         return jnp.where(p_pa < self.p_t_pa, t_strat, t_trop)
 

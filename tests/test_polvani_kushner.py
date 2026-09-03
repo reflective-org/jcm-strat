@@ -85,3 +85,15 @@ def test_season_offset_widens_the_winter():
     assert abs(_teq_kelvin(wide, 0.04)[0, 0] - _teq_kelvin(narrow, 0.04)[0, 0]) < 0.5
     # mid-July neither cools the north
     assert abs(_teq_kelvin(wide, 0.54)[0, 0] - t_us) < 0.5
+
+
+def test_vortex_top_taper_restores_standard_atmosphere_aloft():
+    lats = [85.0]
+    sig = [30.0 / 1013.25, 3.0 / 1013.25, 0.5 / 1013.25]
+    plain = _Fake(lats, sig, gamma_k_per_km=4.0)
+    tapered = _Fake(lats, sig, gamma_k_per_km=4.0, p_vortex_top_hpa=10.0)
+    a = _teq_kelvin(plain, 0.04)[:, 0]; b = _teq_kelvin(tapered, 0.04)[:, 0]
+    t_us = np.asarray(standard_atmosphere_temperature(jnp.asarray([3000.0, 300.0, 50.0])))
+    assert abs(a[0] - b[0]) < 6.0                    # 30 hPa: little change (taper ~ 0.9)
+    assert a[1] < 150.0 and b[1] > t_us[1] - 25.0    # 3 hPa: PK02 asks 143 K, tapered stays near T_US
+    assert abs(b[2] - t_us[2]) < 3.0                 # 0.5 hPa: standard atmosphere
