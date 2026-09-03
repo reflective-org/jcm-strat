@@ -63,7 +63,10 @@ def install_mass_fixer_policy(enabled: bool = True, exclude=()) -> None:
 @hydra.main(version_base=None, config_path=_JCM_CONFIG_DIR, config_name="config")
 def main(cfg: DictConfig) -> None:
     enabled = bool(cfg.get("sl_mass_fixer", True))
-    exclude = OmegaConf.to_container(cfg.get("sl_mass_fixer_exclude", [])) or []
+    raw = cfg.get("sl_mass_fixer_exclude", None)
+    # a config without the key (e.g. the full-ECHAM reference) yields a plain default, not a
+    # ListConfig; OmegaConf.to_container refuses plain lists
+    exclude = list(OmegaConf.to_container(raw)) if raw is not None and OmegaConf.is_config(raw) else list(raw or [])
     install_mass_fixer_policy(enabled, exclude)
     # hand the already-composed config to jcm's task function (hydra's decorated main accepts
     # a pass-through config and then does not re-parse the command line)

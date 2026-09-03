@@ -1,0 +1,20 @@
+# Phase 6 physics: Polvani-Kushner (2002) stratosphere with a seasonal winter hemisphere on top
+# of the dry Held-Suarez troposphere, plus the four passive tracers of Phase 3. Column path.
+#
+# The only change from strat_passive.yaml is the relaxation term: the 200 K clamp becomes the
+# US Standard Atmosphere with a polar-vortex cooling of gamma K/km in the winter cap
+# (jcm_strat/polvani_kushner.py). gamma and tau_strat_days are the Phase 6 A/B knobs.
+vectorize_columns: true
+checkpoint_terms: true
+
+terms:
+  held_suarez:
+    _target_: jcm_strat.polvani_kushner.PolvaniKushnerColumns
+    gamma_k_per_km: 4.0
+    p_tropopause_hpa: 100.0
+    phi0_deg: 50.0
+    delta_phi_deg: 10.0
+    epsilon_k: 10.0
+    tau_strat_days: 40.0
+  passive_tracers:
+    _target_: jcm_strat.tracers.PassiveTracers
