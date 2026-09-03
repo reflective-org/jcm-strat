@@ -100,7 +100,8 @@ def fetch_daily_u10(year):
             u = np.asarray(ds.variables["u"][:], dtype="f8")            # (time, [level,] lat, lon)
             if u.ndim == 4: u = u[:, 0]
             tname = "valid_time" if "valid_time" in ds.variables else "time"
-            tt = netCDF4.num2date(ds.variables[tname][:], ds.variables[tname].units)
+            tt = netCDF4.num2date(ds.variables[tname][:], ds.variables[tname].units,
+                                  only_use_cftime_datetimes=False, only_use_python_datetimes=True)
             lat = np.asarray(ds.variables["latitude"][:], dtype="f8")
             uz = u.mean(axis=-1)
             for d in sorted({t.date() for t in tt}):
@@ -123,6 +124,8 @@ if __name__ == "__main__":
     years = list(range(y0, y1 + 1))
     with ThreadPoolExecutor(max_workers=4) as ex:
         list(ex.map(fetch_monthly, years))
-    with ThreadPoolExecutor(max_workers=4) as ex:
-        list(ex.map(fetch_daily_u10, years))
+    # the daily reduction runs sequentially: concurrent netCDF4/HDF5 reads from threads crashed
+    # the process silently (no traceback) when four years were reduced at once
+    for y in years:
+        fetch_daily_u10(y)
     log("done")
