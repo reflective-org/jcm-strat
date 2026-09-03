@@ -102,7 +102,7 @@ MD
 phase2() {
   g checkout -q phase2-specified-dynamics 2>/dev/null || g checkout -q -b phase2-specified-dynamics phase1-stripped-dry
   step "ERA5 prefetch 2005"
-  python -m jcm.data.era5 --grid echam_t63_l95_hybrid --start 2004-12-31 --end 2006-01-02 --init >> "$LOG" 2>&1 || { step "ERA5 prefetch failed"; return 1; }
+  python -m jcm.data.era5 --grid echam_t63_l95_hybrid --start 2004-12-31 --end 2006-01-03 --init >> "$LOG" 2>&1 || { step "ERA5 prefetch failed"; return 1; }
   mkdir -p docs/outputs/02_nudged
   [ -f docs/outputs/02_nudged/output.md ] || cat > docs/outputs/02_nudged/output.md <<'MD'
 # Phase 2 — specified dynamics: troposphere nudged to ERA5, stratosphere free
