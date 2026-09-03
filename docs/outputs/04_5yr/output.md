@@ -116,6 +116,13 @@ PARADIS u(60.5N, 10 hPa)             DJF mean   days u<0 (Nov-Mar)      60.5S DJ
   2000/2001                            15.8          0                   -0.7
 annual mean u(60N, 10 hPa): PARADIS +10.0 m/s, jcm-strat (Held-Suarez) -4.0 m/s, ERA5 2005-2009 +9.8 m/s
 
+ERA5 u(60N, 10 hPa), daily (CDS), the model's own years   DJF mean   days u<0 (Nov-Mar)   60S DJF
+  2005/2006                                                 12.7         25                 -8.0
+  2006/2007                                                 34.6          4                 -8.9
+  2007/2008                                                 32.6         15                 -7.1
+  2008/2009                                                 20.5         30                 -6.8
+  (model, same winters: -4.3 / -1.8 / -2.5 / -5.2 m/s; PARADIS 1996-2000: 31 -> 16 m/s, 0 reversals)
+
 zonal-mean T bias vs ERA5 2005-2009 [K]   tropics 10S-10N   60-90N   60-90S
   10 hPa   model                              -34.3          -18.8    -15.2
   10 hPa   PARADIS                             +1.1           +0.5     -5.8
@@ -146,10 +153,12 @@ Reading:
    Antarctic jet core. If PARADIS's circulation drove the tracers, the tropical pipe would be
    ventilated far more strongly than in Phase 4 — which is the case for an emulator-driven transport.
 2. **But PARADIS's northern vortex never breaks and weakens over the rollout.** DJF-mean u(60°N, 10 hPa)
-   falls from 31 to 16 m/s across the five winters and there is not a single reversal in five winters,
-   where ERA5 shows roughly six major warmings per decade. A too-stable, slowly drifting vortex is a
-   known long-rollout failure mode; it would bias an emulator-driven age of air old in the polar
-   lower stratosphere.
+   falls from 31 to 16 m/s across the five winters and there is not a single reversal, where ERA5 over
+   the model's own years swings between 13 and 35 m/s in the DJF mean with 4–30 reversal days per
+   winter (the three major warmings of 2006, 2008 and 2009 are the 25-, 15- and 30-day reversals). The
+   model, for its part, sits at −2 to −5 m/s all winter with 21–30 "reversal" days that are simply the
+   absence of a jet. A too-stable, slowly drifting vortex is a known long-rollout failure mode; it would
+   bias an emulator-driven age of air old in the polar lower stratosphere.
 3. **PARADIS's vertical velocity is not usable as a Brewer-Dobson proxy.** The daily-mean zonal-mean ω
    is noisy and partly unphysical: a checkerboard above 10 hPa with ±1.5 mm/s cells, strong ascent
    over both poles at all levels, and a sign change between 100 hPa (+0.10 mm/s), 70 hPa (−0.17) and

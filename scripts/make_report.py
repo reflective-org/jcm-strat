@@ -299,8 +299,9 @@ def build(out_pdf: str) -> None:
              "clock sits 1-2 years below CLaMS at all latitudes, with a slow tropospheric transit (0.6 yr at 200 hPa) followed by "
              "too little ageing with height. The entry-age variant of the offline clock is tabulated in the record, not plotted.", maxh=6.5 * cm)
     S += fig("04_5yr/p4_5yr_vortex.png",
-             "Figure 9. Zonal-mean zonal wind at 10 hPa and 61N (blue) and 61S (orange). Top: the model, 5-day means, with the "
-             "ERA5 sudden-warming dates marked; there is no winter westerly jet to disrupt in either hemisphere. Bottom: the same "
+             "Figure 9. Zonal-mean zonal wind at 10 hPa and 60N (blue) and 60S (orange). Top: the model, 5-day means, with ERA5's "
+             "daily wind for the same years overlaid in black and grey and the sudden-warming dates marked; the model has no winter "
+             "westerly jet to disrupt in either hemisphere while ERA5 swings between 13 and 35 m/s in the DJF mean. Bottom: the same "
              "diagnostic in the PARADIS rollout for 1996-2000 (daily): both polar-night jets present, no reversal in five winters, "
              "the northern winter jet weakening from 31 to 16 m/s over the rollout.", maxh=9 * cm)
     S += [para("PARADIS: the circulation drivers, since the rollout carries no tracer", H2),
