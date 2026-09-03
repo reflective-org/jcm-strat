@@ -1,6 +1,6 @@
 # Phase 6 — a stratosphere without radiation: seasonal Polvani-Kushner
 
-Status: **A/B complete, configuration chosen, 5-year chain done** (2026-09-03); ECHAM reference pending. Branch `phase6-stratosphere` (worktree `jcm-strat-phase6`).
+Status: **complete** (2026-09-03): A/B, chosen configuration, 5-year chain, ECHAM reference. Branch `phase6-stratosphere` (worktree `jcm-strat-phase6`).
 
 ## Question this phase answers
 
@@ -46,14 +46,14 @@ time `tau_strat_days` is a separate knob (PK02 and Held-Suarez: 40 d).
 | `p6_pk_g4_t15_s05_top5` | strat_pk | 4 | 15 | 365 | + faded above 5 hPa |
 | `p6_pk_g4_t15_s05_top3` | strat_pk | 4 | 15 | 365 | **+ faded above 3 hPa — chosen; now the `strat_pk` defaults** |
 | `p6_2005` … `p6_2009` | strat_pk (chosen) | 4 | 15 | 5 x 365 | the 5-year chain with tracers (`chain_years.sh`, EXPERIMENT=p6_pk PREFIX=p6) |
-| `ref_echam_sd_2005` | echam (full) | - | - | 365 | reference, GPU 1 |
+| `ref_echam_sd_2005` | echam (full: RRTMGP, convection, clouds, TKE, surface, Hines + SSO) | - | - | 365 | reference, GPU 1, target 12-hourly; 140 sim days/hr (2.8 h) |
 | `p3_tracers_1yr` | strat_passive (Held-Suarez) | - | 40 | 365 | the Phase-3 baseline, for contrast |
 
 ## Acceptance (proposed in PLANS.md, PR 7)
 
 | check | threshold | result |
 |---|---|---|
-| zonal-mean T RMSE 100-1 hPa vs ERA5 | <= 5 K, and no worse than the ECHAM reference | **6.7 K annual** for the chosen run (Held-Suarez: 35 K); DJF 9.8 K is inflated by the January spin-up from the ERA5 initial state (see reading). ECHAM reference pending |
+| zonal-mean T RMSE 100-1 hPa vs ERA5 | <= 5 K, and no worse than the ECHAM reference | **6.7 K annual** for the chosen run, 6.4 K over 2005-2009 (Held-Suarez: 35 K); DJF 9.8 K is inflated by the January spin-up. **Not met against the ECHAM reference on temperature**: full ECHAM gets 4.3 K. Met on wind: 6.8 vs ECHAM's 9.7 m/s |
 | DJF u(60N, 10 hPa) vs ERA5 | within 10 m/s | **pass**: 38 vs 38 m/s |
 | JJA u(60S, 10 hPa) vs ERA5 | (added) within 20 percent | 66 vs 78 m/s (-15 percent) |
 | SSW winters 2005-2009 | >= 2 of 3 with a weakened vortex | **pass, 2 of 3**: ERA5 central dates 2006-01-21, 2007-02-24, 2008-02-22 (+03-14), 2009-01-24; the chain reverses on 2008-03-21 and 2009-02-05 (5-day means), misses 2006 and 2007. Held-Suarez chain: none |
@@ -196,5 +196,21 @@ tracers over 1826 d: unity max |q-1| 2.59e-4, burden drift +1.8e-4; sai -0.77 pe
    times too large (Phase 3: 0.001 was really 5e-6; the Phase-4 chain's 0.668 is really 0.003;
    this chain's 17.0 is 0.089). No verdict changes, but the Phase 4 record should be corrected.
 
+9. **Against JCM's own full physics, the analytic stratosphere wins on winds and loses on
+   temperature.** The full-ECHAM specified-dynamics year (`echam_ref/`) has the better temperature
+   climatology (4.3 K RMSE, 100-1 hPa) but almost no Arctic vortex: u(60N, 10 hPa) drops to
+   ~4 m/s in the first week of January 2005 and stays there through the following November and
+   December, when it should rebuild to 25-30 m/s, and the Antarctic jet peaks at 40-50 m/s
+   against ERA5's 80-100. Its wind RMSE is 9.7 m/s against the PK run's 6.8. Two caveats: its
+   nudging target is 12-hourly (memory), and one year is one year; but the missing Arctic
+   vortex in a run with radiation, Hines and orographic drag on suggests the full package's
+   gravity-wave drag or its radiation-plus-nudging balance deserves a look before it is used as
+   "the answer". It also runs at 140 simulated days/hour here (Phase 0 measured 52 with 5-day
+   chunks and hourly diagnostics), i.e. 32 times slower than the PK model.
+
+![ECHAM reference vortex](echam_ref/vortex_series.png)
+![ECHAM reference polar cap](echam_ref/polar_cap_T.png)
+![ECHAM reference climatology](echam_ref/strat_climatology_ECHAM_SD.png)
+
 Decision: `strat_pk` defaults = gamma 4 K/km, tau 15 d, season_offset 0.5, vortex cooling faded
-above 3 hPa (KEY_DECISIONS #19-#21). The ECHAM reference year (GPU 1) is added when it finishes.
+above 3 hPa (KEY_DECISIONS #19-#21). Phase 7 (time-step sweep) runs on this configuration.
