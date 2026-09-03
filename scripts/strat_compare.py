@@ -243,6 +243,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("outdir"); ap.add_argument("--run", action="append", required=True, help="LABEL=rundir")
     ap.add_argument("--years", default=None, help="e.g. 2005-2009; default: the first run's years")
+    ap.add_argument("--climatology-for", default=None,
+                    help="comma-separated run labels that get a climatology figure (default: all)")
     a = ap.parse_args(); os.makedirs(a.outdir, exist_ok=True)
     runs = dict(r.split("=", 1) for r in a.run)
     first = xr.open_dataset(sorted(glob.glob(os.path.join(list(runs.values())[0], "longrun_day*.nc")))[0])
@@ -258,8 +260,10 @@ def main():
 
     lines = ["| run | ref | season | RMSE T 100-1 hPa [K] | RMSE u 100-1 hPa [m/s] | u(60N,10hPa) DJF [m/s] | u(60S,10hPa) JJA [m/s] |",
              "|---|---|---|---|---|---|---|"]
+    clim_for = set(a.climatology_for.split(",")) if a.climatology_for else set(models)
     for name, m in models.items():
-        plot_climatology(name, m, era5, waccm, a.outdir)
+        if name in clim_for:
+            plot_climatology(name, m, era5, waccm, a.outdir)
         for refname, ref, mc in (("ERA5", era5, None), ("WACCM6", waccm, "month")):
             if ref is None: continue
             for seas in ("DJF", "JJA", "annual"):

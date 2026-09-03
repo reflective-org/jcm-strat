@@ -29,7 +29,7 @@ for y in "${YEARS[@]}"; do
   init=()
   if [ -n "$prev" ]; then init=(init=from_state "init.file=$prev/checkpoint.ckpt"); fi
   step "run $name: $days days ${init[*]:-init=era5}"
-  ( cd "$rundir" && python -m jcm_strat.main --config-dir "$REPO/jcm_strat/config" "+experiment=$EXPERIMENT" run.checkpoint_path=checkpoint.ckpt \
+  ( cd "$rundir" && python -m jcm_strat.main --config-dir "$REPO/jcm_strat/config" "+experiment=$EXPERIMENT" ++run.checkpoint_path=checkpoint.ckpt \
       "run.start_date=$y-01-01" "run.total_time=$days" "${init[@]}" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
   rc=$?; echo "[launch] $(date -Is) exit=$rc" >> "$rundir/log.txt"
   step "done $name exit=$rc"

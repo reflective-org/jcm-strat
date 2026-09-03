@@ -24,3 +24,12 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | [#18](https://github.com/reflective-org/jcm-strat/issues/18) | Global-mean p_s differs between dry and full-physics runs (998.6 vs 985.6 hPa) | research | Understand before comparing tracer burdens across configurations. |
 | [#19](https://github.com/reflective-org/jcm-strat/issues/19) | Output volume / per-chunk overhead dominates the dry model's wall time | feature | Kernel 6000 d/hr vs end-to-end ~1000-2500 d/hr. |
 | [#20](https://github.com/reflective-org/jcm-strat/issues/20) | Gravity-wave drag in the stripped model (needs a column-vectorized Held-Suarez) | feature | Phase-1 GWD A/B dropped; `strat_dry_gwd.yaml` removed until this is solved. |
+
+## Found in Phase 6 (to be filed as issues with PR 7)
+
+| Item | Label | Notes |
+|---|---|---|
+| Tropical tropopause in the PK equilibrium: latitude-dependent `T_US` floor (~195 K at the equator, 217 K poleward) | feature | The stripped model is ~10 K warm at 70-150 hPa in the tropics; affects the tropical pipe and age of air. |
+| Upper-stratosphere cold bias, 1-3 hPa, ~9 K year-round at tau 15 | research | Dynamical; check with Hines drag (#20) and with RRTMGP (#2). |
+| Spin-up of the upper stratosphere from the ERA5 initial state (no information above 50 hPa) | feature | Start comparisons after a 1-2 month spin-up, or initialise the stratosphere from the PK equilibrium. |
+| Internal variability vs relaxation time: SSW frequency at tau 15 vs 25 over 2005-2009 | research | Needs the 5-year chains; decides whether tau 15 is too stiff for the wave-driven variability. |
