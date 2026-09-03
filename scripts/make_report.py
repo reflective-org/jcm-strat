@@ -297,8 +297,34 @@ def build(out_pdf: str) -> None:
              "(right). The extratropics match CLaMS at 55 hPa; the tropics are 1.5 years too old; the tropical profile is already "
              "about one year old at 100 hPa, the tropospheric-transit signature.", maxh=6.5 * cm)
     S += fig("04_5yr/p4_5yr_vortex.png",
-             "Figure 9. Zonal-mean zonal wind at 10 hPa and 61N (blue) and 61S (orange), 5-day means, with the ERA5 sudden-"
-             "warming dates marked. There is no winter westerly jet to disrupt in either hemisphere.", maxh=5.5 * cm)
+             "Figure 9. Zonal-mean zonal wind at 10 hPa and 61N (blue) and 61S (orange). Top: the model, 5-day means, with the "
+             "ERA5 sudden-warming dates marked; there is no winter westerly jet to disrupt in either hemisphere. Bottom: the same "
+             "diagnostic in the PARADIS rollout for 1996-2000 (daily): both polar-night jets present, no reversal in five winters, "
+             "the northern winter jet weakening from 31 to 16 m/s over the rollout.", maxh=9 * cm)
+    S += [para("PARADIS: the circulation drivers, since the rollout carries no tracer", H2),
+          para("The PARADIS long-range rollout 1995_12_06_5y1m (v2 stage 3d, 1 degree, 17 pressure levels, initialised "
+               "6 December 1995, 6-hourly for a month then daily to January 2001) was asked for as a fourth entry in the "
+               "age-of-air comparison. It carries no tracer of any kind, so it has no age of air; deriving one offline from its "
+               "winds is issue 29. What it does carry is the circulation that sets the age of air, compared here for the five "
+               "years after the first month against the model's last year."),
+          bullets(["PARADIS has the stratosphere Held-Suarez lacks: a cold tropical tropopause, a warm upper stratosphere, both "
+                   "polar-night jets (60S up to about 95 m/s in austral winter, 60N 20-50 m/s in boreal winter) and an equatorial "
+                   "easterly band at 10-30 hPa. Model minus PARADIS is the Held-Suarez signature: 20-30 K too cold above 30 hPa "
+                   "and 20-30 m/s too weak at both jets (Figure 14).",
+                   "PARADIS's northern vortex never breaks and weakens over the rollout: the DJF-mean wind at 60N, 10 hPa falls "
+                   "from 31 to 16 m/s across five winters with no reversal, where ERA5 shows about six major warmings per decade.",
+                   "PARADIS's vertical velocity is not usable as a Brewer-Dobson proxy: the zonal-mean omega is a checkerboard above "
+                   "10 hPa, ascends over both poles, and changes sign between 100, 70 and 50 hPa in the tropics (+0.10, -0.17, "
+                   "+0.32 mm/s) where the real residual circulation rises smoothly at 0.2-0.4 mm/s (Figure 15).",
+                   "For Approach A versus B: the physics baseline transports well on the wrong circulation; the emulator has a far "
+                   "better mean circulation but no tracer, no vortex breakdowns, and a vertical velocity that cannot be trusted "
+                   "directly. Neither is yet a validated age of air."])]
+    S += fig("04_5yr/p4_5yr_vs_paradis_climatology.png",
+             "Figure 14. Zonal-mean temperature (top) and zonal wind (bottom) on PARADIS's 17 levels: the model's last year (left), "
+             "the PARADIS rollout's 1996-2000 mean (middle), and model minus PARADIS (right).", maxh=8.5 * cm)
+    S += fig("04_5yr/paradis_upwelling.png",
+             "Figure 15. PARADIS zonal-mean vertical velocity, w = -omega H/p, 1996-2000 mean. Checkerboard above 10 hPa and polar "
+             "ascent are not physical; the tropical column changes sign between 100 and 50 hPa.", maxh=6.5 * cm)
     S += fig("04_5yr/p4_5yr_tracer_zonal.png",
              "Figure 10. Zonal means at day 1826. Age of air (top left) now shows the tropical pipe through the whole lower "
              "stratosphere; the injection tracer (top right) has spread over the entire upper domain after five years of "
