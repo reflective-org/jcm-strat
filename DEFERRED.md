@@ -25,13 +25,14 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | [#19](https://github.com/reflective-org/jcm-strat/issues/19) | Output volume / per-chunk overhead dominates the dry model's wall time | feature | Kernel 6000 d/hr vs end-to-end ~1000-2500 d/hr. |
 | [#20](https://github.com/reflective-org/jcm-strat/issues/20) | Gravity-wave drag in the stripped model (needs a column-vectorized Held-Suarez) | feature | Phase-1 GWD A/B dropped; `strat_dry_gwd.yaml` removed until this is solved. |
 
-## Found in Phase 6 (to be filed as issues with PR 7)
+## Found in Phase 6 (issues #31-#36, filed 2026-09-03)
 
 | Item | Label | Notes |
 |---|---|---|
-| Tropical tropopause in the PK equilibrium: latitude-dependent `T_US` floor (~195 K at the equator, 217 K poleward) | feature | The stripped model is ~10 K warm at 70-150 hPa in the tropics; affects the tropical pipe and age of air. |
-| Upper-stratosphere cold bias, 1-3 hPa, ~9 K year-round at tau 15 | research | Dynamical; check with Hines drag (#20) and with RRTMGP (#2). |
-| Spin-up of the upper stratosphere from the ERA5 initial state (no information above 50 hPa) | feature | Start comparisons after a 1-2 month spin-up, or initialise the stratosphere from the PK equilibrium. |
-| Internal variability vs relaxation time: SSW frequency at tau 15 vs 25 over 2005-2009 | research | Needs the 5-year chains; decides whether tau 15 is too stiff for the wave-driven variability. |
-| Winter pole above 10 hPa 20-30 K too warm with the 3 hPa taper | feature | The taper hands the cap back to the standard atmosphere, whose 1-3 hPa values are summer ones; a colder winter stratopause target (or a taper to a winter profile) is needed. |
-| Full-ECHAM specified-dynamics year has no Arctic vortex (u(60N,10hPa) ~4 m/s all year) and a half-strength Antarctic one | research | Check Hines/SSO drag strength and the radiation + nudging balance in the stock package before using it as the reference stratosphere; rerun with a 6 h target once memory allows. |
+| [#31](https://github.com/reflective-org/jcm-strat/issues/31) Tropical tropopause in the PK equilibrium: latitude-dependent `T_US` floor (~195 K at the equator, 217 K poleward) | feature | The stripped model is ~10 K warm at 70-150 hPa in the tropics; affects the tropical pipe and age of air. |
+| [#32](https://github.com/reflective-org/jcm-strat/issues/32) Upper-stratosphere cold bias, 1-3 hPa, ~9 K year-round at tau 15 | research | Dynamical; check with Hines drag (#20) and with RRTMGP (#2). |
+| [#34](https://github.com/reflective-org/jcm-strat/issues/34) Spin-up of the upper stratosphere from the ERA5 initial state (no information above 50 hPa) | feature | Start comparisons after a 1-2 month spin-up, or initialise the stratosphere from the PK equilibrium. |
+| [#33](https://github.com/reflective-org/jcm-strat/issues/33) Internal variability vs relaxation time: SSW frequency at tau 15 vs 25 over 2005-2009 | research | Needs the 5-year chains; decides whether tau 15 is too stiff for the wave-driven variability. |
+| [#32](https://github.com/reflective-org/jcm-strat/issues/32) Winter pole above 10 hPa 20-30 K too warm with the 3 hPa taper | feature | The taper hands the cap back to the standard atmosphere, whose 1-3 hPa values are summer ones; a colder winter stratopause target (or a taper to a winter profile) is needed. |
+| [#35](https://github.com/reflective-org/jcm-strat/issues/35) Full-ECHAM specified-dynamics year has no Arctic vortex (u(60N,10hPa) ~4 m/s all year) and a half-strength Antarctic one | research | Check Hines/SSO drag strength and the radiation + nudging balance in the stock package before using it as the reference stratosphere; rerun with a 6 h target once memory allows. |
+| [#36](https://github.com/reflective-org/jcm-strat/issues/36) tracer_budget pull-up check 192x too large before 2026-09-03 | bug | Fixed on phase6-stratosphere; Phase 3/4 numbers to correct (verdicts unchanged). |
