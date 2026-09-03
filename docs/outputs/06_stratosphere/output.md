@@ -65,7 +65,9 @@ time `tau_strat_days` is a separate knob (PK02 and Held-Suarez: 40 d).
 
 All runs are 2005, dt 12 min, 5-day means; metrics over 100-1 hPa, area-weighted, model interpolated
 in log-pressure to ERA5's levels (`scripts/strat_compare.py`). Full table with the WACCM6 rows:
-`strat_metrics.md`.
+`strat_metrics.md`. `strat_climatology_panel.png` puts every model version on one page: full ECHAM
+physics under the same nudging, Held-Suarez, the chosen Polvani-Kushner run, ERA5, WACCM6
+(`scripts/strat_compare.py --panel`).
 
 | run | ref | season | RMSE T 100-1 hPa [K] | RMSE u 100-1 hPa [m/s] | u(60N,10hPa) DJF [m/s] | u(60S,10hPa) JJA [m/s] |
 |---|---|---|---|---|---|---|
@@ -112,6 +114,7 @@ PK_g4_t15_s05_top10 SSW-like reversals (5-day means, +-5 d): 2005-12-02
 PK_g4_t15_s05_top5 SSW-like reversals (5-day means, +-5 d): none
 PK_g4_t15_s05_top3 SSW-like reversals (5-day means, +-5 d): 2005-03-22
 
+![all model versions against ERA5 and WACCM6](strat_climatology_panel.png)
 ![vortex](vortex_series.png)
 ![polar cap](polar_cap_T.png)
 ![climatology, Held-Suarez](strat_climatology_P3_HS.png)

@@ -4,6 +4,7 @@ Newest first. Each row links to the per-phase record in `docs/outputs/`.
 
 | Date | Phase | State | Record |
 |---|---|---|---|
+| 2026-09-03 | 7 — time-step sweep | **done**: 12/30/45/60/90/120 min x 1-2 departure iterations on the Phase 6 configuration; knee at 30 min (2.35x, Antarctic jet -18 percent), >= 60 min unusable | [docs/outputs/07_timestep/output.md](docs/outputs/07_timestep/output.md) |
 | 2026-09-03 | 6 — stratosphere without radiation (Polvani-Kushner, seasonal) | A/B of 8 configurations done, choice fixed as `strat_pk` defaults; **done**: 5-year chain (6.4 K / 5.6 m/s vs ERA5, 2 of 3 SSW winters, AoA pattern vs CLaMS); full-ECHAM reference year: better T (4.3 K) but no Arctic vortex and 9.7 m/s | [docs/outputs/06_stratosphere/output.md](docs/outputs/06_stratosphere/output.md) |
 | 2026-09-03 | 4 — 5-year run, the Phase-1 number | **done**: 2005–2009 as five chained segments; transport checks pass; age-of-air pattern right but tropics 1.5 yr too old and no polar-night jet (Held-Suarez stratosphere) | [docs/outputs/04_5yr/output.md](docs/outputs/04_5yr/output.md) |
 | 2026-09-03 | 3 — passive tracers | **done**: aoa/unity/sai/e90 term, 1-yr run 2005, all acceptance checks pass; mass-fixer/clock interaction found and fixed | [docs/outputs/03_tracers/output.md](docs/outputs/03_tracers/output.md) |
@@ -26,6 +27,8 @@ Simulated days per wall-clock hour, one H100 (GPU 0), `run=longrun` unless state
 | 4 | P4 same, 5 years as five chained segments | T63L95 | 12 | 4315 aggregate, 4457–4478 per segment (e2e 1768; 2079–2099 per segment) | 7 | `p4_5yr` (`p4_2005`…`p4_2009`) | 2026-09-03 |
 | 6 | P6 SD + tracers + Polvani-Kushner stratosphere | T63L95 | 12 | 4445.3 (e2e 2012) | 7 | `p6_pk_g4_t15_s05_top3` | 2026-09-03 |
 | 6 | reference: full ECHAM physics + SD nudging (12 h target), GPU 1 | T63L95 | 12 | 139.9 (e2e 131) | 214 | `ref_echam_sd_2005` | 2026-09-03 |
+| 7 | P6 configuration, dt 30 | T63L95 | 30 | 10432 (e2e 1891) | 7 | `p7_dt30` | 2026-09-03 |
+| 7 | P6 configuration, dt 45, 2 departure iterations | T63L95 | 45 | 12369 (e2e 3028) | 9 | `p7_dt45_it2` | 2026-09-03 |
 
 ## Wall-clock per simulated year and per six simulated hours
 
