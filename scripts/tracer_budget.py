@@ -67,8 +67,17 @@ def load(rundir: str) -> xr.Dataset:
         raise SystemExit("no longrun_day*.nc in " + rundir)
     ds = xr.open_mfdataset(files, combine="nested", concat_dim="time", decode_times=False,
                            data_vars=[*TRACERS, "normalized_surface_pressure"])
-    days = np.array([int(re.search(r"_day(\d+)\.nc$", f).group(1)) for f in files], dtype=float)
-    return ds, days
+    # each file is one chunk holding several window means; reconstruct the day at the END of
+    # every window from the chunk-end day in the filename and the number of saves per file
+    ends = [int(re.search(r"_day(\d+)\.nc$", f).group(1)) for f in files]
+    starts = [0] + ends[:-1]
+    days = []
+    for f, s0, s1 in zip(files, starts, ends):
+        with xr.open_dataset(f, decode_times=False) as d:
+            n = d.sizes["time"]
+        step = (s1 - s0) / n
+        days.extend(s0 + step * (j + 1) for j in range(n))
+    return ds, np.asarray(days, dtype=float)
 
 
 def main() -> None:
