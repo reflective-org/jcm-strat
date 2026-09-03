@@ -6,7 +6,7 @@ run the physics dycore with tropospheric physics stripped out, nudge the troposp
 leave the stratosphere free, and measure how fast the simplest possible physics solve can be.
 That number is the baseline against which the ML-emulator route (Approach B, PARADIS) is judged.
 
-Status: **Phase 0 done** (environment, baseline timing). Next: Phase 1, the stripped dry model. See [PROGRESS.md](PROGRESS.md).
+Status: **Phases 0–4 done.** The Phase-1 number is in: one simulated year in 10.4 minutes on one H100 at T63L95 (30 years ≈ 5.2 GPU-hours), passive-tracer mass closed to 0.02 % over five years; age-of-air pattern right but the tropics 1.5 yr too old and no polar-night jet with Held-Suarez in place of radiation. Next: the stratospheric forcing (issues #5 Polvani-Kushner, #2 RRTMGP). See [PROGRESS.md](PROGRESS.md) and [docs/outputs/04_5yr/output.md](docs/outputs/04_5yr/output.md).
 
 ## What this repo is, and is not
 
@@ -72,7 +72,8 @@ Filled in as phases complete (see PROGRESS.md for the running version).
 | JCM full ECHAM physics (reference) | T63L95 | 12 min | 51.6 (582 ms/step) | Phase 0 baseline; 51.9 at dt = 15 min |
 | stripped, dry Held-Suarez | T63L95 | 12 min | — | Phase 1 |
 | + ERA5 nudging below 150 hPa | T63L95 | 12 min | — | Phase 2 |
-| + passive tracers (age of air etc.) | T63L95 | 12 min | — | Phase 3 |
+| + passive tracers (age of air etc.) | T63L95 | 12 min | 4458 stepping, 2082 end-to-end | Phase 3; clock excluded from the mass fixer |
+| same, 5 years 2005–2009 (five chained segments) | T63L95 | 12 min | 4315 stepping, 1768 end-to-end | Phase 4; 10.4 min per year, 30 yr ≈ 5.2 GPU-h |
 
 ## Upstreams
 
