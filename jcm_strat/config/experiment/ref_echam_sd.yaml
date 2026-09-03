@@ -1,0 +1,43 @@
+# @package _global_
+# Reference run for the stratosphere phase: JCM's FULL ECHAM physics (RRTMGP radiation,
+# convection, clouds, TKE diffusion, surface, Hines + SSO gravity waves) under exactly the
+# specified dynamics of Phases 2-4: ERA5 initial state, u/v/T nudged to ERA5 below 150 hPa,
+# tau 6 h, bottom 2 levels free, 2005. The only difference from the stripped model is what
+# happens above 150 hPa, so this run shows what JCM's own radiation buys the stratosphere.
+#
+# One-off exception to the GPU-0 policy (agreed 2026-09-03): this ~7 h run goes on GPU 1 so
+# GPU 0 stays free for the quick Polvani-Kushner iterations.
+#   tmux new-session -d -s ref_echam_sd_2005 'source scripts/env.sh && export CUDA_VISIBLE_DEVICES=1 \
+#     XLA_PYTHON_CLIENT_MEM_FRACTION=0.95 && ...'
+#
+# Memory: with full ECHAM the 6-hourly one-year target (31 GB resident on the GPU) does not fit
+# beside RRTMGP (OOM allocating 33.8 GiB at the first step, log_attempt3). The reference therefore
+# samples the target 12-hourly (15 GB; JCM interpolates between samples). Deviation from the
+# stripped runs' 6 h target; its effect is confined to sub-daily tropospheric variability.
+defaults:
+  - override /physics: echam
+  - override /grid: echam_t63_l95_hybrid
+  - override /run: longrun
+  - override /init: era5
+  - override /terrain: from_file
+  - override /forcing: from_file
+  - override /nudging: era5
+
+terrain:
+  file: hf://bundles/t63/terrain.nc
+forcing:
+  file: hf://bundles/t63/forcing_pd.nc
+
+run:
+  time_step: 12
+  chunk_days: 30
+  save_interval: 5
+  total_time: 365
+  start_date: 2005-01-01
+
+nudging:
+  tau_hours: 6.0
+  pbl_levels: 2
+  nudge_temperature: true
+  min_pressure_hpa: 150.0
+  freq: 12h

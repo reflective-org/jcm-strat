@@ -9,6 +9,9 @@ export HF_HOME="$JCM_STRAT_REPO/cache/huggingface"      # jcm boundary files (hf
 export JCM_ERA5_CACHE="$JCM_STRAT_REPO/cache/era5"       # regridded WeatherBench2 ERA5 windows
 export SCRATCH="$JCM_STRAT_REPO/scratch"                 # jcm puts its JAX compile cache in $SCRATCH/jcm-jax-cache
 export CUDA_VISIBLE_DEVICES=0                            # project policy: GPU 0 only
+# The venv's editable install of jcm_strat points at the main checkout; in a git worktree the
+# tree that sourced this file must win, so put it first on the import path.
+export PYTHONPATH="$JCM_STRAT_REPO${PYTHONPATH:+:$PYTHONPATH}"
 export PATH="$HOME/.local/bin:$PATH"                     # uv
 # libcuda.so.1 lives under the containerised driver mount, off the loader path.
 # Without it JAX SILENTLY falls back to CPU (hours -> weeks); check_env.sh asserts a GPU.

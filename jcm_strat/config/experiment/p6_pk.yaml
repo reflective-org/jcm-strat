@@ -1,0 +1,10 @@
+# @package _global_
+# Phase 6 experiment: the Phase-3/4 specified-dynamics configuration (ERA5-nudged u/v/T below
+# 150 hPa, free stratosphere, four passive tracers, clock exempt from the mass fixer) with the
+# Polvani-Kushner seasonal stratosphere instead of the 200 K Held-Suarez clamp. Usage:
+#   scripts/launch.sh p6_pk_g4_t40 +experiment=p6_pk
+#   scripts/launch.sh p6_pk_g4_t15 +experiment=p6_pk physics.terms.held_suarez.tau_strat_days=15
+#   scripts/launch.sh p6_pk_g2_t40 +experiment=p6_pk physics.terms.held_suarez.gamma_k_per_km=2
+defaults:
+  - /experiment/p3_tracers
+  - override /physics: strat_pk

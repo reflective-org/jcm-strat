@@ -12,7 +12,6 @@ runs/
 *.ckpt
 *.png
 *.gif
-*.pdf
 # except the per-step records, which ARE tracked
 !docs/outputs/**
 # python

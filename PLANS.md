@@ -276,6 +276,50 @@ week 3.
 
 ---
 
+# Part 1b — A defensible stratosphere, then the time step (decided 2026-09-03)
+
+Both phases keep the Phase-3 configuration (ERA5-nudged u/v/T below 150 hPa, four passive
+tracers, T63L95) and change one thing each. Branch `phase6-stratosphere`, worktree
+`/data/JCM_stripped/jcm-strat-phase6`. GPU 0 for everything except the one agreed exception below.
+
+## PR 7 — Phase 6: a stratosphere without radiation (Polvani-Kushner, seasonal)
+
+Why: Held-Suarez pulls the whole stratosphere toward 200 K on 40 days (Phases 1-4): no
+polar-night jet, no seasonal cycle, 21 K RMS cold bias vs ERA5. Duncan's handover assumed a
+realistic stratosphere under specified dynamics; nothing provides one yet. Decision: the analytic
+Polvani-Kushner (2002) equilibrium, not a relaxation toward an ERA5/WACCM climatology, so the
+comparison with those references stays an honest test.
+
+1. **References** (CPU): `scripts/fetch_era5_strat_ref.py` pulls ERA5 monthly zonal-mean u/T on
+   25 levels to 1 hPa and daily u at 10 hPa, 2005-2009, from the CDS (the WeatherBench2 store
+   used for nudging stops at 50 hPa). WACCM6 = the CESM2.1.5 histSST member 1996-2014 on disk
+   (`/data/cesm2.1.5_output/histSST/...fixedSST_1996-2014.001`, monthly h0 T/U, daily h6 Uzm).
+   `scripts/strat_compare.py`: T and u climatology DJF/JJA 300-1 hPa (run / ERA5 / WACCM /
+   difference), u(60N,60S; 10 hPa) daily series with ERA5 SSW central dates, polar-cap T,
+   RMSE table.
+2. **ECHAM reference year** `+experiment=ref_echam_sd`: full ECHAM physics under the same
+   nudging, 2005, ~7 h. **Runs on GPU 1, the one agreed exception to the GPU-0 rule**, so GPU 0
+   stays free for the 10-minute PK iterations. Memory forced the target to 12-hourly sampling.
+3. **`jcm_strat/polvani_kushner.py`**: PK02 equilibrium on the column path, winter hemisphere
+   following the calendar (`forcing.solar.tyear`), `gamma` and `tau_strat_days` as knobs.
+   A/B on 2005 (`scripts/phase6_ab.sh`): gamma 4 / tau 40 (PK02), gamma 4 / tau 15 (Duncan's
+   radiative timescale), gamma 2 / tau 40. Then Hines gravity-wave drag on the column path
+   (issue #20) as a further A/B if the vortex is too strong.
+4. **Pick** by the comparison against ERA5, WACCM and the ECHAM reference; rerun 2005-2009
+   chained with tracers for age of air vs CLaMS/WACCM.
+
+Acceptance (proposed, to be confirmed): zonal-mean T RMSE 100-1 hPa vs ERA5 <= 5 K and no worse
+than the ECHAM reference; DJF u(60N,10hPa) within 10 m/s of ERA5; >= 2 of the 3 ERA5 SSW winters
+show a weakened vortex over 2005-2009; Phase-3 tracer checks unchanged.
+
+## PR 8 — Phase 7: time-step sweep
+
+On the chosen Phase-6 configuration, 2005: dt = 12, 30, 60, 90, 120 min (one run each, ~10 min),
+`departure_iterations` 1 and 2 at >= 60 min (the SL departure solve's accuracy condition scales
+with dt x wind shear). Judge with the same comparison panels plus the Phase-3 tracer table. The
+longest step inside the acceptance band is the answer; the 5-year chain at that step gives the
+throughput headline (issue #3).
+
 # Part 2 — Add complexity later (GitHub issues, filed in PR 1)
 
 Ordered by value. Each is one issue; none is started before PR 5 is merged.
