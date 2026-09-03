@@ -15,6 +15,7 @@ runs/
 *.pdf
 # except the per-step records, which ARE tracked
 !docs/outputs/**
+!docs/*.png
 # python
 __pycache__/
 *.pyc
