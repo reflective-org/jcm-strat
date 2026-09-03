@@ -1,0 +1,14 @@
+# Phase 3 physics: the dry Held-Suarez model plus four passive tracers
+# (aoa, unity, sai, e90 — see jcm_strat/tracers.py).
+#
+# Runs on the column-vectorized physics path: jcm's 3-D path cannot add tracer
+# tendencies across terms, so Held-Suarez is the per-column variant in
+# jcm_strat/held_suarez_columns.py (same forcing, per-column latitude).
+vectorize_columns: true
+checkpoint_terms: true
+
+terms:
+  held_suarez:
+    _target_: jcm_strat.held_suarez_columns.HeldSuarezColumns
+  passive_tracers:
+    _target_: jcm_strat.tracers.PassiveTracers

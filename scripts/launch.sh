@@ -26,7 +26,7 @@ overrides=""
 for a in "$@"; do overrides+=" $(printf '%q' "$a")"; done
 cmd="source $REPO/scripts/env.sh && cd $rundir && \
 echo \"[launch] \$(date -Is) jcm-strat \$(git -C $REPO rev-parse --short HEAD) session=$session\" && \
-python -m jcm.main --config-dir $REPO/jcm_strat/config$overrides hydra.run.dir=$rundir; rc=\$?; \
+python -m jcm_strat.main --config-dir $REPO/jcm_strat/config$overrides hydra.run.dir=$rundir; rc=\$?; \
 echo \"[launch] \$(date -Is) exit=\$rc\""
 tmux new-session -d -s "$session" "bash -c $(printf '%q' "$cmd") 2>&1 | tee -a $rundir/log.txt"
 echo "launched $session -> $rundir/log.txt   (attach: tmux attach -t $session ; detach: C-b d)"
