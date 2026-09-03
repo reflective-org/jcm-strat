@@ -17,8 +17,13 @@ a hemispheric asymmetry ``- epsilon sin(phi)`` that cools the winter troposphere
 
 PK02 is a perpetual-solstice setup. Here the winter hemisphere follows the calendar: with
 ``s(t) = cos(2 pi (tyear - t_peak))`` and ``t_peak`` = mid-January, the northern cap uses
-amplitude ``A_N = max(0, s)`` and the southern cap ``A_S = max(0, -s)``, so each vortex exists
-for half the year with a smooth onset/breakdown, and ``epsilon(t) = epsilon_0 s(t)``. The
+amplitude ``A_N = clip((s + c) / (1 + c), 0, 1)`` and the southern cap the same with ``-s``,
+where ``c = season_offset``. ``c = 0`` gives ``max(0, s)``: each vortex exists for half the
+year and is at full strength only briefly around the solstice (the first Phase-6 run: cooling
+arrived two months late in autumn and the vortices were too weak). ``c = 0.5`` starts the
+cooling at the autumn equinox, holds it near full strength through the three winter months and
+ends it after the spring equinox, which is when the real polar night, and the radiative cooling
+it stands in for, exist. ``epsilon(t) = epsilon_0 s(t)`` in the troposphere either way. The
 fraction of year comes from ``forcing.solar.tyear`` (populated by ``ForcingData.select`` from the
 run calendar), the same field the SPEEDY shortwave scheme reads.
 
@@ -88,6 +93,7 @@ class PolvaniKushnerColumns(HeldSuarezColumns):
         delta_phi_deg: float = 10.0,
         epsilon_k: float = 10.0,
         t_peak_year_fraction: float = 0.04,   # ~15 January: NH vortex at full strength
+        season_offset: float = 0.0,           # 0: half-year cosine; 0.5: equinox-to-equinox plateau
         tau_strat_days: float = 40.0,
         **held_suarez_kwargs,
     ) -> None:
@@ -100,12 +106,16 @@ class PolvaniKushnerColumns(HeldSuarezColumns):
         self.delta_phi = float(jnp.deg2rad(delta_phi_deg))
         self.epsilon = float(epsilon_k) * self._k_per_nondim
         self.t_peak = float(t_peak_year_fraction)
+        self.season_offset = float(season_offset)
         self.k_strat = nnx.Variable(jnp.asarray(specs.nondimensionalize(1.0 / (float(tau_strat_days) * units.day))))
 
     # --- equilibrium -------------------------------------------------------------------
     def _season(self, tyear):
         s = jnp.cos(2.0 * jnp.pi * (tyear - self.t_peak))
-        return jnp.maximum(0.0, s), jnp.maximum(0.0, -s), s      # A_N, A_S, s
+        c = self.season_offset
+        a_n = jnp.clip((s + c) / (1.0 + c), 0.0, 1.0)
+        a_s = jnp.clip((-s + c) / (1.0 + c), 0.0, 1.0)
+        return a_n, a_s, s                                        # A_N, A_S, s
 
     def _equilibrium_temperature(self, normalized_surface_pressure, tyear=0.0):
         sigma = self._sigma.get_value()[:, jnp.newaxis]           # (nlev, 1)

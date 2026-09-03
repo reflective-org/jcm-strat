@@ -15,6 +15,7 @@ terms:
     phi0_deg: 50.0
     delta_phi_deg: 10.0
     epsilon_k: 10.0
+    season_offset: 0.0
     tau_strat_days: 40.0
   passive_tracers:
     _target_: jcm_strat.tracers.PassiveTracers

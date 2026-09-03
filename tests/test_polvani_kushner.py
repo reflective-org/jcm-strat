@@ -71,3 +71,17 @@ def test_troposphere_matches_held_suarez_where_warm():
     warm = b > t_us                                  # where Held-Suarez sits above the T_US floor
     assert warm.any() and np.allclose(a[warm], b[warm], rtol=1e-6), (a, b)
     assert np.all(a >= b - 1e-6)                     # PK02's floor is T_US, never colder than HS
+
+
+def test_season_offset_widens_the_winter():
+    lats = [85.0]; sig = [10.0 / 1013.25]
+    narrow = _Fake(lats, sig, gamma_k_per_km=4.0, season_offset=0.0)
+    wide = _Fake(lats, sig, gamma_k_per_km=4.0, season_offset=0.5)
+    t_us = float(standard_atmosphere_temperature(jnp.asarray(1000.0)))
+    # mid-October (tyear 0.79): the narrow cosine has barely started cooling, the wide one has
+    assert abs(_teq_kelvin(narrow, 0.79)[0, 0] - t_us) < 4.0
+    assert _teq_kelvin(wide, 0.79)[0, 0] < t_us - 15.0
+    # mid-January both are at full strength and identical
+    assert abs(_teq_kelvin(wide, 0.04)[0, 0] - _teq_kelvin(narrow, 0.04)[0, 0]) < 0.5
+    # mid-July neither cools the north
+    assert abs(_teq_kelvin(wide, 0.54)[0, 0] - t_us) < 0.5
