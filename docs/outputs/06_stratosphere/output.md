@@ -1,6 +1,6 @@
 # Phase 6 — a stratosphere without radiation: seasonal Polvani-Kushner
 
-Status: **A/B complete, configuration chosen** (2026-09-03); 5-year chain and ECHAM reference pending. Branch `phase6-stratosphere` (worktree `jcm-strat-phase6`).
+Status: **A/B complete, configuration chosen, 5-year chain done** (2026-09-03); ECHAM reference pending. Branch `phase6-stratosphere` (worktree `jcm-strat-phase6`).
 
 ## Question this phase answers
 
@@ -56,8 +56,10 @@ time `tau_strat_days` is a separate knob (PK02 and Held-Suarez: 40 d).
 | zonal-mean T RMSE 100-1 hPa vs ERA5 | <= 5 K, and no worse than the ECHAM reference | **6.7 K annual** for the chosen run (Held-Suarez: 35 K); DJF 9.8 K is inflated by the January spin-up from the ERA5 initial state (see reading). ECHAM reference pending |
 | DJF u(60N, 10 hPa) vs ERA5 | within 10 m/s | **pass**: 38 vs 38 m/s |
 | JJA u(60S, 10 hPa) vs ERA5 | (added) within 20 percent | 66 vs 78 m/s (-15 percent) |
-| SSW winters 2005-2009 | >= 2 of 3 with a weakened vortex | needs the 5-year chain (running); 2005 had no SSW in ERA5, and the model correctly produces none in the chosen run |
-| tracer checks | unchanged from Phase 3 | pending on the 5-year chain (`tracer_budget.py`) |
+| SSW winters 2005-2009 | >= 2 of 3 with a weakened vortex | **pass, 2 of 3**: ERA5 central dates 2006-01-21, 2007-02-24, 2008-02-22 (+03-14), 2009-01-24; the chain reverses on 2008-03-21 and 2009-02-05 (5-day means), misses 2006 and 2007. Held-Suarez chain: none |
+| tracer checks over 5 years | unchanged from Phase 3 | **pass**: unity max deviation 2.6e-4, sai burden -0.8 percent vs analytic, minima >= 0 (aoa -8e-7 d roundoff), top-level polar sai 9 percent of the column mean (no pull-up) |
+| age of air vs CLaMS (Phase 4 criterion) | latitude gradient right sign; tropical/extratropical contrast within 50 percent of CLaMS | **pass at 30 km, marginal at 20 km**: contrast 0.77 vs 0.88 yr at 12 hPa; 1.56 vs 2.79 yr at 55 hPa (56 percent). Held-Suarez chain: 0.35 and 1.21 |
+| 5-year climatology vs ERA5 2005-2009 | (added) | T RMSE 6.4 K, u RMSE 5.6 m/s annual; DJF u(60N) 32 vs 28, JJA u(60S) 65 vs 72 (Held-Suarez chain: 35.7 K, 11.9 m/s) |
 
 ## Results
 
@@ -121,6 +123,29 @@ Throughput of the chosen configuration: 4445 simulated days/hour stepping, 2012 
 (`p6_pk_g4_t15_s05_top3`), indistinguishable from Phase 3 (4458 / 2082): the PK equilibrium costs
 nothing measurable.
 
+### The 5-year chain (`p6_2005` … `p6_2009`, aggregate `runs/p6_5yr`; figures in `5yr/`)
+
+Same configuration, 2005-2009, four passive tracers, five chained one-year segments (65 min on
+GPU 0). Compared with ERA5 2005-2009, WACCM6, CLaMS and the Held-Suarez Phase-4 chain (`p4_5yr`).
+
+![5-yr vortex](5yr/vortex_series.png)
+![5-yr polar cap](5yr/polar_cap_T.png)
+![5-yr climatology](5yr/strat_climatology_PK_5yr.png)
+![5-yr age of air](5yr/p6_5yr_aoa_triptych.png)
+![5-yr age-of-air profiles](5yr/p6_5yr_aoa_profiles.png)
+![5-yr tracers](5yr/p6_5yr_tracer_zonal.png)
+![5-yr budgets](5yr/p6_5yr_tracer_budget.png)
+
+```
+5-yr metrics vs ERA5 2005-2009 (100-1 hPa):  T RMSE 6.4 K (HS 35.7)   u RMSE 5.6 m/s (HS 11.9)
+age of air, model / CLaMS / WACCM (entry age), 2005-2009 mean of the last year:
+  ~55 hPa: tropics 2.29 / 1.33 / 1.11 yr   50-70 deg 3.85 / 4.12 / 3.40   contrast 1.56 / 2.79 / 2.29
+  ~12 hPa: tropics 3.70 / 3.68 / 2.82 yr   50-70 deg 4.47 / 4.56 / 4.18   contrast 0.77 / 0.88 / 1.36
+  Held-Suarez chain:  ~55 hPa contrast 1.21;  ~12 hPa contrast 0.35
+tracers over 1826 d: unity max |q-1| 2.59e-4, burden drift +1.8e-4; sai -0.77 percent vs analytic;
+  minima: aoa -8.5e-7 d, unity 1.0, sai 0, e90 0; top-level polar sai / column mean 0.089
+```
+
 ## Reading
 
 1. **A polar-night jet without radiation is achievable, and the relaxation time is the knob that
@@ -150,6 +175,26 @@ nothing measurable.
 5. **Held-Suarez is now clearly out.** 35 K RMSE, no vortex, no seasons, against 6.7 K with
    the same code path and the same cost.
 
+6. **Over five years the picture holds and the variability is there.** RMSE 6.4 K / 5.6 m/s
+   against ERA5 2005-2009; the polar-cap temperature follows ERA5 in both hemispheres with the
+   Arctic winters showing the year-to-year variability that Held-Suarez had none of. Two of the
+   three ERA5 SSW winters produce a wind reversal within one to four weeks of the observed date
+   (2008, 2009); 2006 and 2007 do not, and the January-2006 event was a particularly wave-driven
+   one, so tau 15 may be too stiff for it (DEFERRED). The 5-year climatology shows the remaining
+   biases cleanly: the winter pole above 10 hPa is now 20-30 K too *warm* (the 3 hPa taper hands
+   the cap back to the standard atmosphere, whose 250-270 K at 1-3 hPa is the summer value),
+   the tropics at 1-3 hPa 10 K too cold, the tropical lower stratosphere 10 K too warm.
+7. **Age of air: right pattern, tropical pipe too old in the lower stratosphere.** At 30 km the
+   model matches CLaMS almost exactly (tropics 3.70 vs 3.68 yr, contrast 0.77 vs 0.88). At
+   20 km the tropics are a year too old (2.29 vs 1.33 yr) so the tropical/extratropical contrast
+   is 56 percent of CLaMS's: too slow tropical ascent or too much in-mixing between 100 and
+   30 hPa. Both point at the 10 K warm tropical tropopause in the target (DEFERRED). Against the
+   Held-Suarez chain the PK stratosphere improves the contrast from 1.21 to 1.56 yr at 20 km and
+   from 0.35 to 0.77 yr at 30 km.
+8. **A bug in the pull-up check.** `tracer_budget.py` summed the top level over longitude without
+   dividing by the number of longitudes, so every pull-up ratio it printed before today was 192
+   times too large (Phase 3: 0.001 was really 5e-6; the Phase-4 chain's 0.668 is really 0.003;
+   this chain's 17.0 is 0.089). No verdict changes, but the Phase 4 record should be corrected.
+
 Decision: `strat_pk` defaults = gamma 4 K/km, tau 15 d, season_offset 0.5, vortex cooling faded
-above 3 hPa (KEY_DECISIONS #19-#21). The 2005-2009 chain with tracers runs with it; the ECHAM
-reference year (GPU 1) is added to this record when it finishes.
+above 3 hPa (KEY_DECISIONS #19-#21). The ECHAM reference year (GPU 1) is added when it finishes.

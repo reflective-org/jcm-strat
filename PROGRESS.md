@@ -4,7 +4,7 @@ Newest first. Each row links to the per-phase record in `docs/outputs/`.
 
 | Date | Phase | State | Record |
 |---|---|---|---|
-| 2026-09-03 | 6 — stratosphere without radiation (Polvani-Kushner, seasonal) | A/B of 8 configurations done, choice fixed as `strat_pk` defaults; 5-year chain and ECHAM reference running | [docs/outputs/06_stratosphere/output.md](docs/outputs/06_stratosphere/output.md) |
+| 2026-09-03 | 6 — stratosphere without radiation (Polvani-Kushner, seasonal) | A/B of 8 configurations done, choice fixed as `strat_pk` defaults; 5-year chain done (6.4 K / 5.6 m/s vs ERA5, 2 of 3 SSW winters, AoA pattern vs CLaMS); ECHAM reference running | [docs/outputs/06_stratosphere/output.md](docs/outputs/06_stratosphere/output.md) |
 | 2026-09-03 | 3 — passive tracers | **done**: aoa/unity/sai/e90 term, 1-yr run 2005, all acceptance checks pass; mass-fixer/clock interaction found and fixed | [docs/outputs/03_tracers/output.md](docs/outputs/03_tracers/output.md) |
 | 2026-09-03 | 2 — specified dynamics | runs done (90 d check, 1-yr 2005), PR open | [docs/outputs/02_nudged/output.md](docs/outputs/02_nudged/output.md) |
 | 2026-09-02 | 1 — stripped dry model | run done (1-yr HS), PR open | [docs/outputs/01_dry/output.md](docs/outputs/01_dry/output.md) |

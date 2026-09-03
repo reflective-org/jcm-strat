@@ -49,5 +49,5 @@ for y in "${YEARS[@]}"; do
 done
 cp "$REPO/runs/${PREFIX}_2005/.hydra" -r "$agg/" 2>/dev/null
 cat "$REPO"/runs/${PREFIX}_20??/log.txt > "$agg/log.txt"
-step "linked $(ls "$agg"/longrun_day*.nc | wc -l) chunk files into runs/p4_5yr ($offset days)"
+step "linked $(ls "$agg"/longrun_day*.nc | wc -l) chunk files into runs/${PREFIX}_5yr ($offset days)"
 step "chain finished"

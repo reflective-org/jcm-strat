@@ -33,3 +33,4 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | Upper-stratosphere cold bias, 1-3 hPa, ~9 K year-round at tau 15 | research | Dynamical; check with Hines drag (#20) and with RRTMGP (#2). |
 | Spin-up of the upper stratosphere from the ERA5 initial state (no information above 50 hPa) | feature | Start comparisons after a 1-2 month spin-up, or initialise the stratosphere from the PK equilibrium. |
 | Internal variability vs relaxation time: SSW frequency at tau 15 vs 25 over 2005-2009 | research | Needs the 5-year chains; decides whether tau 15 is too stiff for the wave-driven variability. |
+| Winter pole above 10 hPa 20-30 K too warm with the 3 hPa taper | feature | The taper hands the cap back to the standard atmosphere, whose 1-3 hPa values are summer ones; a colder winter stratopause target (or a taper to a winter profile) is needed. |

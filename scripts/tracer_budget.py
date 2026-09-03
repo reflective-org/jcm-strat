@@ -120,9 +120,13 @@ def main() -> None:
     sai_err = burden["sai"][-1] / sai_expected[-1] - 1
     # pull-up: sai at the top model level over the polar caps vs its global-mean column
     sai_last = np.asarray(ds["sai"].isel(time=-1))            # (lev, lon, lat)
-    top = sai_last[-1]                                        # top level (surface-first file)
+    # the top level is the one with the smallest reference pressure; do not assume a level order
+    # (the chained-run aggregates come out top-first and the single runs surface-first)
+    top = sai_last[int(np.argmin(np.asarray(ds["level"])))]
     cap = np.abs(lat) > 70
-    polar_top = float((top[:, cap] * w[cap]).sum() / w[cap].sum())
+    # zonal mean first: the earlier version summed over longitude without dividing by nlon, so
+    # every pull-up number printed before 2026-09-03 was 192x too large (the verdicts still held)
+    polar_top = float((top[:, cap].mean(axis=0) * w[cap]).sum() / w[cap].sum())
     global_col = float(burden["sai"][-1])
     aoa_last = np.asarray(ds["aoa"].isel(time=-1)).mean(axis=1) / 365.25   # zonal mean, years (lev, lat)
     k20 = int(np.argmin(np.abs(p_nom - 20.0)))
