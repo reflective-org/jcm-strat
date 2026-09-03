@@ -10,3 +10,8 @@ What works today. Updated with every PR.
 | Zonal-mean T/u sanity plot for any jcm output file | Phase 0 | `scripts/plot_zonal_mean.py` |
 | Passive tracers (age of air, unity, idealised injection, e90) as one PhysicsTerm, advected semi-Lagrangian with the global mass fixer | Phase 3 | `jcm_strat/tracers.py`, `physics/strat_passive.yaml`, `+experiment=p3_tracers`, `tests/test_tracers.py` |
 | Tracer budget and transport diagnostics (mass-weighted burdens with exact hybrid layer masses, sai vs analytic expectation, pull-up check, age of air at 20 hPa) | Phase 3 | `scripts/tracer_budget.py` |
+| Multi-year nudged runs as chained calendar-year segments (init=from_state from the previous checkpoint), per-year ERA5 windows sliced from one prefetch, aggregate run directory with cumulative day numbers | Phase 4 | `scripts/chain_years.sh`, `scripts/slice_era5_years.py`, `+experiment=p4_5yr` |
+| Age-of-air comparison against CLaMS v3.1/ERA5 and WACCM6 REF-D1; polar-vortex u(60°, 10 hPa) time series with ERA5 SSW dates | Phase 4 | `scripts/aoa_vs_clams.py`, `scripts/vortex_series.py` |
+| PDF report of all phase records | Phase 4 | `scripts/make_report.py` → `docs/outputs/jcm-strat_phases_0-4.pdf` |
+| PARADIS rollout circulation comparison (zonal means of u, v, T, omega cached from the raw state.zarr; climatology and vortex panels against the model) | Phase 4 | `scripts/paradis_zonal.py`, `scripts/paradis_circulation.py`, `scripts/vortex_series.py --paradis` |
+| Offline age-of-air clocks carried by a PARADIS rollout's winds (semi-Lagrangian on the rollout's grid, JAX/GPU, surface and 150 hPa resets); fourth and fifth sources in the age-of-air comparison | Phase 4 | `scripts/paradis_offline_clock.py`, `scripts/aoa_vs_clams.py --paradis-clock` |

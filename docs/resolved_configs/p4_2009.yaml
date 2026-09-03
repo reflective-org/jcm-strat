@@ -1,0 +1,69 @@
+constants: {}
+physics:
+  vectorize_columns: true
+  checkpoint_terms: true
+  terms:
+    held_suarez:
+      _target_: jcm_strat.held_suarez_columns.HeldSuarezColumns
+    passive_tracers:
+      _target_: jcm_strat.tracers.PassiveTracers
+grid:
+  vertical: hybrid
+  layers: 95
+  spectral_truncation: 63
+  spmd_mesh: null
+dycore:
+  name: dinosaur
+  compute_omega: null
+run:
+  time_step: 12
+  save_interval: 5
+  total_time: 365
+  output_averages: true
+  output: longrun.nc
+  log_level: INFO
+  sponge:
+    levels: 10
+    timescale_h: 1.5
+    enspodi: 2.0
+    damp_temperature: true
+    target_T_K: 250.0
+  chunk_days: 30
+  output_prefix: longrun
+  mode: full
+  state_file: null
+  tracer_vars: null
+  column:
+    lat_deg: 0.0
+    lon_deg: 0.0
+  start_date: '2009-01-01'
+  checkpoint_path: checkpoint.ckpt
+init:
+  kind: from_state
+  file: /data/JCM_stripped/jcm-strat/runs/p4_2008/checkpoint.ckpt
+terrain:
+  kind: from_file
+  file: hf://bundles/t63/terrain.nc
+  interpolate: true
+forcing:
+  kind: default
+  ozone_file: auto
+  emissions_file: null
+  dms_file: null
+  dust_file: null
+  oxidants_file: null
+nudging:
+  enabled: true
+  source: era5
+  tau_hours: 6.0
+  pbl_levels: 2
+  nudge_temperature: true
+  min_pressure_hpa: 150.0
+  freq: 6h
+diffusion:
+  kind: auto
+  scale: 1.0
+  tracer_positivity: auto
+sl_mass_fixer: true
+sl_mass_fixer_exclude:
+- aoa
