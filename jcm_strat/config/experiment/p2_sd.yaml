@@ -1,0 +1,33 @@
+# @package _global_
+# Phase 2 experiment: specified dynamics. The Phase-1 dry model with the
+# troposphere nudged to ERA5 (WeatherBench2) below 150 hPa, winds AND
+# temperature, tau 6 h; stratosphere free. Usage:
+#   scripts/launch.sh p2_sd_1yr +experiment=p2_sd run.total_time=365
+# Requires the ERA5 window in $JCM_ERA5_CACHE (scripts/pipeline.sh prefetches it).
+defaults:
+  - override /physics: strat_dry
+  - override /grid: echam_t63_l95_hybrid
+  - override /run: longrun
+  - override /init: era5
+  - override /terrain: from_file
+  - override /forcing: default
+  - override /nudging: era5
+
+terrain:
+  file: hf://bundles/t63/terrain.nc
+
+run:
+  time_step: 12
+  chunk_days: 30
+  save_interval: 5
+  total_time: 365
+  start_date: 2005-01-01
+
+nudging:
+  tau_hours: 6.0
+  pbl_levels: 2
+  nudge_temperature: true        # KEY_DECISIONS #7
+  # Hard cutoff for now (KEY_DECISIONS #8). One key to change; issue #1 makes it
+  # follow the model's own tropopause instead.
+  min_pressure_hpa: 150.0
+  freq: 6h

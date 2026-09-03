@@ -1,3 +1,5 @@
-label,grid,dt_min,days_per_hr,ms_per_step,run,date
-P0 full ECHAM,T63L95,12.0,51.6,582,base_echam_l95_10d,2026-09-02
-P0 full ECHAM,T63L95,15.0,51.9,723,base_echam_l95_10d_dt15,2026-09-02
+label,grid,dt_min,days_per_hr,ms_per_step,e2e_days_per_hr,run,date
+P0 full ECHAM,T63L95,12.0,51.6,582,47,base_echam_l95_10d,2026-09-02
+P0 full ECHAM,T63L95,15.0,51.9,723,47,base_echam_l95_10d_dt15,2026-09-02
+P1 dry HS,T63L95,12.0,6000.0,5,991,p1_dry_30d,2026-09-02
+P1 dry HS,T63L95,12.0,5786.9,5,2368,p1_dry_1yr,2026-09-02

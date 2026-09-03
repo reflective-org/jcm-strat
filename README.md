@@ -35,6 +35,21 @@ tmux attach -t strat_smoke_hs   # C-b d to detach
 Every model run goes through `scripts/launch.sh`: it runs in a detached tmux session named
 `strat_<session>`, on **GPU 0 only**, one at a time, writing to `runs/<session>/`.
 
+## Unattended pipeline
+
+`scripts/pipeline.sh` runs the remaining plan steps (runs, plots, output records, commits, PRs)
+one after another in the tmux session `strat_pipeline`, so the session that started it can be
+closed. Check on it with:
+
+```bash
+tmux ls                                  # strat_pipeline present = still running
+tail -f runs/pipeline.log                # one line per step
+tmux attach -t strat_pipeline            # live console (C-b d to detach)
+gh pr list --repo reflective-org/jcm-strat
+```
+
+It skips steps whose outputs exist, so after an interruption just start it again.
+
 ## Documents
 
 | File | What it is |

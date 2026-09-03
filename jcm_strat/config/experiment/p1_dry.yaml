@@ -1,0 +1,24 @@
+# @package _global_
+# Phase 1 experiment: dry Held-Suarez on the 95-level high-top grid, real
+# terrain, no nudging, no tracers. Usage:
+#   scripts/launch.sh p1_dry_30d +experiment=p1_dry run.total_time=30
+defaults:
+  - override /physics: strat_dry
+  - override /grid: echam_t63_l95_hybrid
+  - override /run: longrun
+  - override /init: jw
+  - override /terrain: from_file
+  - override /forcing: default
+  - override /nudging: none
+
+init:
+  rh: 0.0
+
+terrain:
+  file: hf://bundles/t63/terrain.nc
+
+run:
+  time_step: 12
+  chunk_days: 30
+  save_interval: 5
+  total_time: 365
