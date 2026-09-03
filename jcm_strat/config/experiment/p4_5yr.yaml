@@ -1,0 +1,14 @@
+# @package _global_
+# Phase 4 experiment: the Phase-3 configuration run for five years, 2005-01-01 to
+# 2009-12-31 (1826 days), with a restart checkpoint every chunk so an interrupted run
+# resumes. Usage:
+#   scripts/launch.sh p4_5yr +experiment=p4_5yr
+# Requires the 2004-12-31..2010-01-03 ERA5 window in $JCM_ERA5_CACHE (the runner pads the
+# window by one day before and two after; prefetch with exactly those dates or the cache
+# key will not match and the run will try to download 150 GB itself).
+defaults:
+  - /experiment/p3_tracers
+
+run:
+  total_time: 1826
+  checkpoint_path: checkpoint.ckpt
