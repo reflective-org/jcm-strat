@@ -16,7 +16,7 @@ authors = [{name = "Susanne Baur", email = "susanne@reflective.org"}]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest", "matplotlib", "pyyaml"]
+dev = ["pytest", "matplotlib", "pyyaml", "reportlab"]
 
 [tool.setuptools.packages.find]
 include = ["jcm_strat*"]
