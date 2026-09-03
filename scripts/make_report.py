@@ -288,14 +288,16 @@ def build(out_pdf: str) -> None:
                "by the transport scheme: the same tracers on a stratosphere with a polar-night jet and a realistic Brewer-Dobson "
                "circulation are the next experiment.")]
     S += fig("04_5yr/p4_5yr_aoa_triptych.png",
-             "Figure 7. Zonal-mean age of air at the end of 2009: the model (last 12 saves), CLaMS v3.1 driven by ERA5 "
-             "(2005-2009 mean, a surface clock like ours) and WACCM6 REF-D1 (2005-2009 mean, an entry age relative to 103 hPa, "
-             "hence younger by construction). The model has the right shape and the right extratropical ages but a tropical pipe "
-             "that is far too old and too shallow.", maxh=7.5 * cm)
+             "Figure 7. Zonal-mean age of air: the model (last 12 saves), CLaMS v3.1 driven by ERA5 (2005-2009 mean, a surface "
+             "clock), WACCM6 REF-D1 (2005-2009 mean, an entry age relative to 103 hPa, hence younger by construction), and two "
+             "clocks carried offline by the PARADIS rollout's winds for 1996-2000 (surface reset; reset below 150 hPa). The model "
+             "has the right shape and the right extratropical ages but a tropical pipe that is far too old; the PARADIS-driven "
+             "offline clocks are too young everywhere.", maxh=6 * cm)
     S += fig("04_5yr/p4_5yr_aoa_profiles.png",
              "Figure 8. Mean age against latitude at about 55 hPa (left) and 12 hPa (middle), and the tropical vertical profile "
-             "(right). The extratropics match CLaMS at 55 hPa; the tropics are 1.5 years too old; the tropical profile is already "
-             "about one year old at 100 hPa, the tropospheric-transit signature.", maxh=6.5 * cm)
+             "(right), all five sources. The model's extratropics match CLaMS at 55 hPa and its tropics are 1.5 years too old; "
+             "the PARADIS offline clocks sit 1-2 years below CLaMS at all latitudes, with a slow tropospheric transit (0.6 yr at "
+             "200 hPa) followed by too little ageing with height.", maxh=6.5 * cm)
     S += fig("04_5yr/p4_5yr_vortex.png",
              "Figure 9. Zonal-mean zonal wind at 10 hPa and 61N (blue) and 61S (orange). Top: the model, 5-day means, with the "
              "ERA5 sudden-warming dates marked; there is no winter westerly jet to disrupt in either hemisphere. Bottom: the same "
@@ -322,6 +324,23 @@ def build(out_pdf: str) -> None:
     S += fig("04_5yr/p4_5yr_vs_paradis_climatology.png",
              "Figure 14. Zonal-mean temperature (top) and zonal wind (bottom) on PARADIS's 17 levels: the model's last year (left), "
              "the PARADIS rollout's 1996-2000 mean (middle), and model minus PARADIS (right).", maxh=8.5 * cm)
+    S += [para("PARADIS offline clocks: the rollout's winds carrying two age-of-air definitions", H2),
+          para("Because the rollout has no tracer, two clock tracers were carried offline by its own daily winds on its own "
+               "1-degree, 17-level grid with a semi-Lagrangian scheme (6-hour sub-steps, trilinear interpolation, 1.4 minutes "
+               "on one GPU for five years): a surface-reset clock, the CLaMS and WACCM boundary condition, and a clock reset "
+               "below 150 hPa, an entry age. From now on both definitions are carried side by side (decision 22); the jcm-strat "
+               "model adds the second clock in its next multi-year run."),
+          bullets(["The PARADIS-driven stratosphere is too young everywhere, the opposite failure to the physics model: 2.3 "
+                   "years at 55 hPa in the extratropics against 4.1 in CLaMS, 2.9 years at 12 hPa against 4.6. Even the entry "
+                   "clock, which no tropospheric-transit argument can rescue, gives 1.5 years at 50-70 degrees against WACCM's 3.4. "
+                   "The tropical pipe exists but its contrast is a quarter of CLaMS's.",
+                   "Slow troposphere, fast stratosphere: the surface clock reads 0.6 years at 200 hPa and 1.1 at 100 hPa in the "
+                   "tropics (CLaMS 0.2 at 100 hPa), then ages too slowly with height.",
+                   "The causes were foreseen and are not PARADIS's transport as such: the noisy vertical velocity becomes "
+                   "spurious vertical exchange, 17 levels make trilinear interpolation strongly diffusive in the vertical "
+                   "(the stratospheric levels are about 5 km apart), and daily winds miss sub-daily transport. The two offline "
+                   "lines bound PARADIS's transport from the young side as the physics model bounds it from the old side; a "
+                   "tracer inside the emulator, Approach B's transport head, is what would settle it."])]
     S += fig("04_5yr/paradis_upwelling.png",
              "Figure 15. PARADIS zonal-mean vertical velocity, w = -omega H/p, 1996-2000 mean. Checkerboard above 10 hPa and polar "
              "ascent are not physical; the tropical column changes sign between 100 and 50 hPa.", maxh=6.5 * cm)

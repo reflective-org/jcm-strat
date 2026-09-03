@@ -147,6 +147,58 @@ Reading:
    next step on the physics side is the stratospheric forcing (issues #2, #5); on the emulator side,
    issue #29.
 
+### PARADIS offline clocks (issue #29): two age-of-air definitions carried by the rollout's winds
+
+`scripts/paradis_offline_clock.py`: semi-Lagrangian backward trajectories (two-pass midpoint,
+trilinear interpolation in longitude, latitude and ln p) on PARADIS's own 1°×17-level grid, driven by
+its daily u, v (from the Cartesian components) and ω (d ln p/dt = ω/p), 6-hour sub-steps with the
+daily winds interpolated in time, run over 1996-01-06 … 2001-01-04 on GPU 0 in 1.4 minutes. Two
+clocks, both +1 day/day: **surface reset** (lowest level; the CLaMS and WACCM boundary condition)
+and **reset below 150 hPa** (an entry age; KEY_DECISIONS #22, issue #25). Sanity: far from the
+resets the clock advances exactly 1.00 day/day (30.0 d after 30 d; 5-year top-level maximum 3.45 yr
+< 5 yr because the 1 hPa level is ventilated from below). Output `runs/paradis_1995_12_06/offline_clock.nc`.
+
+```
+last 12 months, zonal mean [yr]                tropics 10S-10N   50-70 deg   contrast
+~55 hPa  model (jcm-strat, 700 hPa reset)             2.88          4.09       1.21
+~55 hPa  CLaMS v3.1 / ERA5 (surface clock)            1.33          4.12       2.79
+~55 hPa  WACCM6 REF-D1 (entry age)                    1.11          3.40       2.29
+~55 hPa  PARADIS winds + offline clock (surface)       1.59          2.33       0.74
+~55 hPa  PARADIS winds + offline clock (entry <150)    0.85          1.49       0.64
+~12 hPa  model                                        4.42          4.76       0.35
+~12 hPa  CLaMS                                        3.68          4.56       0.88
+~12 hPa  WACCM (entry age)                            2.82          4.18       1.36
+~12 hPa  PARADIS offline (surface)                    2.59          2.93       0.34
+~12 hPa  PARADIS offline (entry <150)                 1.91          2.27       0.36
+
+PARADIS offline, surface clock, tropical / global mean:  200 hPa 0.62 / 1.18 yr;  100 hPa 1.13 / 1.65;
+  50 hPa 1.59 / 2.13;  10 hPa 2.59 / 2.83;  1 hPa 2.92 / 3.04.   Entry clock at 100 hPa: 0.40 / 0.71.
+```
+
+Reading:
+
+1. **The PARADIS-driven stratosphere is too young everywhere, the opposite failure to the physics
+   model.** At 55 hPa the extratropics read 2.3 yr (CLaMS 4.1) and at 12 hPa 2.9 yr (CLaMS 4.6); even the
+   entry clock, which cannot be blamed on tropospheric transit, gives 1.5 yr at 50–70° where WACCM's
+   entry age is 3.4. The tropical pipe is there (tropics younger than extratropics at every level, and
+   the 55 hPa minimum sits at the equator) but the contrast is a quarter of CLaMS's.
+2. **Slow troposphere, fast stratosphere.** The surface clock reads 0.6 yr at 200 hPa and 1.1 yr at
+   100 hPa in the tropics (CLaMS 0.2 at 100 hPa): with five tropospheric levels and no parameterised
+   mixing, resolved daily winds carry air up slowly — the same tropospheric-transit bias as in
+   jcm-strat, larger. Above the tropopause the age then grows far too slowly with height.
+3. **Why the stratosphere is too young.** Three causes, all foreseen and none attributable to
+   PARADIS's transport as such: (a) PARADIS's ω is noisy and partly unphysical (checkerboard above
+   10 hPa, polar ascent; the previous section), which the offline scheme turns into spurious vertical
+   exchange; (b) 17 levels put 100, 70, 50, 30, 20, 10 hPa about 5 km apart, so trilinear
+   interpolation in ln p is strongly diffusive in the vertical; (c) daily winds miss the sub-daily
+   part of the transport. The result measures "PARADIS winds through a coarse offline scheme"; it
+   bounds PARADIS's transport from below in age, as the physics model bounds it from above.
+4. **What would make it meaningful.** A less diffusive vertical treatment (cubic or monotone
+   interpolation, or a flux-form scheme), the 6-hourly output for the whole rollout, a smoothed or
+   mass-consistent ω, and ideally the tracer inside the emulator — which is Approach B's transport
+   head. Until then the two offline lines are shown as bounds with these caveats, not as PARADIS's
+   age of air.
+
 ## The Phase-1 number
 
 > The stripped stratospheric JCM on Dinosaur-SL — dry Held-Suarez physics, ERA5-nudged winds and
