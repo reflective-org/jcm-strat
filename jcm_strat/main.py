@@ -33,7 +33,29 @@ import jcm.main as _jcm_main
 from jcm.dycore.dinosaur import dycore as _dycore
 
 _ORIG_FIX = _dycore.DinosaurDycore._fix_nodal_tracer_mass
+_ORIG_INIT = _dycore.DinosaurDycore.__init__
 _JCM_CONFIG_DIR = os.path.join(os.path.dirname(_jcm_main.__file__), "config")
+
+
+def install_sl_options(extra: dict) -> None:
+    """Merge ``extra`` into the ``sl_options`` the runner hands to ``DinosaurDycore``.
+
+    The runner only forwards ``off_centering`` (``sl_off_centering``); the Phase 7 time-step sweep
+    needs ``departure_iterations`` (dinosaur's fixed-point iterations for the semi-Lagrangian
+    departure points, default 1; the accuracy condition scales with dt x wind shear).
+    """
+    extra = {k: v for k, v in extra.items() if v is not None}
+    if not extra:
+        return
+
+    def patched_init(self, *args, **kwargs):
+        opts = dict(kwargs.get("sl_options") or {})
+        opts.update(extra)
+        kwargs["sl_options"] = opts
+        return _ORIG_INIT(self, *args, **kwargs)
+
+    _dycore.DinosaurDycore.__init__ = patched_init
+    logging.getLogger("jcm_strat").info("jcm_strat: semi-Lagrangian options %s", extra)
 
 
 def install_mass_fixer_policy(enabled: bool = True, exclude=()) -> None:
@@ -68,6 +90,8 @@ def main(cfg: DictConfig) -> None:
     # ListConfig; OmegaConf.to_container refuses plain lists
     exclude = list(OmegaConf.to_container(raw)) if raw is not None and OmegaConf.is_config(raw) else list(raw or [])
     install_mass_fixer_policy(enabled, exclude)
+    di = cfg.get("sl_departure_iterations", None)
+    install_sl_options({"departure_iterations": int(di) if di is not None else None})
     # hand the already-composed config to jcm's task function (hydra's decorated main accepts
     # a pass-through config and then does not re-parse the command line)
     _jcm_main.main(cfg_passthrough=cfg)
