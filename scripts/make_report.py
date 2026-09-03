@@ -59,6 +59,41 @@ def table(rows, widths, header=True):
     return t
 
 
+def walltime_rows():
+    """Per configuration: wall-clock for one simulated year and for six simulated hours, from throughput.csv.
+
+    Stepping numbers come from the per-chunk wall time (compile excluded); end-to-end includes compile and
+    output writing. Six simulated hours = 6*60/dt steps x ms/step - the cost of one 6-hourly emulator step's
+    worth of physics integration.
+    """
+    import csv
+    rows = list(csv.DictReader(open(os.path.join(OUT, "throughput.csv"))))
+    by = {r["run"]: r for r in rows}
+    picks = [("Phase 0: stock JCM, full ECHAM physics", "base_echam_l95_10d"),
+             ("Phase 0: same, 15 min step", "base_echam_l95_10d_dt15"),
+             ("Phase 1: dry Held-Suarez", "p1_dry_1yr"),
+             ("Phase 2: + ERA5-nudged troposphere", "p2_sd_1yr"),
+             ("Phase 3: + four passive tracers", "p3_tracers_1yr")]
+    out = [["Configuration", "dt", "sim. days per hour (stepping / end-to-end)", "one simulated year (stepping / end-to-end)", "six simulated hours (stepping)"]]
+    def fmt_year(days_per_hr):
+        h = 365.0 / days_per_hr
+        return f"{h:.1f} h" if h >= 1 else f"{h * 60:.1f} min"
+    def fmt_6h(days_per_hr):
+        sec = 0.25 / days_per_hr * 3600.0        # six simulated hours = a quarter day
+        return f"{sec:.2f} s" if sec < 60 else f"{sec / 60:.1f} min"
+    def row(label, r, e2e_override=None, note=""):
+        dt = float(r["dt_min"]); st = float(r["days_per_hr"]); e2e = float(e2e_override or r["e2e_days_per_hr"]); ms = float(r["ms_per_step"])
+        return [label, f"{dt:g} min", f"{st:,.0f} / {e2e:,.0f}", f"{fmt_year(st)} / {fmt_year(e2e)}{note}", fmt_6h(st)]
+    for label, run in picks:
+        if run in by:
+            out.append(row(label, by[run]))
+    segs = [r for r in rows if r["run"].startswith("p4_20")]
+    if segs:
+        mean = {k: str(sum(float(r[k]) for r in segs) / len(segs)) for k in ("dt_min", "days_per_hr", "e2e_days_per_hr", "ms_per_step")}
+        out.append(row("Phase 4: same, five chained one-year segments (per-segment mean)", mean))
+    return out
+
+
 def footer(canvas, doc):
     canvas.saveState(); canvas.setFont("Helvetica", 7.5); canvas.setFillColor(colors.HexColor("#555555"))
     canvas.drawRightString(A4[0] - 2 * cm, 1.2 * cm, f"{FOOT}  |  page {doc.page}"); canvas.restoreState()
@@ -281,6 +316,12 @@ def build(out_pdf: str) -> None:
                "output. The end-to-end number is the one that matters for a 30-year run; the gap between the two is output "
                "volume and per-chunk overhead (issue 19). The 12 minute step is far below the semi-Lagrangian ceiling, so a "
                "time-step sweep (issue 3) is the next speed lever.")]
+    S += [para("Wall-clock per simulated year and per six simulated hours", H2),
+          table(walltime_rows(), [5.2 * cm, 1.3 * cm, 3.6 * cm, 4.6 * cm, 2.5 * cm]),
+          para("Stepping excludes JIT compile and output; end-to-end includes both (and, for Phase 4, one 31 GB "
+               "nudging-target load per segment; the whole five-year chain ran at 1 768 days/hour end to end, 12.4 min per "
+               "year). Six simulated hours is 30 steps of 12 minutes; the emulator route would take one 6-hour step for the "
+               "same interval, so this column is the physics cost an emulator step has to beat. All on one H100, T63L95.", CAP)]
     S += fig("04_5yr/throughput.png",
              "Figure 13. Simulated days per wall-clock hour on one H100 for each configuration, log scale. Removing the physics "
              "gave a factor of about 110; nudging cost 6 percent and four tracers a further 18 percent in stepping; the five "
@@ -343,4 +384,10 @@ def build(out_pdf: str) -> None:
 
 
 if __name__ == "__main__":
-    build(sys.argv[1] if len(sys.argv) > 1 else os.path.join(OUT, "jcm-strat_phases_0-4.pdf"))
+    if len(sys.argv) > 1 and sys.argv[1] == "--walltime-md":
+        rows = walltime_rows()
+        print("| " + " | ".join(rows[0]) + " |"); print("|" + "---|" * len(rows[0]))
+        for r in rows[1:]:
+            print("| " + " | ".join(r) + " |")
+    else:
+        build(sys.argv[1] if len(sys.argv) > 1 else os.path.join(OUT, "jcm-strat_phases_0-4.pdf"))
