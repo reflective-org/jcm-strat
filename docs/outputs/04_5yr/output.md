@@ -92,6 +92,61 @@ winter     DJF mean [m/s]   5-day means with u<0 (Nov-Mar)
 ![zonal-mean T, u vs ERA5](p4_5yr_zonal_mean.png)
 ![throughput](throughput.png)
 
+## PARADIS: the circulation drivers, since the rollout carries no tracer
+
+Requested 2026-09-03: put the PARADIS long-range rollout `1995_12_06_5y1m` next to CLaMS and WACCM
+in the age-of-air comparison. The rollout (`/data/paradis_logs/lightning_logs/cesm_run_2/forecasts/
+longrange_v2_dec1995_ensemble/1995_12_06_5y1m/state.zarr`; PARADIS v2 stage 3d, 1°, 17 pressure
+levels 1–1000 hPa, initialised 1995-12-06, 6-hourly for 30 days then daily to 2001-01-04) carries
+**no tracer of any kind**, so it has no age of air to compare. Deriving one offline from its winds is
+issue #29. What it does carry is the circulation that sets the age of air, so that is compared here:
+the first month is discarded and the 1996-01-06 … 2001-01-04 mean is used (`scripts/paradis_zonal.py`
+→ `runs/paradis_1995_12_06/zonal_means.nc`; `scripts/paradis_circulation.py`; `vortex_series.py --paradis`).
+
+```
+PARADIS u(60.5N, 10 hPa)             DJF mean   days u<0 (Nov-Mar)      60.5S DJF
+  1996/1997                            30.7          0                    0.5
+  1997/1998                            23.4          0                    1.4
+  1998/1999                            24.2          0                    1.1
+  1999/2000                            21.4          0                    1.7
+  2000/2001                            15.8          0                   -0.7
+annual mean u(60N, 10 hPa): PARADIS +10.0 m/s, jcm-strat (Held-Suarez) -4.0 m/s
+
+PARADIS tropical (10S-10N) zonal-mean upwelling w = -omega*H/p, 5-yr mean (ERA5-era w* ~0.2-0.4 mm/s at 70 hPa)
+  100 hPa +0.10 mm/s | 70 hPa -0.17 | 50 hPa +0.32 | 30 hPa +0.52 | 20 hPa +0.24
+```
+
+![model vs PARADIS climatology](p4_5yr_vs_paradis_climatology.png)
+![PARADIS upwelling](paradis_upwelling.png)
+![vortex, model and PARADIS](p4_5yr_vortex.png)
+
+Reading:
+
+1. **PARADIS has the stratosphere the Held-Suarez model lacks.** Its zonal-mean temperature has the
+   cold tropical tropopause, the warm upper stratosphere and the winter-pole gradients; its zonal wind
+   has both polar-night jets (60°S up to ~95 m/s in austral winter, 60°N 20–50 m/s in boreal winter,
+   summer easterlies) and an equatorial easterly band at 10–30 hPa. The model-minus-PARADIS panels are
+   the Held-Suarez signature: 20–30 K too cold above 30 hPa, 20–30 m/s too weak at both jets, and too
+   westerly at the equator. If PARADIS's circulation drove the tracers, the tropical pipe would be
+   ventilated far more strongly than in Phase 4 — which is the case for an emulator-driven transport.
+2. **But PARADIS's northern vortex never breaks and weakens over the rollout.** DJF-mean u(60°N, 10 hPa)
+   falls from 31 to 16 m/s across the five winters and there is not a single reversal in five winters,
+   where ERA5 shows roughly six major warmings per decade. A too-stable, slowly drifting vortex is a
+   known long-rollout failure mode; it would bias an emulator-driven age of air old in the polar
+   lower stratosphere.
+3. **PARADIS's vertical velocity is not usable as a Brewer-Dobson proxy.** The daily-mean zonal-mean ω
+   is noisy and partly unphysical: a checkerboard above 10 hPa with ±1.5 mm/s cells, strong ascent
+   over both poles at all levels, and a sign change between 100 hPa (+0.10 mm/s), 70 hPa (−0.17) and
+   50 hPa (+0.32) in the tropics where the residual circulation is smoothly upward at 0.2–0.4 mm/s.
+   The resolved ω of an emulator is not the residual (Lagrangian-mean) circulation anyway; the honest
+   way to get PARADIS's transport is a tracer carried by its winds (issue #29), or the transport head
+   that Approach B proposes.
+4. **What this means for Approach A vs B.** The physics baseline transports well but on the wrong
+   circulation; the emulator has a far better mean circulation but no tracer, no reversals, and a
+   vertical velocity that cannot be trusted directly. Neither is yet a validated age of air. The
+   next step on the physics side is the stratospheric forcing (issues #2, #5); on the emulator side,
+   issue #29.
+
 ## The Phase-1 number
 
 > The stripped stratospheric JCM on Dinosaur-SL — dry Held-Suarez physics, ERA5-nudged winds and

@@ -13,3 +13,4 @@ What works today. Updated with every PR.
 | Multi-year nudged runs as chained calendar-year segments (init=from_state from the previous checkpoint), per-year ERA5 windows sliced from one prefetch, aggregate run directory with cumulative day numbers | Phase 4 | `scripts/chain_years.sh`, `scripts/slice_era5_years.py`, `+experiment=p4_5yr` |
 | Age-of-air comparison against CLaMS v3.1/ERA5 and WACCM6 REF-D1; polar-vortex u(60°, 10 hPa) time series with ERA5 SSW dates | Phase 4 | `scripts/aoa_vs_clams.py`, `scripts/vortex_series.py` |
 | PDF report of all phase records | Phase 4 | `scripts/make_report.py` → `docs/outputs/jcm-strat_phases_0-4.pdf` |
+| PARADIS rollout circulation comparison (zonal means of u, v, T, omega cached from the raw state.zarr; climatology and vortex panels against the model) | Phase 4 | `scripts/paradis_zonal.py`, `scripts/paradis_circulation.py`, `scripts/vortex_series.py --paradis` |
