@@ -23,7 +23,7 @@ run:
   start_date: 2005-01-01
 
 # The clock is not a conserved quantity: keep it out of the dycore's global mass fixer
-# (jcm_strat/main.py; KEY_DECISIONS #18). Everything else stays fixed as in Phases 1-2.
+# (jcm_strat/main.py; KEY_DECISIONS #19). Everything else stays fixed as in Phases 1-2.
 sl_mass_fixer: true
 sl_mass_fixer_exclude: [aoa]
 

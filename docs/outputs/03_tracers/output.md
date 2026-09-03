@@ -17,7 +17,7 @@ dycore as nodal tracers with JCM's global proportional mass fixer on (its defaul
 | `e90` | 100 in the two lowest layers, 90-day e-folding sink (Prather et al. 2011) | dynamical tropopause marker (the 90 contour) |
 
 Held-Suarez runs as the per-column subclass `HeldSuarezColumns` because JCM's 3-D physics path
-cannot add tracer tendencies across terms (KEY_DECISIONS #15, issue #20).
+cannot add tracer tendencies across terms (KEY_DECISIONS #17, issue #20).
 
 ## Runs
 
