@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Circulation drivers of age of air: jcm-strat vs a PARADIS long-range rollout.
 
-    python scripts/paradis_circulation.py runs/<session> runs/paradis_<member>/zonal_means.nc <outdir>
+    python scripts/paradis_circulation.py runs/<session> runs/paradis_<member>/zonal_means.nc <outdir> \
+        [--era5 "cache/era5_ref/era5_zm_monthly_*.nc"]
+
+With --era5 the climatology figure gains ERA5 (CDS monthly-mean zonal means, 25 levels 1-1000 hPa,
+the model years) as the reference: model | PARADIS | ERA5 | model - ERA5 | PARADIS - ERA5.
 
 PARADIS carries no tracer, so it cannot enter the age-of-air comparison directly. What it does
 carry is the circulation that sets the age of air: the zonal-mean temperature and zonal wind
@@ -52,6 +56,7 @@ def to_levels(field, p_from, p_to):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("rundir"); ap.add_argument("paradis_nc"); ap.add_argument("outdir")
+    ap.add_argument("--era5", default=None, help="glob of era5_zm_monthly_<year>.nc files (uzm, tzm on level x lat)")
     a = ap.parse_args()
     os.makedirs(a.outdir, exist_ok=True)
     run = os.path.basename(a.rundir.rstrip("/"))
@@ -64,24 +69,46 @@ def main() -> None:
     Tm_i = to_levels(Tm, pm, plev); Um_i = to_levels(Um, pm, plev)
     Tp_i = np.stack([np.interp(mlat, plat, Tp[k]) for k in range(len(plev))]); Up_i = np.stack([np.interp(mlat, plat, Up[k]) for k in range(len(plev))])
 
-    fig, ax = plt.subplots(2, 3, figsize=(15, 8), sharey=True)
     lv_T = np.arange(180, 321, 10); lv_u = np.arange(-60, 61, 10); lv_d = np.arange(-30, 31, 5)
-    for i, (F, lv, cmap, lab, title) in enumerate([
-            (Tm_i, lv_T, "RdYlBu_r", "K", f"model {run}: zonal-mean T, last 12 months"),
-            (Tp_i, lv_T, "RdYlBu_r", "K", f"PARADIS: zonal-mean T, {t0}..{t1}"),
-            (Tm_i - Tp_i, lv_d, "RdBu_r", "K", "model minus PARADIS, T")]):
-        cf = ax[0, i].contourf(mlat, plev, F, levels=lv, cmap=cmap, extend="both"); fig.colorbar(cf, ax=ax[0, i], label=lab); ax[0, i].set_title(title, fontsize=9)
-    for i, (F, lv, cmap, lab, title) in enumerate([
-            (Um_i, lv_u, "RdBu_r", "m/s", "model: zonal-mean u"),
-            (Up_i, lv_u, "RdBu_r", "m/s", "PARADIS: zonal-mean u"),
-            (Um_i - Up_i, lv_d, "RdBu_r", "m/s", "model minus PARADIS, u")]):
-        cf = ax[1, i].contourf(mlat, plev, F, levels=lv, cmap=cmap, extend="both"); fig.colorbar(cf, ax=ax[1, i], label=lab); ax[1, i].set_title(title, fontsize=9)
+    era_note = ""
+    if a.era5:
+        e = xr.open_mfdataset(sorted(glob.glob(a.era5)), combine="nested", concat_dim="time", decode_times=False)
+        yrs = sorted(int(xr.open_dataset(f).attrs.get("year", 0)) for f in glob.glob(a.era5))
+        Te = e.tzm.mean("time").values; Ue = e.uzm.mean("time").values           # (25 lev, 721 lat), ascending
+        pe = e.level.values.astype(float); late = e.lat.values
+        Te_i = np.stack([np.interp(mlat, late, Te[k]) for k in range(len(pe))]); Ue_i = np.stack([np.interp(mlat, late, Ue[k]) for k in range(len(pe))])
+        Te_i = to_levels(Te_i, pe, plev); Ue_i = to_levels(Ue_i, pe, plev)
+        era_note = f"ERA5 {yrs[0]}-{yrs[-1]} (CDS monthly means)"
+        colsT = [(Tm_i, lv_T, "RdYlBu_r", "K", f"model {run}: zonal-mean T, last 12 months"),
+                 (Tp_i, lv_T, "RdYlBu_r", "K", f"PARADIS: zonal-mean T, {t0}..{t1}"),
+                 (Te_i, lv_T, "RdYlBu_r", "K", f"{era_note}: zonal-mean T"),
+                 (Tm_i - Te_i, lv_d, "RdBu_r", "K", "model minus ERA5, T"),
+                 (Tp_i - Te_i, lv_d, "RdBu_r", "K", "PARADIS minus ERA5, T")]
+        colsU = [(Um_i, lv_u, "RdBu_r", "m/s", "model: zonal-mean u"),
+                 (Up_i, lv_u, "RdBu_r", "m/s", "PARADIS: zonal-mean u"),
+                 (Ue_i, lv_u, "RdBu_r", "m/s", "ERA5: zonal-mean u"),
+                 (Um_i - Ue_i, lv_d, "RdBu_r", "m/s", "model minus ERA5, u"),
+                 (Up_i - Ue_i, lv_d, "RdBu_r", "m/s", "PARADIS minus ERA5, u")]
+    else:
+        colsT = [(Tm_i, lv_T, "RdYlBu_r", "K", f"model {run}: zonal-mean T, last 12 months"),
+                 (Tp_i, lv_T, "RdYlBu_r", "K", f"PARADIS: zonal-mean T, {t0}..{t1}"),
+                 (Tm_i - Tp_i, lv_d, "RdBu_r", "K", "model minus PARADIS, T")]
+        colsU = [(Um_i, lv_u, "RdBu_r", "m/s", "model: zonal-mean u"),
+                 (Up_i, lv_u, "RdBu_r", "m/s", "PARADIS: zonal-mean u"),
+                 (Um_i - Up_i, lv_d, "RdBu_r", "m/s", "model minus PARADIS, u")]
+    nc = len(colsT)
+    fig, ax = plt.subplots(2, nc, figsize=(4.6 * nc + 1.5, 8), sharey=True)
+    for i, (F, lv, cmap, lab, title) in enumerate(colsT):
+        cf = ax[0, i].contourf(mlat, plev, F, levels=lv, cmap=cmap, extend="both"); fig.colorbar(cf, ax=ax[0, i], label=lab); ax[0, i].set_title(title, fontsize=8)
+    for i, (F, lv, cmap, lab, title) in enumerate(colsU):
+        cf = ax[1, i].contourf(mlat, plev, F, levels=lv, cmap=cmap, extend="both"); fig.colorbar(cf, ax=ax[1, i], label=lab); ax[1, i].set_title(title, fontsize=8)
         ax[1, i].contour(mlat, plev, F, levels=[0], colors="k", linewidths=.5)
     for axx in ax.ravel():
         axx.set_yscale("log"); axx.set_ylim(1000, 1); axx.axhline(150, color="grey", ls=":", lw=.8)
     for axx in ax[1]: axx.set_xlabel("latitude")
     for axx in ax[:, 0]: axx.set_ylabel("pressure (hPa)")
-    fig.suptitle("Circulation drivers of age of air: jcm-strat (Held-Suarez stratosphere, 2009) vs PARADIS rollout (1996-2000), on PARADIS's 17 levels")
+    fig.suptitle("Circulation drivers of age of air: jcm-strat (Held-Suarez stratosphere, 2009), PARADIS rollout (1996-2000)"
+                 + (f" and {era_note}" if era_note else "") + ", on PARADIS's 17 levels")
     fig.tight_layout(); f1 = os.path.join(a.outdir, f"{run}_vs_paradis_climatology.png"); fig.savefig(f1, dpi=130); print("wrote", f1)
 
     # upwelling
@@ -105,7 +132,17 @@ def main() -> None:
         djf = ((yrs == y) & (mos == 12)) | ((yrs == y + 1) & (mos <= 2)); nm = ((yrs == y) & (mos >= 11)) | ((yrs == y + 1) & (mos <= 3))
         if djf.sum() < 20: continue
         print(f"  {y}/{y+1}: DJF mean {float(u60.values[djf].mean()):6.1f} m/s   days u<0: {int((u60.values[nm] < 0).sum()):3d}   (60S DJF {float(u60s.values[djf].mean()):5.1f})")
-    print(f"PARADIS annual-mean u(60.5N,10hPa) {float(u60.mean()):.1f} m/s; model annual-mean at 60N/10hPa {float(Um_i[k10, int(np.argmin(np.abs(mlat-60)))]):.1f} m/s")
+    j60 = int(np.argmin(np.abs(mlat - 60)))
+    line = f"annual-mean u(60N, 10 hPa): PARADIS {float(u60.mean()):.1f} m/s, model {float(Um_i[k10, j60]):.1f} m/s"
+    if a.era5:
+        line += f", ERA5 {float(Ue_i[k10, j60]):.1f} m/s"
+        kk = {p: int(np.argmin(np.abs(plev - p))) for p in (10, 30, 50, 70)}
+        trop = np.abs(mlat) <= 10
+        print("zonal-mean T bias vs ERA5 [K], tropics 10S-10N / 60-90N / 60-90S:")
+        for p, k in kk.items():
+            for name, F in (("model", Tm_i), ("PARADIS", Tp_i)):
+                d = F[k] - Te_i[k]; print(f"  {p:3d} hPa {name:8s} {d[trop].mean():+6.1f} / {d[mlat>=60].mean():+6.1f} / {d[mlat<=-60].mean():+6.1f}")
+    print(line)
 
 
 if __name__ == "__main__":

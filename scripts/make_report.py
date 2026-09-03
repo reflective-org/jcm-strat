@@ -288,17 +288,20 @@ def build(out_pdf: str) -> None:
                "by the transport scheme: the same tracers on a stratosphere with a polar-night jet and a realistic Brewer-Dobson "
                "circulation are the next experiment.")]
     S += fig("04_5yr/p4_5yr_aoa_triptych.png",
-             "Figure 7. Zonal-mean age of air at the end of 2009: the model (last 12 saves), CLaMS v3.1 driven by ERA5 "
-             "(2005-2009 mean, a surface clock like ours) and WACCM6 REF-D1 (2005-2009 mean, an entry age relative to 103 hPa, "
-             "hence younger by construction). The model has the right shape and the right extratropical ages but a tropical pipe "
-             "that is far too old and too shallow.", maxh=7.5 * cm)
+             "Figure 7. Zonal-mean age of air: the model (last 12 saves), CLaMS v3.1 driven by ERA5 (2005-2009 mean, a surface "
+             "clock), WACCM6 REF-D1 (2005-2009 mean, an entry age relative to 103 hPa, hence younger by construction), and a "
+             "surface-reset clock carried offline by the PARADIS rollout's winds for 1996-2000. The model has the right shape and "
+             "the right extratropical ages but a tropical pipe that is far too old; the PARADIS-driven offline clock is too young "
+             "everywhere.", maxh=6.5 * cm)
     S += fig("04_5yr/p4_5yr_aoa_profiles.png",
              "Figure 8. Mean age against latitude at about 55 hPa (left) and 12 hPa (middle), and the tropical vertical profile "
-             "(right). The extratropics match CLaMS at 55 hPa; the tropics are 1.5 years too old; the tropical profile is already "
-             "about one year old at 100 hPa, the tropospheric-transit signature.", maxh=6.5 * cm)
+             "(right). The model's extratropics match CLaMS at 55 hPa and its tropics are 1.5 years too old; the PARADIS offline "
+             "clock sits 1-2 years below CLaMS at all latitudes, with a slow tropospheric transit (0.6 yr at 200 hPa) followed by "
+             "too little ageing with height. The entry-age variant of the offline clock is tabulated in the record, not plotted.", maxh=6.5 * cm)
     S += fig("04_5yr/p4_5yr_vortex.png",
-             "Figure 9. Zonal-mean zonal wind at 10 hPa and 61N (blue) and 61S (orange). Top: the model, 5-day means, with the "
-             "ERA5 sudden-warming dates marked; there is no winter westerly jet to disrupt in either hemisphere. Bottom: the same "
+             "Figure 9. Zonal-mean zonal wind at 10 hPa and 60N (blue) and 60S (orange). Top: the model, 5-day means, with ERA5's "
+             "daily wind for the same years overlaid in black and grey and the sudden-warming dates marked; the model has no winter "
+             "westerly jet to disrupt in either hemisphere while ERA5 swings between 13 and 35 m/s in the DJF mean. Bottom: the same "
              "diagnostic in the PARADIS rollout for 1996-2000 (daily): both polar-night jets present, no reversal in five winters, "
              "the northern winter jet weakening from 31 to 16 m/s over the rollout.", maxh=9 * cm)
     S += [para("PARADIS: the circulation drivers, since the rollout carries no tracer", H2),
@@ -307,10 +310,11 @@ def build(out_pdf: str) -> None:
                "age-of-air comparison. It carries no tracer of any kind, so it has no age of air; deriving one offline from its "
                "winds is issue 29. What it does carry is the circulation that sets the age of air, compared here for the five "
                "years after the first month against the model's last year."),
-          bullets(["PARADIS has the stratosphere Held-Suarez lacks: a cold tropical tropopause, a warm upper stratosphere, both "
-                   "polar-night jets (60S up to about 95 m/s in austral winter, 60N 20-50 m/s in boreal winter) and an equatorial "
-                   "easterly band at 10-30 hPa. Model minus PARADIS is the Held-Suarez signature: 20-30 K too cold above 30 hPa "
-                   "and 20-30 m/s too weak at both jets (Figure 14).",
+          bullets(["PARADIS has the stratosphere Held-Suarez lacks, and it is close to ERA5: against the 2005-2009 ERA5 zonal "
+                   "means its temperature is within 1-3 K in the tropics and Arctic at 10-70 hPa (4-6 K cold over the Antarctic) "
+                   "and its annual-mean wind at 60N, 10 hPa is 10.0 m/s against ERA5's 9.8; both polar-night jets and an "
+                   "equatorial easterly band are there. Model minus ERA5 is the Held-Suarez signature: 34 K too cold in the "
+                   "tropics and 15-19 K over the poles at 10 hPa, 20-30 m/s too weak at both jets (Figure 14).",
                    "PARADIS's northern vortex never breaks and weakens over the rollout: the DJF-mean wind at 60N, 10 hPa falls "
                    "from 31 to 16 m/s across five winters with no reversal, where ERA5 shows about six major warmings per decade.",
                    "PARADIS's vertical velocity is not usable as a Brewer-Dobson proxy: the zonal-mean omega is a checkerboard above "
@@ -320,8 +324,25 @@ def build(out_pdf: str) -> None:
                    "better mean circulation but no tracer, no vortex breakdowns, and a vertical velocity that cannot be trusted "
                    "directly. Neither is yet a validated age of air."])]
     S += fig("04_5yr/p4_5yr_vs_paradis_climatology.png",
-             "Figure 14. Zonal-mean temperature (top) and zonal wind (bottom) on PARADIS's 17 levels: the model's last year (left), "
-             "the PARADIS rollout's 1996-2000 mean (middle), and model minus PARADIS (right).", maxh=8.5 * cm)
+             "Figure 14. Zonal-mean temperature (top) and zonal wind (bottom) on PARADIS's 17 levels: the model's last year, the "
+             "PARADIS rollout's 1996-2000 mean, ERA5 2005-2009 (CDS monthly means), model minus ERA5, and PARADIS minus ERA5.", maxh=8 * cm)
+    S += [para("PARADIS offline clocks: the rollout's winds carrying two age-of-air definitions", H2),
+          para("Because the rollout has no tracer, two clock tracers were carried offline by its own daily winds on its own "
+               "1-degree, 17-level grid with a semi-Lagrangian scheme (6-hour sub-steps, trilinear interpolation, 1.4 minutes "
+               "on one GPU for five years): a surface-reset clock, the CLaMS and WACCM boundary condition, and a clock reset "
+               "below 150 hPa, an entry age. From now on both definitions are carried side by side (decision 22); the jcm-strat "
+               "model adds the second clock in its next multi-year run."),
+          bullets(["The PARADIS-driven stratosphere is too young everywhere, the opposite failure to the physics model: 2.3 "
+                   "years at 55 hPa in the extratropics against 4.1 in CLaMS, 2.9 years at 12 hPa against 4.6. Even the entry "
+                   "clock, which no tropospheric-transit argument can rescue, gives 1.5 years at 50-70 degrees against WACCM's 3.4. "
+                   "The tropical pipe exists but its contrast is a quarter of CLaMS's.",
+                   "Slow troposphere, fast stratosphere: the surface clock reads 0.6 years at 200 hPa and 1.1 at 100 hPa in the "
+                   "tropics (CLaMS 0.2 at 100 hPa), then ages too slowly with height.",
+                   "The causes were foreseen and are not PARADIS's transport as such: the noisy vertical velocity becomes "
+                   "spurious vertical exchange, 17 levels make trilinear interpolation strongly diffusive in the vertical "
+                   "(the stratospheric levels are about 5 km apart), and daily winds miss sub-daily transport. The two offline "
+                   "lines bound PARADIS's transport from the young side as the physics model bounds it from the old side; a "
+                   "tracer inside the emulator, Approach B's transport head, is what would settle it."])]
     S += fig("04_5yr/paradis_upwelling.png",
              "Figure 15. PARADIS zonal-mean vertical velocity, w = -omega H/p, 1996-2000 mean. Checkerboard above 10 hPa and polar "
              "ascent are not physical; the tropical column changes sign between 100 and 50 hPa.", maxh=6.5 * cm)
