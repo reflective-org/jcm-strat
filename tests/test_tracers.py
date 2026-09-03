@@ -48,10 +48,13 @@ def test_one_step_tendencies():
 
 def test_short_run_keeps_tracers_sane():
     model = _model()
-    model.run(total_time=1)                                    # one day on T31L8
-    tr = model._final_dycore_state.tracers
+    # save_interval must not exceed total_time, or Model.run saves nothing and
+    # _final_dycore_state stays at the initial condition (a vacuous test)
+    ds = model.run(total_time=1, save_interval=1).to_xarray()   # one day on T31L8, one snapshot
     for k in ("aoa", "unity", "sai", "e90"):
-        assert k in tr and not bool(jnp.any(jnp.isnan(tr[k])))
-    u = np.asarray(tr["unity"])                                # raw units: stays 1 everywhere
+        assert k in ds and not bool(np.any(np.isnan(ds[k].values)))
+    u = ds["unity"].values                                     # raw units: stays 1 everywhere
     assert abs(u.mean() - 1.0) < 1e-2 and u.std() < 1e-2
-    assert np.asarray(tr["aoa"]).min() >= -1e-9
+    assert ds["aoa"].values.min() >= -1e-6
+    assert ds["aoa"].values.max() > 0.5                        # the clock ticks (1 d expected)
+    assert ds["sai"].values.max() > 0 and ds["e90"].values.max() > 50
