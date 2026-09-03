@@ -156,7 +156,7 @@ daily winds interpolated in time, run over 1996-01-06 … 2001-01-04 on GPU 0 in
 clocks, both +1 day/day: **surface reset** (lowest level; the CLaMS and WACCM boundary condition)
 and **reset below 150 hPa** (an entry age; KEY_DECISIONS #22, issue #25). Sanity: far from the
 resets the clock advances exactly 1.00 day/day (30.0 d after 30 d; 5-year top-level maximum 3.45 yr
-< 5 yr because the 1 hPa level is ventilated from below). Output `runs/paradis_1995_12_06/offline_clock.nc`.
+< 5 yr because the 1 hPa level is ventilated from below). Output `runs/paradis_1995_12_06/offline_clock.nc`. The figures show the surface-reset clock only (the entry clock is in the table below and available with `--paradis-entry-clock`).
 
 ```
 last 12 months, zonal mean [yr]                tropics 10S-10N   50-70 deg   contrast

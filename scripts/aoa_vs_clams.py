@@ -82,7 +82,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("rundir"); ap.add_argument("outdir")
     ap.add_argument("--years", default="2005-2009"); ap.add_argument("--label", default="")
-    ap.add_argument("--paradis-clock", default=None, help="offline_clock.nc from scripts/paradis_offline_clock.py")
+    ap.add_argument("--paradis-clock", default=None, help="offline_clock.nc from scripts/paradis_offline_clock.py (surface-reset clock)")
+    ap.add_argument("--paradis-entry-clock", action="store_true", help="also show the offline clock reset below 150 hPa (off by default)")
     a = ap.parse_args()
     y0, y1 = (int(s) for s in a.years.split("-")); years = list(range(y0, y1 + 1))
     run = os.path.basename(a.rundir.rstrip("/")); os.makedirs(a.outdir, exist_ok=True)
@@ -98,7 +99,8 @@ def main() -> None:
         pz = xr.open_dataset(a.paradis_clock); span = f"{pz.attrs.get('start','')[:10]}..{pz.attrs.get('end','')[:10]}"
         pp, latp = np.asarray(pz.level), np.asarray(pz.lat)
         sources.append((pp, latp, pz.age_sfc_last12_zm.values, f"PARADIS winds + offline clock, surface reset\n({span}, last 12 months)", "PARADIS offline (surface)", "-."))
-        sources.append((pp, latp, pz.age_150_last12_zm.values, "PARADIS winds + offline clock, reset below 150 hPa\n(entry age)", "PARADIS offline (entry <150 hPa)", (0, (3, 1, 1, 1))))
+        if a.paradis_entry_clock:
+            sources.append((pp, latp, pz.age_150_last12_zm.values, "PARADIS winds + offline clock, reset below 150 hPa\n(entry age)", "PARADIS offline (entry <150 hPa)", (0, (3, 1, 1, 1))))
     vmax = max(1.0, np.ceil(np.nanmax(ac) * 2) / 2)
     levels = np.linspace(0, vmax, int(vmax * 4) + 1)
 
