@@ -92,6 +92,138 @@ winter     DJF mean [m/s]   5-day means with u<0 (Nov-Mar)
 ![zonal-mean T, u vs ERA5](p4_5yr_zonal_mean.png)
 ![throughput](throughput.png)
 
+## PARADIS: the circulation drivers, since the rollout carries no tracer
+
+Requested 2026-09-03: put the PARADIS long-range rollout `1995_12_06_5y1m` next to CLaMS and WACCM
+in the age-of-air comparison. The rollout (`/data/paradis_logs/lightning_logs/cesm_run_2/forecasts/
+longrange_v2_dec1995_ensemble/1995_12_06_5y1m/state.zarr`; PARADIS v2 stage 3d, 1°, 17 pressure
+levels 1–1000 hPa, initialised 1995-12-06, 6-hourly for 30 days then daily to 2001-01-04) carries
+**no tracer of any kind**, so it has no age of air to compare. Deriving one offline from its winds is
+issue #29. What it does carry is the circulation that sets the age of air, so that is compared here:
+the first month is discarded and the 1996-01-06 … 2001-01-04 mean is used (`scripts/paradis_zonal.py`
+→ `runs/paradis_1995_12_06/zonal_means.nc`; `scripts/paradis_circulation.py --era5`; `vortex_series.py --paradis`).
+ERA5 enters the climatology figure as the reference: CDS monthly-mean zonal means of u and T on 25 levels
+(1–1000 hPa) for the model years 2005–2009 (`cache/era5_ref/era5_zm_monthly_<year>.nc`, produced by the
+CDS fetch on the Phase 6 branch), so both models are shown against the same reanalysis — PARADIS for its
+own years, the model for its own — on PARADIS's 17 levels.
+
+```
+PARADIS u(60.5N, 10 hPa)             DJF mean   days u<0 (Nov-Mar)      60.5S DJF
+  1996/1997                            30.7          0                    0.5
+  1997/1998                            23.4          0                    1.4
+  1998/1999                            24.2          0                    1.1
+  1999/2000                            21.4          0                    1.7
+  2000/2001                            15.8          0                   -0.7
+annual mean u(60N, 10 hPa): PARADIS +10.0 m/s, jcm-strat (Held-Suarez) -4.0 m/s, ERA5 2005-2009 +9.8 m/s
+
+ERA5 u(60N, 10 hPa), daily (CDS), the model's own years   DJF mean   days u<0 (Nov-Mar)   60S DJF
+  2005/2006                                                 12.7         25                 -8.0
+  2006/2007                                                 34.6          4                 -8.9
+  2007/2008                                                 32.6         15                 -7.1
+  2008/2009                                                 20.5         30                 -6.8
+  (model, same winters: -4.3 / -1.8 / -2.5 / -5.2 m/s; PARADIS 1996-2000: 31 -> 16 m/s, 0 reversals)
+
+zonal-mean T bias vs ERA5 2005-2009 [K]   tropics 10S-10N   60-90N   60-90S
+  10 hPa   model                              -34.3          -18.8    -15.2
+  10 hPa   PARADIS                             +1.1           +0.5     -5.8
+  30 hPa   model                              -19.5           -8.9     -2.5
+  30 hPa   PARADIS                             -3.4           -1.6     -4.2
+  50 hPa   model                              -12.3           -7.6     +0.3
+  50 hPa   PARADIS                             -1.1           -0.8     -2.3
+  70 hPa   model                               -6.5           -7.4     +1.1
+  70 hPa   PARADIS                             +1.1           -0.6     -1.3
+
+PARADIS tropical (10S-10N) zonal-mean upwelling w = -omega*H/p, 5-yr mean (ERA5-era w* ~0.2-0.4 mm/s at 70 hPa)
+  100 hPa +0.10 mm/s | 70 hPa -0.17 | 50 hPa +0.32 | 30 hPa +0.52 | 20 hPa +0.24
+```
+
+![model vs PARADIS climatology](p4_5yr_vs_paradis_climatology.png)
+![PARADIS upwelling](paradis_upwelling.png)
+![vortex, model and PARADIS](p4_5yr_vortex.png)
+
+Reading:
+
+1. **PARADIS has the stratosphere the Held-Suarez model lacks, and it is close to ERA5.** Against the
+   2005–2009 ERA5 zonal means PARADIS's temperature is within ±1–3 K in the tropics and Arctic at 10–70 hPa
+   (−4 to −6 K over the Antarctic), and its annual-mean u(60°N, 10 hPa) is 10.0 m/s against ERA5's 9.8;
+   both polar-night jets, the summer easterlies and an equatorial easterly band at 10–30 hPa are there.
+   The model-minus-ERA5 panels are the Held-Suarez signature: −34 K in the tropics and −15 to −19 K over the
+   poles at 10 hPa, −12 K in the tropics at 50 hPa, 20–30 m/s too weak at both jets, too westerly at the
+   equator. PARADIS-minus-ERA5 is small by comparison except for a weak Antarctic cold bias and a too-weak
+   Antarctic jet core. If PARADIS's circulation drove the tracers, the tropical pipe would be
+   ventilated far more strongly than in Phase 4 — which is the case for an emulator-driven transport.
+2. **But PARADIS's northern vortex never breaks and weakens over the rollout.** DJF-mean u(60°N, 10 hPa)
+   falls from 31 to 16 m/s across the five winters and there is not a single reversal, where ERA5 over
+   the model's own years swings between 13 and 35 m/s in the DJF mean with 4–30 reversal days per
+   winter (the three major warmings of 2006, 2008 and 2009 are the 25-, 15- and 30-day reversals). The
+   model, for its part, sits at −2 to −5 m/s all winter with 21–30 "reversal" days that are simply the
+   absence of a jet. A too-stable, slowly drifting vortex is a known long-rollout failure mode; it would
+   bias an emulator-driven age of air old in the polar lower stratosphere.
+3. **PARADIS's vertical velocity is not usable as a Brewer-Dobson proxy.** The daily-mean zonal-mean ω
+   is noisy and partly unphysical: a checkerboard above 10 hPa with ±1.5 mm/s cells, strong ascent
+   over both poles at all levels, and a sign change between 100 hPa (+0.10 mm/s), 70 hPa (−0.17) and
+   50 hPa (+0.32) in the tropics where the residual circulation is smoothly upward at 0.2–0.4 mm/s.
+   The resolved ω of an emulator is not the residual (Lagrangian-mean) circulation anyway; the honest
+   way to get PARADIS's transport is a tracer carried by its winds (issue #29), or the transport head
+   that Approach B proposes.
+4. **What this means for Approach A vs B.** The physics baseline transports well but on the wrong
+   circulation; the emulator has a far better mean circulation but no tracer, no reversals, and a
+   vertical velocity that cannot be trusted directly. Neither is yet a validated age of air. The
+   next step on the physics side is the stratospheric forcing (issues #2, #5); on the emulator side,
+   issue #29.
+
+### PARADIS offline clocks (issue #29): two age-of-air definitions carried by the rollout's winds
+
+`scripts/paradis_offline_clock.py`: semi-Lagrangian backward trajectories (two-pass midpoint,
+trilinear interpolation in longitude, latitude and ln p) on PARADIS's own 1°×17-level grid, driven by
+its daily u, v (from the Cartesian components) and ω (d ln p/dt = ω/p), 6-hour sub-steps with the
+daily winds interpolated in time, run over 1996-01-06 … 2001-01-04 on GPU 0 in 1.4 minutes. Two
+clocks, both +1 day/day: **surface reset** (lowest level; the CLaMS and WACCM boundary condition)
+and **reset below 150 hPa** (an entry age; KEY_DECISIONS #22, issue #25). Sanity: far from the
+resets the clock advances exactly 1.00 day/day (30.0 d after 30 d; 5-year top-level maximum 3.45 yr
+< 5 yr because the 1 hPa level is ventilated from below). Output `runs/paradis_1995_12_06/offline_clock.nc`. The figures show the surface-reset clock only (the entry clock is in the table below and available with `--paradis-entry-clock`).
+
+```
+last 12 months, zonal mean [yr]                tropics 10S-10N   50-70 deg   contrast
+~55 hPa  model (jcm-strat, 700 hPa reset)             2.88          4.09       1.21
+~55 hPa  CLaMS v3.1 / ERA5 (surface clock)            1.33          4.12       2.79
+~55 hPa  WACCM6 REF-D1 (entry age)                    1.11          3.40       2.29
+~55 hPa  PARADIS winds + offline clock (surface)       1.59          2.33       0.74
+~55 hPa  PARADIS winds + offline clock (entry <150)    0.85          1.49       0.64
+~12 hPa  model                                        4.42          4.76       0.35
+~12 hPa  CLaMS                                        3.68          4.56       0.88
+~12 hPa  WACCM (entry age)                            2.82          4.18       1.36
+~12 hPa  PARADIS offline (surface)                    2.59          2.93       0.34
+~12 hPa  PARADIS offline (entry <150)                 1.91          2.27       0.36
+
+PARADIS offline, surface clock, tropical / global mean:  200 hPa 0.62 / 1.18 yr;  100 hPa 1.13 / 1.65;
+  50 hPa 1.59 / 2.13;  10 hPa 2.59 / 2.83;  1 hPa 2.92 / 3.04.   Entry clock at 100 hPa: 0.40 / 0.71.
+```
+
+Reading:
+
+1. **The PARADIS-driven stratosphere is too young everywhere, the opposite failure to the physics
+   model.** At 55 hPa the extratropics read 2.3 yr (CLaMS 4.1) and at 12 hPa 2.9 yr (CLaMS 4.6); even the
+   entry clock, which cannot be blamed on tropospheric transit, gives 1.5 yr at 50–70° where WACCM's
+   entry age is 3.4. The tropical pipe is there (tropics younger than extratropics at every level, and
+   the 55 hPa minimum sits at the equator) but the contrast is a quarter of CLaMS's.
+2. **Slow troposphere, fast stratosphere.** The surface clock reads 0.6 yr at 200 hPa and 1.1 yr at
+   100 hPa in the tropics (CLaMS 0.2 at 100 hPa): with five tropospheric levels and no parameterised
+   mixing, resolved daily winds carry air up slowly — the same tropospheric-transit bias as in
+   jcm-strat, larger. Above the tropopause the age then grows far too slowly with height.
+3. **Why the stratosphere is too young.** Three causes, all foreseen and none attributable to
+   PARADIS's transport as such: (a) PARADIS's ω is noisy and partly unphysical (checkerboard above
+   10 hPa, polar ascent; the previous section), which the offline scheme turns into spurious vertical
+   exchange; (b) 17 levels put 100, 70, 50, 30, 20, 10 hPa about 5 km apart, so trilinear
+   interpolation in ln p is strongly diffusive in the vertical; (c) daily winds miss the sub-daily
+   part of the transport. The result measures "PARADIS winds through a coarse offline scheme"; it
+   bounds PARADIS's transport from below in age, as the physics model bounds it from above.
+4. **What would make it meaningful.** A less diffusive vertical treatment (cubic or monotone
+   interpolation, or a flux-form scheme), the 6-hourly output for the whole rollout, a smoothed or
+   mass-consistent ω, and ideally the tracer inside the emulator — which is Approach B's transport
+   head. Until then the two offline lines are shown as bounds with these caveats, not as PARADIS's
+   age of air.
+
 ## The Phase-1 number
 
 > The stripped stratospheric JCM on Dinosaur-SL — dry Held-Suarez physics, ERA5-nudged winds and
