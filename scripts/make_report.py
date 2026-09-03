@@ -309,10 +309,11 @@ def build(out_pdf: str) -> None:
                "age-of-air comparison. It carries no tracer of any kind, so it has no age of air; deriving one offline from its "
                "winds is issue 29. What it does carry is the circulation that sets the age of air, compared here for the five "
                "years after the first month against the model's last year."),
-          bullets(["PARADIS has the stratosphere Held-Suarez lacks: a cold tropical tropopause, a warm upper stratosphere, both "
-                   "polar-night jets (60S up to about 95 m/s in austral winter, 60N 20-50 m/s in boreal winter) and an equatorial "
-                   "easterly band at 10-30 hPa. Model minus PARADIS is the Held-Suarez signature: 20-30 K too cold above 30 hPa "
-                   "and 20-30 m/s too weak at both jets (Figure 14).",
+          bullets(["PARADIS has the stratosphere Held-Suarez lacks, and it is close to ERA5: against the 2005-2009 ERA5 zonal "
+                   "means its temperature is within 1-3 K in the tropics and Arctic at 10-70 hPa (4-6 K cold over the Antarctic) "
+                   "and its annual-mean wind at 60N, 10 hPa is 10.0 m/s against ERA5's 9.8; both polar-night jets and an "
+                   "equatorial easterly band are there. Model minus ERA5 is the Held-Suarez signature: 34 K too cold in the "
+                   "tropics and 15-19 K over the poles at 10 hPa, 20-30 m/s too weak at both jets (Figure 14).",
                    "PARADIS's northern vortex never breaks and weakens over the rollout: the DJF-mean wind at 60N, 10 hPa falls "
                    "from 31 to 16 m/s across five winters with no reversal, where ERA5 shows about six major warmings per decade.",
                    "PARADIS's vertical velocity is not usable as a Brewer-Dobson proxy: the zonal-mean omega is a checkerboard above "
@@ -322,8 +323,8 @@ def build(out_pdf: str) -> None:
                    "better mean circulation but no tracer, no vortex breakdowns, and a vertical velocity that cannot be trusted "
                    "directly. Neither is yet a validated age of air."])]
     S += fig("04_5yr/p4_5yr_vs_paradis_climatology.png",
-             "Figure 14. Zonal-mean temperature (top) and zonal wind (bottom) on PARADIS's 17 levels: the model's last year (left), "
-             "the PARADIS rollout's 1996-2000 mean (middle), and model minus PARADIS (right).", maxh=8.5 * cm)
+             "Figure 14. Zonal-mean temperature (top) and zonal wind (bottom) on PARADIS's 17 levels: the model's last year, the "
+             "PARADIS rollout's 1996-2000 mean, ERA5 2005-2009 (CDS monthly means), model minus ERA5, and PARADIS minus ERA5.", maxh=8 * cm)
     S += [para("PARADIS offline clocks: the rollout's winds carrying two age-of-air definitions", H2),
           para("Because the rollout has no tracer, two clock tracers were carried offline by its own daily winds on its own "
                "1-degree, 17-level grid with a semi-Lagrangian scheme (6-hour sub-steps, trilinear interpolation, 1.4 minutes "

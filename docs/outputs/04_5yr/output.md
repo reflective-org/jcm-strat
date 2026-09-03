@@ -101,7 +101,11 @@ levels 1–1000 hPa, initialised 1995-12-06, 6-hourly for 30 days then daily to 
 **no tracer of any kind**, so it has no age of air to compare. Deriving one offline from its winds is
 issue #29. What it does carry is the circulation that sets the age of air, so that is compared here:
 the first month is discarded and the 1996-01-06 … 2001-01-04 mean is used (`scripts/paradis_zonal.py`
-→ `runs/paradis_1995_12_06/zonal_means.nc`; `scripts/paradis_circulation.py`; `vortex_series.py --paradis`).
+→ `runs/paradis_1995_12_06/zonal_means.nc`; `scripts/paradis_circulation.py --era5`; `vortex_series.py --paradis`).
+ERA5 enters the climatology figure as the reference: CDS monthly-mean zonal means of u and T on 25 levels
+(1–1000 hPa) for the model years 2005–2009 (`cache/era5_ref/era5_zm_monthly_<year>.nc`, produced by the
+CDS fetch on the Phase 6 branch), so both models are shown against the same reanalysis — PARADIS for its
+own years, the model for its own — on PARADIS's 17 levels.
 
 ```
 PARADIS u(60.5N, 10 hPa)             DJF mean   days u<0 (Nov-Mar)      60.5S DJF
@@ -110,7 +114,17 @@ PARADIS u(60.5N, 10 hPa)             DJF mean   days u<0 (Nov-Mar)      60.5S DJ
   1998/1999                            24.2          0                    1.1
   1999/2000                            21.4          0                    1.7
   2000/2001                            15.8          0                   -0.7
-annual mean u(60N, 10 hPa): PARADIS +10.0 m/s, jcm-strat (Held-Suarez) -4.0 m/s
+annual mean u(60N, 10 hPa): PARADIS +10.0 m/s, jcm-strat (Held-Suarez) -4.0 m/s, ERA5 2005-2009 +9.8 m/s
+
+zonal-mean T bias vs ERA5 2005-2009 [K]   tropics 10S-10N   60-90N   60-90S
+  10 hPa   model                              -34.3          -18.8    -15.2
+  10 hPa   PARADIS                             +1.1           +0.5     -5.8
+  30 hPa   model                              -19.5           -8.9     -2.5
+  30 hPa   PARADIS                             -3.4           -1.6     -4.2
+  50 hPa   model                              -12.3           -7.6     +0.3
+  50 hPa   PARADIS                             -1.1           -0.8     -2.3
+  70 hPa   model                               -6.5           -7.4     +1.1
+  70 hPa   PARADIS                             +1.1           -0.6     -1.3
 
 PARADIS tropical (10S-10N) zonal-mean upwelling w = -omega*H/p, 5-yr mean (ERA5-era w* ~0.2-0.4 mm/s at 70 hPa)
   100 hPa +0.10 mm/s | 70 hPa -0.17 | 50 hPa +0.32 | 30 hPa +0.52 | 20 hPa +0.24
@@ -122,12 +136,14 @@ PARADIS tropical (10S-10N) zonal-mean upwelling w = -omega*H/p, 5-yr mean (ERA5-
 
 Reading:
 
-1. **PARADIS has the stratosphere the Held-Suarez model lacks.** Its zonal-mean temperature has the
-   cold tropical tropopause, the warm upper stratosphere and the winter-pole gradients; its zonal wind
-   has both polar-night jets (60°S up to ~95 m/s in austral winter, 60°N 20–50 m/s in boreal winter,
-   summer easterlies) and an equatorial easterly band at 10–30 hPa. The model-minus-PARADIS panels are
-   the Held-Suarez signature: 20–30 K too cold above 30 hPa, 20–30 m/s too weak at both jets, and too
-   westerly at the equator. If PARADIS's circulation drove the tracers, the tropical pipe would be
+1. **PARADIS has the stratosphere the Held-Suarez model lacks, and it is close to ERA5.** Against the
+   2005–2009 ERA5 zonal means PARADIS's temperature is within ±1–3 K in the tropics and Arctic at 10–70 hPa
+   (−4 to −6 K over the Antarctic), and its annual-mean u(60°N, 10 hPa) is 10.0 m/s against ERA5's 9.8;
+   both polar-night jets, the summer easterlies and an equatorial easterly band at 10–30 hPa are there.
+   The model-minus-ERA5 panels are the Held-Suarez signature: −34 K in the tropics and −15 to −19 K over the
+   poles at 10 hPa, −12 K in the tropics at 50 hPa, 20–30 m/s too weak at both jets, too westerly at the
+   equator. PARADIS-minus-ERA5 is small by comparison except for a weak Antarctic cold bias and a too-weak
+   Antarctic jet core. If PARADIS's circulation drove the tracers, the tropical pipe would be
    ventilated far more strongly than in Phase 4 — which is the case for an emulator-driven transport.
 2. **But PARADIS's northern vortex never breaks and weakens over the rollout.** DJF-mean u(60°N, 10 hPa)
    falls from 31 to 16 m/s across the five winters and there is not a single reversal in five winters,
