@@ -27,7 +27,7 @@ run_model() {
   if grep -q '\[launch\].*exit=0' "$rundir/log.txt" 2>/dev/null; then step "skip $name (done)"; return 0; fi
   while tmux ls 2>/dev/null | grep '^strat_' | grep -qv strat_pipeline; do sleep 30; done
   mkdir -p "$rundir"; step "run $name: $*"
-  ( cd "$rundir" && python -m jcm.main --config-dir "$REPO/jcm_strat/config" "$@" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
+  ( cd "$rundir" && python -m jcm_strat.main --config-dir "$REPO/jcm_strat/config" "$@" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
   local rc=$?
   echo "[launch] $(date -Is) exit=$rc" >> "$rundir/log.txt"
   step "done $name exit=$rc"; return $rc
