@@ -93,7 +93,7 @@ multiplicative rescaling. JCM's proportional mass fixer restores each tracer's g
 transport; at the clock's 700 hPa reset edge (0 below, ~150 d above) the quasi-monotone limiter
 creates mass every step, and the fixer removes it by shrinking the *whole* field, stratosphere
 included. A clock is not a conserved quantity and must not be mass-fixed. Fix: `jcm_strat.main`
-with `sl_mass_fixer_exclude: [aoa]` (KEY_DECISIONS #18). Verified on a 5-day run
+with `sl_mass_fixer_exclude: [aoa]` (KEY_DECISIONS #19). Verified on a 5-day run
 (`p3_fixer_5d`: daily means 0.504, 1.504, 2.504, 3.504, 4.504 d) and by the unit test
 `tests/test_mass_fixer_policy.py` (1.00 d after one day on T31L8).
 
@@ -126,4 +126,4 @@ with `sl_mass_fixer_exclude: [aoa]` (KEY_DECISIONS #18). Verified on a 5-day run
 
 ## Decisions taken in this phase
 
-See KEY_DECISIONS.md rows 16–17.
+See KEY_DECISIONS.md rows 17–18.
