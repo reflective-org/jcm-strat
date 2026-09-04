@@ -38,3 +38,10 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | [#32](https://github.com/reflective-org/jcm-strat/issues/32) Winter pole above 10 hPa 20-30 K too warm with the 3 hPa taper | feature | The taper hands the cap back to the standard atmosphere, whose 1-3 hPa values are summer ones; a colder winter stratopause target (or a taper to a winter profile) is needed. |
 | [#35](https://github.com/reflective-org/jcm-strat/issues/35) Full-ECHAM specified-dynamics year has no Arctic vortex (u(60N,10hPa) ~4 m/s all year) and a half-strength Antarctic one | research | Check Hines/SSO drag strength and the radiation + nudging balance in the stock package before using it as the reference stratosphere; rerun with a 6 h target once memory allows. |
 | [#36](https://github.com/reflective-org/jcm-strat/issues/36) tracer_budget pull-up check 192x too large before 2026-09-03 | bug | Fixed on phase6-stratosphere; Phase 3/4 numbers to correct (verdicts unchanged). |
+
+## Found in Phase 7
+
+| Item | Label | Notes |
+|---|---|---|
+| Semi-implicit off-centering vs time step: is `sl_off_centering` (0.2) what limits the step to < 60 min? | research | Two departure iterations did not help at 30 min and only delayed the blow-up at 60/90; sweep off-centering 0.2-0.5 at 45 and 60 min. |
+| Antarctic jet weakening with the step (66 -> 54 m/s at 30 min) | research | Accuracy signature of the fast winter jet; check whether it is the dycore or the 6-hourly nudging interpolation, and whether the 5-year age of air changes at 30 min. |

@@ -65,7 +65,9 @@ time `tau_strat_days` is a separate knob (PK02 and Held-Suarez: 40 d).
 
 All runs are 2005, dt 12 min, 5-day means; metrics over 100-1 hPa, area-weighted, model interpolated
 in log-pressure to ERA5's levels (`scripts/strat_compare.py`). Full table with the WACCM6 rows:
-`strat_metrics.md`.
+`strat_metrics.md`. `strat_climatology_panel.png` puts every model version on one page: full ECHAM
+physics under the same nudging, Held-Suarez, the chosen Polvani-Kushner run, ERA5, WACCM6
+(`scripts/strat_compare.py --panel`).
 
 | run | ref | season | RMSE T 100-1 hPa [K] | RMSE u 100-1 hPa [m/s] | u(60N,10hPa) DJF [m/s] | u(60S,10hPa) JJA [m/s] |
 |---|---|---|---|---|---|---|
@@ -112,6 +114,7 @@ PK_g4_t15_s05_top10 SSW-like reversals (5-day means, +-5 d): 2005-12-02
 PK_g4_t15_s05_top5 SSW-like reversals (5-day means, +-5 d): none
 PK_g4_t15_s05_top3 SSW-like reversals (5-day means, +-5 d): 2005-03-22
 
+![all model versions against ERA5 and WACCM6](strat_climatology_panel.png)
 ![vortex](vortex_series.png)
 ![polar cap](polar_cap_T.png)
 ![climatology, Held-Suarez](strat_climatology_P3_HS.png)
@@ -195,6 +198,59 @@ tracers over 1826 d: unity max |q-1| 2.59e-4, burden drift +1.8e-4; sai -0.77 pe
    dividing by the number of longitudes, so every pull-up ratio it printed before today was 192
    times too large (Phase 3: 0.001 was really 5e-6; the Phase-4 chain's 0.668 is really 0.003;
    this chain's 17.0 is 0.089). No verdict changes, but the Phase 4 record should be corrected.
+
+### Stratospheric circulation patterns of the 5-year chain (`circulation/`, `scripts/strat_circulation.py`)
+
+![Is the BDC there](circulation/bdc_simple.png)
+![QBO time-height](circulation/qbo_time_height.png)
+![TEM residual streamfunction](circulation/tem_streamfunction.png)
+
+`bdc_simple.png` (`scripts/bdc_simple.py`) is the one-look version: the injection tracer after 3 months,
+1, 2 and 5 years, lifted in the tropics and carried poleward and down, and the tropical upward mass
+flux at 70 hPa month by month against WACCM6 (annual means 7.6 vs 6.8 x 10^9 kg/s, monthly
+range 4.7-10.4 vs 4.8-10.0, both peaking in boreal winter).
+
+```
+equatorial u (5S-5N)      QBO: deseasonalised std 10/20/30/50 hPa   SAO amplitude 1/2/3 hPa   mean u 20/30 hPa
+model PK_5yr               4.0 / 3.9 / 3.7 / 2.8 m/s                 5.5 / 6.0 / 5.2 m/s        -14 / -12 m/s
+ERA5 2005-2009            17.5 / 17.5 / 15.2 / 10.7                  30.7 / 20.7 / 15.6         -13 / -8
+WACCM6 histSST            12.6 / 10.0 / 8.6 / 4.6                    18.4 / 20.0 / 18.0          -3 / -1
+
+Brewer-Dobson: tropical upward mass flux (max - min of Psi*, |lat| <= 60), 10^9 kg/s
+                       70 hPa            100 hPa           30 hPa           10 hPa
+                   DJF  JJA  annual   DJF  JJA  annual   DJF  JJA  ann    DJF  JJA  ann
+model PK_5yr        8.8  6.5   7.2    12.7  9.2  10.2     4.5  2.7  3.4    2.0  1.1  1.4
+WACCM6 histSST      8.6  5.4   6.1    13.9  9.5  10.8     4.5  3.2  3.1    2.5  2.1  1.4
+
+tropical ascent from age of air (10S-10N): age at 70/50/30/20/10 hPa; transit 70 -> 10 hPa; mean ascent
+model PK_5yr        1.97 / 2.39 / 2.94 / 3.31 / 3.84 yr    1.87 yr    0.23 mm/s
+CLaMS v3.1 / ERA5   0.75 / 1.66 / 2.62 / 3.08 / 3.68 yr    2.94 yr    0.15 mm/s
+WACCM6 (entry age)  0.54 / 1.17 / 1.99 / 2.45 / 3.01 yr    2.47 yr    0.17 mm/s
+```
+
+10. **No QBO, a weak SAO.** The equatorial stratosphere sits in steady easterlies of 12-14 m/s
+    (the QBO's time mean in ERA5 is also easterly, -13 / -8 m/s at 20 / 30 hPa) with only an
+    annual modulation; the deseasonalised variability is 4 m/s where ERA5 has 17. This was
+    expected (PLANS, issue #6): the QBO is driven by tropical waves the T63 dry model without
+    convection and gravity-wave drag does not generate, and the nudging stops at 150 hPa. The
+    semiannual oscillation at 1-3 hPa is present but at a quarter of ERA5's amplitude. For
+    stratospheric aerosol this matters through the QBO's modulation of tropical confinement
+    and of the Brewer-Dobson upwelling; nudging the tropical stratospheric wind to ERA5 (#6)
+    is the pragmatic fix under specified dynamics.
+11. **The Brewer-Dobson circulation is realistic in structure and strength.** The residual
+    streamfunction shows the deep winter-hemisphere cell reaching 1 hPa, the shallow branches
+    turning around near 100 hPa, and the seasonal reversal, in the same places as WACCM6. The
+    tropical upward mass flux at 70 hPa is 7.2 x 10^9 kg/s annual (WACCM6, same method and
+    years, 6.1; DJF 8.8 vs 8.6, JJA 6.5 vs 5.4) and 10.2 at 100 hPa (10.8). With the
+    troposphere nudged to ERA5 the wave driving of the stratosphere is essentially right, and
+    the analytic stratosphere lets it act. (Model covariances are from 5-day means, so fast
+    transient waves are missing; WACCM6's are daily.)
+12. **The ascent inferred from age of air is right in the mid-stratosphere and wrong at the
+    entry.** Transit 70 -> 10 hPa is 1.9 yr against CLaMS 2.9 (0.23 vs 0.15 mm/s), while the
+    age at 70 hPa is already 2.0 yr against 0.75: too much aged air is mixed into the tropical
+    lower stratosphere (or the tropical tropopause is too permeable) and then lifted at roughly
+    the right rate. Consistent with the 10 K warm tropical tropopause of the standard-atmosphere
+    target (#31) and with the age-of-air profiles above.
 
 9. **Against JCM's own full physics, the analytic stratosphere wins on winds and loses on
    temperature.** The full-ECHAM specified-dynamics year (`echam_ref/`) has the better temperature
