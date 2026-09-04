@@ -118,7 +118,7 @@ Polvani-Kushner.
 | Polar-night jet | no | yes, strength set by γ and τ | yes, from first principles |
 | Seasons | none | added by hand (jcm-strat version) | yes |
 | Sudden stratospheric warmings | impossible | yes, some | yes |
-| QBO / SAO (section 5) | neither | neither (QBO must be nudged) | SAO yes; QBO only with fine tropical levels and tuned gravity-wave drag |
+| QBO (section 5) | no | no (must be nudged) | only with fine tropical levels and tuned gravity-wave drag |
 | Brewer-Dobson circulation | too weak | close to observed | observed |
 | Water, clouds, convection | none | none | yes |
 | Response of the stratosphere to aerosol heating | none | none (would need a heating term) | yes, from the radiation code |
@@ -142,11 +142,11 @@ Polvani-Kushner.
   radiation back with prescribed trace gases first (issue 2), then aerosol (issue 9), using the
   Polvani-Kushner configuration as the cheap control that isolates what each addition changes.
 
-## 5. Two oscillations of the tropical stratosphere: QBO and SAO
+## 5. The QBO: the tropical oscillation the relaxation targets do not contain
 
-The explanations above are about the time-mean state. The tropical stratosphere also has two
-regular swings of the wind that no relaxation target contains, and one of them matters a great
-deal for aerosol.
+The explanations above are about the time-mean state. The tropical stratosphere also has a
+regular swing of the wind that no relaxation target contains, and it matters a great deal for
+aerosol.
 
 **The QBO (quasi-biennial oscillation)** lives in the lower and middle tropical stratosphere,
 roughly 70 to 10 hPa (18 to 32 km). The zonal wind there alternates between easterlies and
@@ -171,20 +171,5 @@ Because the QBO is not going to appear on its own in this configuration, the sta
 nudge the tropical stratospheric wind towards observations (issue 6, now unblocked because the
 CDS ERA5 data reaches 1 hPa).
 
-**The SAO (semi-annual oscillation)** lives higher, in the upper stratosphere and lower
-mesosphere, roughly 1 to 0.1 hPa (45 to 65 km). The equatorial wind there swings from easterly
-to westerly twice a year, with maxima near the equinoxes and amplitudes of 20 to 30 m/s at the
-stratopause. Its easterly phase comes from the seasonal mesospheric circulation carrying easterly
-momentum across the equator at each solstice; its westerly phase from Kelvin and gravity waves
-breaking there. Models with weak upper-level wave forcing get a weak SAO, and so does ours: the
-record shows it present at 1 to 3 hPa but at about a quarter of ERA5's amplitude.
-
-Why it matters less: the SAO shapes transport above about 40 km, well above the aerosol layer,
-and while it sets the wind regime the QBO descends into and contributes to the upper branch of the
-Brewer-Dobson circulation, the lower branch that controls aerosol lifetime is driven by
-extratropical planetary waves. A weak SAO is a useful symptom (it says the upper-stratospheric
-wave forcing is too weak) but fixing it would not change the age of air at 20 km much.
-
-In short: no relaxation target, Held-Suarez or Polvani-Kushner, produces either oscillation; the
-QBO is the one that affects the transport question and has to be supplied by nudging; the SAO is
-worth recording and not worth chasing.
+In short: no relaxation target, Held-Suarez or Polvani-Kushner, produces a QBO; it affects the
+transport question directly and has to be supplied by nudging.
