@@ -201,8 +201,14 @@ tracers over 1826 d: unity max |q-1| 2.59e-4, burden drift +1.8e-4; sai -0.77 pe
 
 ### Stratospheric circulation patterns of the 5-year chain (`circulation/`, `scripts/strat_circulation.py`)
 
+![Is the BDC there](circulation/bdc_simple.png)
 ![QBO time-height](circulation/qbo_time_height.png)
 ![TEM residual streamfunction](circulation/tem_streamfunction.png)
+
+`bdc_simple.png` (`scripts/bdc_simple.py`) is the one-look version: the injection tracer after 3 months,
+1, 2 and 5 years, lifted in the tropics and carried poleward and down, and the tropical upward mass
+flux at 70 hPa month by month against WACCM6 (annual means 7.6 vs 6.8 x 10^9 kg/s, monthly
+range 4.7-10.4 vs 4.8-10.0, both peaking in boreal winter).
 
 ```
 equatorial u (5S-5N)      QBO: deseasonalised std 10/20/30/50 hPa   SAO amplitude 1/2/3 hPa   mean u 20/30 hPa
