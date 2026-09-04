@@ -15,7 +15,8 @@ from jcm.physics.held_suarez.utils import get_held_suarez_coords
 from jcm.physics_interface import compute_physics_step_gridpoint
 
 from jcm_strat.held_suarez_columns import HeldSuarezColumns
-from jcm_strat.qbo_nudging import QboNudging
+from jcm_strat.polvani_kushner import PolvaniKushnerColumns
+from jcm_strat.qbo_nudging import PolvaniKushnerQbo, QboNudging
 
 ERA5 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache", "era5_ref", "era5_zm_monthly_*.nc")
 pytestmark = pytest.mark.skipif(not glob.glob(ERA5), reason="ERA5 zonal-mean reference files not present")
@@ -65,3 +66,20 @@ def test_tendency_is_zonal_mean_relaxation():
         assert np.allclose(du[:, 0, :], expected, rtol=1e-4, atol=1e-12)
         assert np.all(du[:, 0, np.abs(lat) > 25.5] == 0.0)
         assert np.abs(du).max() > 0.0
+
+
+def test_combined_term_equals_pk_plus_qbo():
+    coords = get_held_suarez_coords()
+    qbo_kw = dict(era5_glob=ERA5, year=2005, tau_days=10.0, p_bot_hpa=300.0, p_top_hpa=4.0, taper_decades=0.2)
+    combined = ComposablePhysics(terms=[PolvaniKushnerQbo(qbo=qbo_kw)], checkpoint_terms=False, vectorize_columns=True)
+    separate = ComposablePhysics(terms=[PolvaniKushnerColumns(), QboNudging(**qbo_kw)], checkpoint_terms=False, vectorize_columns=True)
+    outs = []
+    for physics in (combined, separate):
+        model = Model(coords=coords, time_step=10, physics=physics)
+        state = model.dycore.to_physics_state(model._prepare_initial_dycore_state())
+        tend, _ = compute_physics_step_gridpoint(state, forcing=None, terrain=None,
+                                                 physics_state_carry=model._build_initial_physics_carry(),
+                                                 physics=model.physics, time_step=10 * 60)
+        outs.append((np.asarray(tend.u_wind), np.asarray(tend.temperature)))
+    assert np.allclose(outs[0][0], outs[1][0], rtol=1e-6, atol=1e-12)
+    assert np.allclose(outs[0][1], outs[1][1], rtol=1e-6, atol=1e-12)

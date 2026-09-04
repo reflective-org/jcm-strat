@@ -49,6 +49,8 @@ from jcm.physics.coords_util import column_lat_lon
 from jcm.physics.physics_term import PhysicsTerm
 from jcm.physics_interface import PhysicsState, PhysicsTendency
 
+from jcm_strat.polvani_kushner import PolvaniKushnerColumns
+
 P0_PA = 101325.0
 DAY = 86400.0
 
@@ -69,7 +71,9 @@ class QboNudging(PhysicsTerm):
         p_bot_hpa: float = 90.0,
         p_top_hpa: float = 4.0,
         taper_decades: float = 0.35,
+        use_calendar: bool = True,
     ) -> None:
+        self.use_calendar = bool(use_calendar)   # False: fixed target (first month), for memory tests
         files = sorted(glob.glob(era5_glob), key=lambda f: int(xr.open_dataset(f, decode_times=False).attrs.get("year", 0)))
         if not files:
             raise FileNotFoundError(f"QboNudging: no ERA5 zonal-mean files match {era5_glob}")
@@ -132,11 +136,44 @@ class QboNudging(PhysicsTerm):
         s = jax.ops.segment_sum(field.T, idx, num_segments=self.nlat)                            # (nlat, nlev)
         return (s / self._counts.get_value()[:, None]).T
 
-    def __call__(self, state: PhysicsState, diagnostics: dict, forcing, terrain):
-        solar = getattr(forcing, "solar", None)
-        tyear = solar.tyear if solar is not None else jnp.asarray(0.0)
-        ubar = self.zonal_mean(state.u_wind)                                                     # (nlev, nlat), m/s
+    def tendency(self, u_cols, tyear):
+        """QBO-nudging tendency of u (nondimensional rate x m/s) for column-vectorized u (nlev, ncols)."""
+        ubar = self.zonal_mean(u_cols)                                                           # (nlev, nlat), m/s
         tend_lat = -self.k * self._w.get_value() * (ubar - self._target_now(tyear))             # (nlev, nlat)
-        tend = tend_lat[:, self._lat_idx.get_value()]                                            # (nlev, ncols)
+        return tend_lat[:, self._lat_idx.get_value()]                                            # (nlev, ncols)
+
+    def __call__(self, state: PhysicsState, diagnostics: dict, forcing, terrain):
+        solar = getattr(forcing, "solar", None) if self.use_calendar else None
+        tyear = solar.tyear if solar is not None else jnp.asarray(0.0)
+        tend = self.tendency(state.u_wind, tyear)
         zeros = jnp.zeros_like(state.temperature)
         return PhysicsTendency(u_wind=tend, v_wind=zeros, temperature=zeros, specific_humidity=zeros), diagnostics
+
+
+class PolvaniKushnerQbo(PolvaniKushnerColumns):
+    """Polvani-Kushner relaxation plus QBO nudging in ONE term.
+
+    Functionally identical to running ``PolvaniKushnerColumns`` and ``QboNudging`` as two terms.
+    It exists because of a memory effect on the GPU: a second term reading ``forcing`` (for the
+    fraction of year) made the compiled step hold an extra copy of the 29 GB ERA5 nudging target
+    and the T63L95 run went out of memory (runs/p8_qbo_2005_oom, with and without per-term
+    checkpointing), while the same term with a fixed target fitted. The Polvani-Kushner term
+    already reads ``forcing.solar.tyear``, so the QBO tendency is computed inside it from the same
+    value. Configure the QBO part through the ``qbo`` mapping (QboNudging's arguments).
+    """
+
+    def __init__(self, qbo: dict | None = None, **pk_kwargs) -> None:
+        super().__init__(**pk_kwargs)
+        self.qbo = QboNudging(**dict(qbo or {}))
+
+    def cache_coords(self, coords) -> None:
+        super().cache_coords(coords)
+        self.qbo.cache_coords(coords)
+
+    def __call__(self, state: PhysicsState, diagnostics: dict, forcing, terrain):
+        tend, diagnostics = super().__call__(state, diagnostics, forcing, terrain)
+        solar = getattr(forcing, "solar", None) if self.qbo.use_calendar else None
+        tyear = solar.tyear if solar is not None else jnp.asarray(0.0)
+        du = self.qbo.tendency(state.u_wind, tyear)
+        return PhysicsTendency(u_wind=tend.u_wind + du, v_wind=tend.v_wind, temperature=tend.temperature,
+                               specific_humidity=tend.specific_humidity), diagnostics

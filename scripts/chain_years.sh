@@ -4,7 +4,7 @@
 #
 #   tmux new-session -d -s strat_p4_chain 'bash scripts/chain_years.sh'
 #   EXPERIMENT=p6_pk PREFIX=p6 tmux new-session -d -s strat_p6_chain 'bash scripts/chain_years.sh'
-#   EXPERIMENT=p8_qbo PREFIX=p8 EXTRA_PER_YEAR="physics.terms.qbo_nudging.year={year}" tmux new-session -d -s strat_p8_chain 'bash scripts/chain_years.sh'
+#   EXPERIMENT=p8_qbo PREFIX=p8 EXTRA_PER_YEAR="physics.terms.held_suarez.qbo.year={year}" tmux new-session -d -s strat_p8_chain 'bash scripts/chain_years.sh'
 #
 # EXPERIMENT (default p4_5yr) is the hydra experiment; PREFIX (default p4) names the runs
 # runs/<PREFIX>_<year> and the aggregate runs/<PREFIX>_5yr.
@@ -15,7 +15,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 source "$REPO/scripts/env.sh"
 EXPERIMENT="${EXPERIMENT:-p4_5yr}"; PREFIX="${PREFIX:-p4}"
 # EXTRA_PER_YEAR: optional extra hydra overrides per segment; the literal {year} is replaced by the
-# segment's calendar year, e.g. EXTRA_PER_YEAR="physics.terms.qbo_nudging.year={year}".
+# segment's calendar year, e.g. EXTRA_PER_YEAR="physics.terms.held_suarez.qbo.year={year}".
 EXTRA_PER_YEAR="${EXTRA_PER_YEAR:-}"
 LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"
 step() { echo "[chain] $(date -Is) $*" | tee -a "$LOG"; }

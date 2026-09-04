@@ -1,8 +1,8 @@
 # @package _global_
 # Phase 8 experiment: Phase 6 (Polvani-Kushner seasonal stratosphere, ERA5-nudged troposphere,
 # four passive tracers) plus QBO nudging towards ERA5 monthly zonal-mean winds. Usage:
-#   scripts/launch.sh p8_qbo_2005 +experiment=p8_qbo run.start_date=2005-01-01 physics.terms.qbo_nudging.year=2005
-#   EXPERIMENT=p8_qbo PREFIX=p8 EXTRA_PER_YEAR="physics.terms.qbo_nudging.year={year}" \
+#   scripts/launch.sh p8_qbo_2005 +experiment=p8_qbo run.start_date=2005-01-01 physics.terms.held_suarez.qbo.year=2005
+#   EXPERIMENT=p8_qbo PREFIX=p8 EXTRA_PER_YEAR="physics.terms.held_suarez.qbo.year={year}" \
 #     tmux new-session -d -s strat_p8_chain 'bash scripts/chain_years.sh'
 defaults:
   - /experiment/p6_pk
