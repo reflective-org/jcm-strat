@@ -4,6 +4,7 @@
 #
 #   tmux new-session -d -s strat_p4_chain 'bash scripts/chain_years.sh'
 #   EXPERIMENT=p6_pk PREFIX=p6 tmux new-session -d -s strat_p6_chain 'bash scripts/chain_years.sh'
+#   EXPERIMENT=p8_qbo PREFIX=p8 EXTRA_PER_YEAR="physics.terms.qbo_nudging.year={year}" tmux new-session -d -s strat_p8_chain 'bash scripts/chain_years.sh'
 #
 # EXPERIMENT (default p4_5yr) is the hydra experiment; PREFIX (default p4) names the runs
 # runs/<PREFIX>_<year> and the aggregate runs/<PREFIX>_5yr.
@@ -13,6 +14,9 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 # shellcheck disable=SC1091
 source "$REPO/scripts/env.sh"
 EXPERIMENT="${EXPERIMENT:-p4_5yr}"; PREFIX="${PREFIX:-p4}"
+# EXTRA_PER_YEAR: optional extra hydra overrides per segment; the literal {year} is replaced by the
+# segment's calendar year, e.g. EXTRA_PER_YEAR="physics.terms.qbo_nudging.year={year}".
+EXTRA_PER_YEAR="${EXTRA_PER_YEAR:-}"
 LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"
 step() { echo "[chain] $(date -Is) $*" | tee -a "$LOG"; }
 if nvidia-smi -i 0 --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
@@ -28,9 +32,10 @@ for y in "${YEARS[@]}"; do
   mkdir -p "$rundir"
   init=()
   if [ -n "$prev" ]; then init=(init=from_state "init.file=$prev/checkpoint.ckpt"); fi
-  step "run $name: $days days ${init[*]:-init=era5}"
+  extra=(); if [ -n "$EXTRA_PER_YEAR" ]; then read -r -a extra <<< "${EXTRA_PER_YEAR//\{year\}/$y}"; fi
+  step "run $name: $days days ${init[*]:-init=era5} ${extra[*]}"
   ( cd "$rundir" && python -m jcm_strat.main --config-dir "$REPO/jcm_strat/config" "+experiment=$EXPERIMENT" ++run.checkpoint_path=checkpoint.ckpt \
-      "run.start_date=$y-01-01" "run.total_time=$days" "${init[@]}" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
+      "run.start_date=$y-01-01" "run.total_time=$days" "${init[@]}" "${extra[@]}" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
   rc=$?; echo "[launch] $(date -Is) exit=$rc" >> "$rundir/log.txt"
   step "done $name exit=$rc"
   [ $rc -eq 0 ] || { step "segment $name FAILED - stopping"; exit 1; }

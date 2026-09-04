@@ -1,0 +1,30 @@
+# Phase 8 physics: the Phase 6 Polvani-Kushner stratosphere and the four passive tracers, plus
+# QBO nudging of the tropical stratospheric zonal-mean wind towards ERA5 monthly means
+# (jcm_strat/qbo_nudging.py, issue #6). Only the zonal mean is relaxed, in |lat| < 25 deg and
+# 4-90 hPa (full weight 15 deg / 9-40 hPa), tau 10 d. The `year` selects the ERA5 year and is set
+# per segment by scripts/chain_years.sh (EXTRA_PER_YEAR).
+vectorize_columns: true
+checkpoint_terms: true
+
+terms:
+  held_suarez:
+    _target_: jcm_strat.polvani_kushner.PolvaniKushnerColumns
+    gamma_k_per_km: 4.0
+    p_tropopause_hpa: 100.0
+    phi0_deg: 50.0
+    delta_phi_deg: 10.0
+    epsilon_k: 10.0
+    season_offset: 0.5
+    p_vortex_top_hpa: 3.0
+    tau_strat_days: 15.0
+  passive_tracers:
+    _target_: jcm_strat.tracers.PassiveTracers
+  qbo_nudging:
+    _target_: jcm_strat.qbo_nudging.QboNudging
+    era5_glob: /data/JCM_stripped/jcm-strat/cache/era5_ref/era5_zm_monthly_*.nc
+    year: 2005
+    tau_days: 10.0
+    lat_full_deg: 15.0
+    lat_zero_deg: 25.0
+    p_bot_hpa: 90.0
+    p_top_hpa: 4.0
