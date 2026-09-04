@@ -4,7 +4,12 @@
 # 4-90 hPa (full weight 15 deg / 9-40 hPa), tau 10 d. The `year` selects the ERA5 year and is set
 # per segment by scripts/chain_years.sh (EXTRA_PER_YEAR).
 vectorize_columns: true
-checkpoint_terms: true
+# checkpoint_terms off: jax.checkpoint wraps every term with its full argument list, and with the
+# QboNudging term added the compiled step tried to hold a second copy of the 29 GB ERA5 nudging
+# target (RESOURCE_EXHAUSTED allocating 29.45 GiB, runs/p8_qbo_2005_oom); without per-term
+# checkpointing the same run fits with room to spare. Checkpointing only trades memory for
+# recomputation, so results are unchanged, and these terms are cheap.
+checkpoint_terms: false
 
 terms:
   held_suarez:
