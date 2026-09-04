@@ -3,9 +3,12 @@
 # (jcm_strat/qbo_nudging.py, issue #6). Only the zonal mean is relaxed, in |lat| < 25 deg and
 # 4-90 hPa (full weight 15 deg / 9-40 hPa), tau 10 d.
 #
-# The QBO nudging lives INSIDE the Polvani-Kushner term (PolvaniKushnerQbo) rather than as a
-# separate term: a second term reading forcing.solar.tyear made the compiled GPU step hold an
-# extra copy of the 29 GB ERA5 nudging target (runs/p8_qbo_2005_oom). Same maths, one term.
+# The QBO nudging lives inside the Polvani-Kushner term (PolvaniKushnerQbo): same maths as a
+# separate term (unit-tested), one read of the fraction of year. Memory note: the first Phase 8
+# runs went out of GPU memory (runs/p8_qbo_2005_oom*) because JAX preallocates only 75 percent of
+# the card and the step needs two copies of the 29 GB one-year nudging target at times; the
+# Phase 6 configuration sat just below that ceiling. scripts/env.sh now sets
+# XLA_PYTHON_CLIENT_MEM_FRACTION=0.92.
 # `qbo.year` selects the ERA5 year and is set per segment by scripts/chain_years.sh
 # (EXTRA_PER_YEAR="physics.terms.held_suarez.qbo.year={year}").
 vectorize_columns: true

@@ -73,7 +73,7 @@ class QboNudging(PhysicsTerm):
         taper_decades: float = 0.35,
         use_calendar: bool = True,
     ) -> None:
-        self.use_calendar = bool(use_calendar)   # False: fixed target (first month), for memory tests
+        self.use_calendar = bool(use_calendar)   # False: fixed target (first month); only for tests
         files = sorted(glob.glob(era5_glob), key=lambda f: int(xr.open_dataset(f, decode_times=False).attrs.get("year", 0)))
         if not files:
             raise FileNotFoundError(f"QboNudging: no ERA5 zonal-mean files match {era5_glob}")
@@ -153,13 +153,14 @@ class QboNudging(PhysicsTerm):
 class PolvaniKushnerQbo(PolvaniKushnerColumns):
     """Polvani-Kushner relaxation plus QBO nudging in ONE term.
 
-    Functionally identical to running ``PolvaniKushnerColumns`` and ``QboNudging`` as two terms.
-    It exists because of a memory effect on the GPU: a second term reading ``forcing`` (for the
-    fraction of year) made the compiled step hold an extra copy of the 29 GB ERA5 nudging target
-    and the T63L95 run went out of memory (runs/p8_qbo_2005_oom, with and without per-term
-    checkpointing), while the same term with a fixed target fitted. The Polvani-Kushner term
-    already reads ``forcing.solar.tyear``, so the QBO tendency is computed inside it from the same
-    value. Configure the QBO part through the ``qbo`` mapping (QboNudging's arguments).
+    Functionally identical to running ``PolvaniKushnerColumns`` and ``QboNudging`` as two terms
+    (a unit test asserts it). It was written while chasing a GPU out-of-memory in the first
+    Phase 8 runs; the actual cause turned out to be JAX's default 75 percent preallocation
+    (60 of 80 GB) with two copies of the 29 GB one-year nudging target in flight inside the
+    compiled step - the Phase 6 configuration sat just below that ceiling and any extra term
+    pushed it over. The fix is ``XLA_PYTHON_CLIENT_MEM_FRACTION=0.92`` in ``scripts/env.sh``. The
+    one-term form is kept because it is marginally cheaper and reads the fraction of year once.
+    Configure the QBO part through the ``qbo`` mapping (QboNudging's arguments).
     """
 
     def __init__(self, qbo: dict | None = None, **pk_kwargs) -> None:

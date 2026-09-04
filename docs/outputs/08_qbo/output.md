@@ -30,11 +30,15 @@ phase does that and measures what changes.
 Implementation notes: the term runs on the column path; the zonal mean is a segment mean over the
 columns of each latitude row; the fraction of year comes from `forcing.solar.tyear` like the
 seasonal Polvani-Kushner term and the calendar year is a config argument that the segment chain
-passes per year (`EXTRA_PER_YEAR="physics.terms.qbo_nudging.year={year}"`). Two CPU tests check the
-weights and that the tendency equals −k w (ū − target) exactly. One hazard found and fixed: with
-JAX's per-term checkpointing on, adding the term made the compiled step hold a second copy of the
-29 GB nudging target on the GPU (`p8_qbo_2005_oom`); `checkpoint_terms: false` in the QBO physics
-config removes that with no change to the results.
+passes per year (`EXTRA_PER_YEAR="physics.terms.held_suarez.qbo.year={year}"`). The QBO tendency is
+computed inside the Polvani-Kushner term (`PolvaniKushnerQbo`); three CPU tests check the weights,
+that the tendency equals −k w (ū − target) exactly, and that the combined term equals the two-term
+sum. One hazard found: the first three attempts at the 2005 run died with `RESOURCE_EXHAUSTED`
+allocating 29.45 GiB (`p8_qbo_2005_oom`, `_oom2`). JAX preallocates 75 % of the card (60 of 80 GB) by
+default; the compiled step holds the 29 GB one-year nudging target and at times a second copy of it,
+so the Phase 6 configuration sat just below that ceiling and any additional term tipped it over
+(30-day tests were misleading because their target is 12 times smaller). `scripts/env.sh` now sets
+`XLA_PYTHON_CLIENT_MEM_FRACTION=0.92`; nothing about the physics changed.
 
 ## Runs
 

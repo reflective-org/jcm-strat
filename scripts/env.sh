@@ -9,6 +9,11 @@ export HF_HOME="$JCM_STRAT_REPO/cache/huggingface"      # jcm boundary files (hf
 export JCM_ERA5_CACHE="$JCM_STRAT_REPO/cache/era5"       # regridded WeatherBench2 ERA5 windows
 export SCRATCH="$JCM_STRAT_REPO/scratch"                 # jcm puts its JAX compile cache in $SCRATCH/jcm-jax-cache
 export CUDA_VISIBLE_DEVICES=0                            # project policy: GPU 0 only
+# JAX preallocates 75 % of the card by default (60 GB of 80). A one-year 6-hourly L95 nudging
+# target is 29 GB and the compiled step needs a second copy of it at times, so the Phase 6
+# configuration sat just under that ceiling and the QBO term pushed it over (runs/p8_qbo_2005_oom).
+# We are alone on our GPU, so let JAX use 92 %.
+export XLA_PYTHON_CLIENT_MEM_FRACTION="${XLA_PYTHON_CLIENT_MEM_FRACTION:-0.92}"
 # The venv's editable install of jcm_strat points at the main checkout; in a git worktree the
 # tree that sourced this file must win, so put it first on the import path.
 export PYTHONPATH="$JCM_STRAT_REPO${PYTHONPATH:+:$PYTHONPATH}"
