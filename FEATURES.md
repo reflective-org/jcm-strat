@@ -15,3 +15,5 @@ What works today. Updated with every PR.
 | PDF report of all phase records | Phase 4 | `scripts/make_report.py` → `docs/outputs/jcm-strat_phases_0-4.pdf` |
 | PARADIS rollout circulation comparison (zonal means of u, v, T, omega cached from the raw state.zarr; climatology and vortex panels against the model) | Phase 4 | `scripts/paradis_zonal.py`, `scripts/paradis_circulation.py`, `scripts/vortex_series.py --paradis` |
 | Offline age-of-air clocks carried by a PARADIS rollout's winds (semi-Lagrangian on the rollout's grid, JAX/GPU, surface and 150 hPa resets); fourth and fifth sources in the age-of-air comparison | Phase 4 | `scripts/paradis_offline_clock.py`, `scripts/aoa_vs_clams.py --paradis-clock` |
+| QBO nudging of the tropical stratospheric zonal-mean wind towards ERA5 monthly means, inside the Polvani-Kushner term; per-segment year via `EXTRA_PER_YEAR` | Phase 8 | `jcm_strat/qbo_nudging.py`, `physics/strat_pk_qbo.yaml`, `+experiment=p8_qbo`, `tests/test_qbo_nudging.py` |
+| Before/after comparison of the equatorial wind (time-height, amplitude profiles, confinement of the change) | Phase 8 | `scripts/qbo_compare.py`; `aoa_vs_clams.py --second-run` |

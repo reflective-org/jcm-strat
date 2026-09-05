@@ -10,7 +10,7 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | [#3](https://github.com/reflective-org/jcm-strat/issues/3) | Time-step sweep 12→30→60→120 min | research | SL PR reports an accuracy knee near 30 min. |
 | [#4](https://github.com/reflective-org/jcm-strat/issues/4) | Reduced ~30–44-level grid | feature | New table in `echam_levels.py` + `(63, N)` diffusion orders; ≥ 20 levels over 150–1 hPa. |
 | [#5](https://github.com/reflective-org/jcm-strat/issues/5) | Polvani-Kushner 2002 stratosphere (polar-night jet without radiation) | feature | ~150 lines extending `HeldSuarez`. |
-| [#6](https://github.com/reflective-org/jcm-strat/issues/6) | QBO nudging of tropical stratospheric wind | blocked | Needs ERA5 above 60 hPa (CDS 37-level or SPARC QBO tape). |
+| [#6](https://github.com/reflective-org/jcm-strat/issues/6) | QBO nudging of tropical stratospheric wind | feature | **Done in Phase 8** (`docs/outputs/08_qbo`); close when the branch is merged. Cheaper zonal-mean reduction: #44. |
 | [#7](https://github.com/reflective-org/jcm-strat/issues/7) | Segment-parallel 30-year runs | research | Only if the project ever needs more than GPU 0. |
 | [#8](https://github.com/reflective-org/jcm-strat/issues/8) | Local mass consistency / expose `mass_fixer=False` on the CLI | research | Only if Phase-3 `unity` deviations are large. |
 | [#9](https://github.com/reflective-org/jcm-strat/issues/9) | MAM4 aerosol + SO2 injection (`jcm[mam4]`, GPL) | feature | |
