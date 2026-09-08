@@ -63,14 +63,18 @@ runs; climatology panels for 30 and 45 min.
 ![throughput](throughput.png)
 
 ```
-                 T RMSE [K]  u RMSE [m/s]  u 60N DJF  u 60S JJA   stepping days/hr   ms/step
-dt 12, 1 it.        6.7         6.8          38         66            4 445             7
-dt 30, 1 it.        6.8         7.7          33         54           10 432             7
-dt 30, 2 it.        6.9         8.4          31         53            8 602             9
-dt 45, 2 it.        7.5        13.4          38         48           12 369             9
+                 T RMSE [K]  u RMSE [m/s]  u 60N DJF  u 60S JJA   stepping days/hr   ms/step   sim. yr/hr   wall per 6 h sim.
+dt 12, 1 it.        6.7         6.8          38         66            4 445             7        12.2       0.20 s (30 x 7 ms)
+dt 30, 1 it.        6.8         7.7          33         54           10 432             7        28.6       0.09 s (12 x 7 ms)
+dt 30, 2 it.        6.9         8.4          31         53            8 602             9        23.6       0.10 s (12 x 9 ms)
+dt 45, 2 it.        7.5        13.4          38         48           12 369             9        33.9       0.07 s ( 8 x 9 ms)
 dt 60, 2 it.       24.6       178.3        -216       -185      (unphysical)
 dt 90, 2 it.       35.7       285.5        -311       -323      (unphysical)
 ERA5                 -           -           38         78
+
+sim. yr/hr = stepping days/hr / 365.25; wall per 6 h simulated = steps in 6 h x ms/step (kernel only,
+one GPU; a 6 h step is what PARADIS takes in one step). End-to-end for one year incl. compile and
+output: 2 012 days/hr (5.5 yr/hr) at 12 min, 1 891 days/hr (5.2 yr/hr) at 30 min, see reading 2.
 ```
 
 ## Reading
