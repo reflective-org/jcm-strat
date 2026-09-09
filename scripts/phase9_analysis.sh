@@ -41,8 +41,9 @@ runs_args=(); while read -r label rundir; do
   case "$label" in \#*|"") continue;; esac
   grep -q 'chain finished' "$REPO/runs/$(basename "$rundir" | sed 's/_5yr$//')_chain.log" 2>/dev/null && runs_args+=(--run "$label=$REPO/$rundir")
 done < "$RUNS"
-if [ ${#runs_args[@]} -ge 2 ]; then
-  step "strat_compare over ${#runs_args[@]} runs"
+nruns=$(( ${#runs_args[@]} / 2 ))
+if [ "$nruns" -ge 2 ]; then
+  step "strat_compare over $nruns runs"; mkdir -p "$OUT/strat"
   python scripts/strat_compare.py "$OUT/strat" "${runs_args[@]}" --years $YEARS --panel > "$OUT/strat/log.txt" 2>&1 || step "strat_compare failed"
   step "resolution_metrics"
   python scripts/resolution_metrics.py "$OUT" "${runs_args[@]}" --years $YEARS --last-saves 73 --throughput "$REPO/docs/outputs/throughput.csv" 2>&1 | tail -20
