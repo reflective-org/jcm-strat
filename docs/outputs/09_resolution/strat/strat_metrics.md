@@ -1,0 +1,18 @@
+| run | ref | season | RMSE T 100-1 hPa [K] | RMSE u 100-1 hPa [m/s] | u(60N,10hPa) DJF [m/s] | u(60S,10hPa) JJA [m/s] |
+|---|---|---|---|---|---|---|
+| T63L95 | ERA5 | DJF | 8.7 | 10.1 | 31 (ref 28) | 2 (ref -8) |
+| T63L95 | ERA5 | JJA | 8.1 | 10.8 | -2 (ref -9) | 64 (ref 72) |
+| T63L95 | ERA5 | annual | 6.3 | 4.9 | 14 (ref 10) | 31 (ref 33) |
+| T63L95 | WACCM6 | DJF | 8.1 | 9.2 | 31 (ref 24) | 2 (ref 6) |
+| T63L95 | WACCM6 | JJA | 8.1 | 7.9 | -2 (ref -8) | 64 (ref 73) |
+| T63L95 | WACCM6 | annual | 6.2 | 6.3 | 14 (ref 9) | 31 (ref 43) |
+| T63L63 | ERA5 | DJF | 8.8 | 10.5 | 31 (ref 28) | 2 (ref -8) |
+| T63L63 | ERA5 | JJA | 8.4 | 11.2 | -1 (ref -9) | 64 (ref 72) |
+| T63L63 | ERA5 | annual | 6.1 | 4.6 | 14 (ref 10) | 31 (ref 33) |
+| T63L63 | WACCM6 | DJF | 8.2 | 9.4 | 31 (ref 24) | 2 (ref 6) |
+| T63L63 | WACCM6 | JJA | 8.3 | 8.3 | -1 (ref -8) | 64 (ref 73) |
+| T63L63 | WACCM6 | annual | 6.1 | 6.2 | 14 (ref 9) | 31 (ref 43) |
+
+ERA5 SSW central dates (60N, 10 hPa reversal, Nov-Mar, not final warmings): 2006-01-21, 2006-02-11, 2007-02-24, 2008-02-22, 2008-03-14, 2009-01-24
+T63L95 SSW-like reversals (5-day means, +-5 d): 2008-03-26, 2009-01-31, 2009-12-07
+T63L63 SSW-like reversals (5-day means, +-5 d): 2009-02-05, 2009-12-07

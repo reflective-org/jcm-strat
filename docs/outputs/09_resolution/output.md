@@ -87,11 +87,11 @@ cost stand beside it, unweighted (`scripts/resolution_metrics.py`).
 | run | days | segments | status |
 |---|---|---|---|
 | `p9smoke_*` (8) | 5 | 1 | all exit 0: no OOM, ERA5 from cache, lmidatm diffusion profile in use, health OK |
-| `p9_t63l63_*` → `p9_t63l63_5yr` | 1825 | 5 | queued |
-| `p9_t63l47_*` → `p9_t63l47_5yr` | 1825 | 5 | queued |
+| `p9_t63l63_*` → `p9_t63l63_5yr` | 1825 | 5 | **done**, 65 min on GPU 0 (2026-09-09 20:40–21:45), all segments exit 0 |
+| `p9_t63l47_*` → `p9_t63l47_5yr` | 1825 | 5 | running (GPU 0) |
 | `p9_t85l95_*` → `p9_t85l95_5yr` | 1825 | 10 | queued |
 | `p9_t119l95_*` → `p9_t119l95_5yr` | 1825 | 20 | queued |
-| `p9_t85l63`, `p9_t85l47`, `p9_t119l63`, `p9_t119l47` | 1825 | 10 / 5 / 20 / 10 | queued (wave 2) |
+| `p9_t85l63`, `p9_t85l47`, `p9_t119l63`, `p9_t119l47` | 1825 | 10 / 5 / 20 / 10 | wave 2; T85L63 running (GPU 2), T85L47 running (GPU 1) — Susanne released GPUs 0–2 for this day |
 
 ## Acceptance
 
