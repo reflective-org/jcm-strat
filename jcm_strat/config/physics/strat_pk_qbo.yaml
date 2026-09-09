@@ -1,7 +1,9 @@
 # Phase 8 physics: the Phase 6 Polvani-Kushner stratosphere and the four passive tracers, plus
 # QBO nudging of the tropical stratospheric zonal-mean wind towards ERA5 monthly means
 # (jcm_strat/qbo_nudging.py, issue #6). Only the zonal mean is relaxed, in |lat| < 25 deg and
-# 4-90 hPa (full weight 15 deg / 9-40 hPa), tau 10 d.
+# 1-90 hPa (full weight 15 deg / 2.2-40 hPa), tau 10 d. The first Phase 8 chain (runs/p8_*) used
+# p_top_hpa 4; the 1 hPa top (runs/p8b_*) removed the easterly bias above the window at no cost
+# elsewhere (KEY_DECISIONS #26).
 #
 # The QBO nudging lives inside the Polvani-Kushner term (PolvaniKushnerQbo): same maths as a
 # separate term (unit-tested), one read of the fraction of year. Memory note: the first Phase 8
@@ -32,6 +34,6 @@ terms:
       lat_full_deg: 15.0
       lat_zero_deg: 25.0
       p_bot_hpa: 90.0
-      p_top_hpa: 4.0
+      p_top_hpa: 1.0
   passive_tracers:
     _target_: jcm_strat.tracers.PassiveTracers

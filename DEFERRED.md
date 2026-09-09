@@ -45,3 +45,13 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 |---|---|---|
 | Semi-implicit off-centering vs time step: is `sl_off_centering` (0.2) what limits the step to < 60 min? | research | Two departure iterations did not help at 30 min and only delayed the blow-up at 60/90; sweep off-centering 0.2-0.5 at 45 and 60 min. |
 | Antarctic jet weakening with the step (66 -> 54 m/s at 30 min) | research | Accuracy signature of the fast winter jet; check whether it is the dycore or the 6-hourly nudging interpolation, and whether the 5-year age of air changes at 30 min. |
+
+## Found in Phase 8
+
+| Item | Label | Notes |
+|---|---|---|
+| QBO amplitude 80 % of ERA5, westerly phases +5-10 m/s where ERA5 has +10-20: the 10-day relaxation, not the window (the 1 hPa top changed nothing inside the QBO layer) | research | Sweep tau (5 d, 2 d, 6 h) on 2005; 6 h makes the tropical zonal-mean wind prescribed like the troposphere. Watch the thermal-wind temperature anomalies against the 15-day Polvani-Kushner relaxation. |
+| Daily instead of monthly QBO target | feature | `scripts/fetch_era5_strat_ref.py` already pulls 6-hourly 10 hPa u from CDS; extend to all 25 levels and u + T, and replace the month-centre interpolation in `qbo_nudging.py` by day centres. Only pays off with a tau well below 10 d. |
+| SAO at 1 hPa still 30 % of ERA5 (9.5 vs 30.7 m/s) | research | The weight is 0 at 1 hPa by construction (the target's top level). A top below 1 hPa with the target clamped to its 1 hPa value, or a one-sided taper, would hold 1 hPa itself. |
+| JCM's provenance probe crashed a segment (`UnicodeDecodeError` decoding `git diff HEAD`) when a tracked PDF was modified in the working tree | bug | Worked around with `.gitattributes` (`*.pdf binary`); the probe in `external/jax-gcm/jcm/provenance.py` should decode with `errors="replace"`. Upstream issue to file. |
+

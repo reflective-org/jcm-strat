@@ -19,9 +19,13 @@ What is nudged, towards what:
   of a latitude row is the same, ``-(ubar_model - ubar_ERA5)/tau``, so eddies (the waves that do
   the transport) are left alone; only the mean flow they propagate through is corrected.
 * Where: a tropical window, weight 1 for |lat| <= 15 deg falling smoothly (cos^2) to 0 at 25 deg,
-  and a pressure window with full weight between ~9 and ~40 hPa falling to 0 at 4 and 90 hPa
-  (linear in log p). That is the QBO's domain; it stays clear of the 150 hPa tropospheric nudging
-  cutoff below and of the SAO region above.
+  and a pressure window with full weight between ~2.2 and ~40 hPa falling to 0 at 1 and 90 hPa
+  (linear in log p). It stays clear of the 150 hPa tropospheric nudging cutoff below; the top is
+  the top of the ERA5 target. The first Phase 8 runs stopped at 4 hPa (full weight to ~9 hPa), the
+  QBO's own domain: that left the 1-4 hPa layer 10-15 m/s too easterly, because momentum carried
+  up out of the nudged layer met nothing there (no SAO forcing). Raising the top to 1 hPa removed
+  that bias and nudged in ERA5's semiannual oscillation at 2-3 hPa; inside the QBO layer nothing
+  changed (docs/outputs/08_qbo, 1hpa_top/).
 * How fast: tau = 10 days (WACCM's choice), slow enough not to fight the resolved waves step by
   step, fast enough to hold the observed phase.
 
@@ -69,7 +73,7 @@ class QboNudging(PhysicsTerm):
         lat_full_deg: float = 15.0,
         lat_zero_deg: float = 25.0,
         p_bot_hpa: float = 90.0,
-        p_top_hpa: float = 4.0,
+        p_top_hpa: float = 1.0,
         taper_decades: float = 0.35,
         use_calendar: bool = True,
     ) -> None:

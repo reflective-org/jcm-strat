@@ -1,6 +1,6 @@
 # Phase 8 — QBO nudging: giving the stripped model the tropical wind oscillation it cannot grow
 
-Status: **runs complete, 2005 and the 2005–2009 chain; all acceptance checks pass except throughput (−13 %).** Branch `phase8-qbo-nudging` (off `phase6-circulation`), committed, not pushed.
+Status: **runs complete, 2005 and the 2005–2009 chain; all acceptance checks pass except throughput (−13 %).** Branch `phase8-qbo-nudging` (off `phase6-circulation`), committed, not pushed. **Addendum 2026-09-09 (section at the end): the window top raised from 4 to 1 hPa, same runs repeated; now the default.** PDF: `docs/outputs/jcm-strat_phase8_qbo.pdf` (`scripts/make_phase8_report.py`).
 
 ## Why
 
@@ -153,3 +153,82 @@ Throughput: 3820-3960 days/hr stepping per segment (Phase 6: 4445), 2120-2190 en
    target would have imposed a modelled QBO (weaker, 12.6 m/s std at 10 hPa in the free-running
    histSST run); a climatological or idealised QBO would have lost the real 2005–2009 phase
    sequence that the tracer comparison against CLaMS needs.
+
+## Addendum, 2026-09-09: window top 1 hPa (`1hpa_top/`)
+
+### Why
+
+Two defects of the first version point at the top of the window. (1) Reading 4 above: with the
+equatorial wind held easterly at 5–10 hPa and nothing constraining 1–4 hPa, the mean flow there
+became 10–15 m/s more easterly than ERA5 (−24 m/s at 3 hPa against −8), and the model had no
+semiannual oscillation. (2) The westerly QBO phase first appears at 5–10 hPa and descends from there;
+with the taper ending at 4 hPa that onset layer had only weight 0.3 (5 hPa) to 0.7 (7 hPa). The ERA5
+monthly target already reaches 1 hPa and the model lid is 0.01 hPa, so the change is one key,
+`physics.terms.held_suarez.qbo.p_top_hpa=1.0`: full weight from 40 hPa up to 2.2 hPa, zero at 1 hPa.
+Nothing else changed.
+
+### The relaxations in the model, for reference
+
+| field relaxed | where | target | tau | target cadence |
+|---|---|---|---|---|
+| u, v, T (full fields) | troposphere, p > 150 hPa, not the two lowest levels | ERA5 6-hourly (WeatherBench2) | 6 h | 6-hourly |
+| T (full field) | stratosphere, p < 100 hPa | Polvani-Kushner seasonal equilibrium (analytic) | 15 d | analytic, follows the calendar |
+| T (full field) | troposphere, under the ERA5 nudging | Held-Suarez equilibrium | 40 d free troposphere, 4 d boundary layer | analytic |
+| u, v | boundary layer, sigma > 0.7 | zero (Rayleigh friction) | 1 d at the surface → 0 at sigma 0.7 | — |
+| **zonal-mean u** | **tropics, \|lat\| < 25° (full to 15°), 90 hPa up to the window top (4 hPa before, 1 hPa now)** | **ERA5 monthly zonal means (CDS, 25 levels to 1 hPa)** | **10 d** | **monthly, interpolated between month centres** |
+| u, v → 0; T → zonal mean and 250 K (sponge) | top 10 levels, 0.01–0.15 hPa | — | 1.5 h at the top, doubling per level | — |
+
+### Runs
+
+`p8b_2005` … `p8b_2009`, aggregate `p8b_5yr` (`chain_years.sh` with `EXTRA_PER_YEAR="... qbo.p_top_hpa=1.0"`,
+5 × 14 min on GPU 0). Before = `p8_qbo_2005` / `p8_5yr` (window top 4 hPa). One segment (2007) died
+once in JCM's provenance probe (`UnicodeDecodeError` while decoding `git diff HEAD`, because a
+tracked PDF had been modified in the working tree by a parallel session); `.gitattributes` now
+marks `*.pdf binary`, the segment was rerun, nothing else affected.
+
+### Results (`scripts/qbo_compare.py --p-top 1`, `strat_compare.py`, `strat_circulation.py`, `aoa_vs_clams.py`, `tracer_budget.py`)
+
+```
+                                 deseasonalised std [m/s]    mean u [m/s]   RMS vs ERA5 eq. monthly u [m/s]   SAO amplitude [m/s]
+                                 10 / 20 / 30 / 50 hPa       20 / 30 hPa    10-70 hPa      1-7 hPa            1 / 2 / 3 hPa
+before: top 4 hPa (p8_5yr)       13.6 / 14.1 / 12.4 / 7.8    -11.9 / -7.5      3.9          22.7               4.7 /  5.6 /  5.5
+after:  top 1 hPa (p8b_5yr)      13.7 / 14.1 / 12.4 / 7.8    -11.9 / -7.5      4.0          12.5               9.5 / 15.8 / 13.8
+ERA5 2005-2009 (monthly, CDS)    17.5 / 17.5 / 15.2 / 10.7   -12.9 / -8.0       -             -               30.7 / 20.7 / 15.6
+time-mean equatorial u at 3 hPa: before -24, after -9, ERA5 -6 m/s
+RMS change in time-mean zonal-mean u, after - before: inside the window 5.0 m/s (one patch at 2-3 hPa); |lat| > 30, 1-100 hPa 0.5; troposphere 0.0
+2005 alone: RMS 10-70 hPa 4.2 -> 4.2; 1-7 hPa 17.5 -> 10.6
+
+climatology vs ERA5 2005-2009, 100-1 hPa: T RMSE 6.3 K (before 6.3; Phase 6 6.4); u RMSE 4.9 m/s (before 6.4; Phase 6 5.6)
+DJF u(60N, 10 hPa) 31 m/s (before 32, ERA5 28); JJA u(60S, 10 hPa) 64 (65, 72); reversals 2008-03-26, 2009-01-31, 2009-12-07 (before 03-21, 01-31, 12-07)
+Brewer-Dobson 70 hPa DJF/JJA/annual 9.4 / 6.6 / 7.7 (before 9.2 / 6.7 / 7.7); 100 hPa 10.7 (10.7)
+age of air ~55 hPa tropics 2.16 yr (before 2.16), 50-70 deg 3.81 (3.79), contrast 1.64 (1.63); ~12 hPa tropics 3.68 (3.61; CLaMS 3.68)
+tracers: unity max |q-1| 2.65e-4, sai -0.77 % vs analytic, minima >= 0, top-level polar sai 7.6 % of the column
+throughput 3890-3930 days/hr stepping (before 3820-3960), 8 ms/step, 1870-1900 end-to-end
+```
+
+![equatorial wind, top 4 hPa / top 1 hPa / ERA5, 2005-2009](1hpa_top/5yr/qbo_time_height_before_after.png)
+![equatorial profiles and the change](1hpa_top/5yr/qbo_profiles.png)
+![QBO / SAO section vs ERA5 and WACCM6](1hpa_top/5yr/circulation/qbo_time_height.png)
+![climatology panel: both versions, ERA5, WACCM6](1hpa_top/5yr/strat/strat_climatology_panel.png)
+![vortex](1hpa_top/5yr/strat/vortex_series.png)
+![age of air](1hpa_top/5yr/p8b_5yr_aoa_profiles.png)
+![tracer budgets](1hpa_top/5yr/p8b_5yr_tracer_budget.png)
+![2005 alone](1hpa_top/1yr/qbo_time_height_before_after.png)
+
+### Reading
+
+1. **The bias above the window is gone and the model has a semiannual oscillation.** Equatorial
+   error over 1–7 hPa 22.7 → 12.5 m/s; time-mean wind at 3 hPa −24 → −9 m/s (ERA5 −6); SAO amplitude
+   at 2–3 hPa 5 → 14–16 m/s against ERA5's 16–21. The global stratospheric wind error falls from 6.4
+   to 4.9 m/s, now better than Phase 6's 5.6: the QBO nudging no longer costs anything in the
+   climatology. At 1 hPa itself the SAO is still 30 % of ERA5 because the weight is zero there by
+   construction (the target's top level); a top below 1 hPa with the target clamped would hold it.
+2. **Inside the QBO layer nothing changed.** Same amplitude (13.7 / 14.1 / 12.4 / 7.8), same
+   RMS (4.0 vs 3.9), same time-mean profile below 5 hPa. So the westerly phases being 80 % of
+   ERA5's was never the window: it is the 10-day relaxation against the model's own easterly pull
+   (and the monthly target smoothing the extremes). The next knob is tau, not geometry (DEFERRED).
+3. **Nothing else moved.** Vortex, warmings, polar-cap temperature, Brewer-Dobson flux, age of air
+   (2.16 yr tropical at 20 km in both), tracer conservation and throughput are the 4 hPa numbers
+   within noise. The change in the time-mean wind is one patch at 2–3 hPa over the equator.
+4. **Decision: 1 hPa is the default** (`strat_pk_qbo.yaml`, KEY_DECISIONS #26). The 4 hPa chain
+   `p8_5yr` stays on disk as the before-state.

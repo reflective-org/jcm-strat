@@ -6,12 +6,12 @@
 
 Writes
   qbo_time_height_before_after.png   equatorial (5S-5N) zonal-mean u, monthly, 100-1 hPa: before | after | ERA5,
-                                     with the nudging window (4-90 hPa) marked
+                                     with the nudging window (--p-top to --p-bot, default 1-90 hPa) marked
   qbo_profiles.png                   time-mean equatorial u and its deseasonalised standard deviation (the QBO
                                      amplitude) against pressure for before / after / ERA5; zonal-mean u change
                                      (after minus before, time mean) in latitude x pressure with the window drawn
   qbo_metrics.md                     the numbers: std at 10/20/30/50 hPa, mean u at 20/30 hPa, RMS of the
-                                     equatorial monthly wind against ERA5 (10-70 hPa), and the RMS change in
+                                     equatorial monthly wind against ERA5 (10-70 hPa and 1-7 hPa), and the RMS change in
                                      zonal-mean u inside and outside the nudging window
 Reuses the loaders of strat_compare.py (model runs regridded to the ERA5 reference levels in ln p).
 """
@@ -48,7 +48,7 @@ def main() -> None:
     ap.add_argument("outdir"); ap.add_argument("--before", required=True); ap.add_argument("--after", required=True)
     ap.add_argument("--years", default="2005-2009")
     ap.add_argument("--label-before", default="before: Phase 6, no QBO nudging"); ap.add_argument("--label-after", default="after: QBO nudged to ERA5")
-    ap.add_argument("--p-bot", type=float, default=90.0); ap.add_argument("--p-top", type=float, default=4.0); ap.add_argument("--lat-zero", type=float, default=25.0)
+    ap.add_argument("--p-bot", type=float, default=90.0); ap.add_argument("--p-top", type=float, default=1.0); ap.add_argument("--lat-zero", type=float, default=25.0)
     a = ap.parse_args(); os.makedirs(a.outdir, exist_ok=True)
     y0, y1 = map(int, a.years.split("-")); years = list(range(y0, y1 + 1))
     first = xr.open_dataset(sorted(glob.glob(os.path.join(a.after, "longrun_day*.nc")))[0]); lat_out = np.sort(first.lat.values)
@@ -68,7 +68,7 @@ def main() -> None:
         ax.set_yscale("log"); ax.set_ylim(100, 1); ax.set_ylabel(f"{name}\npressure [hPa]", fontsize=8)
         for pp in (a.p_bot, a.p_top): ax.axhline(pp, color="k", ls=":", lw=0.8)
         plt.colorbar(cf, ax=ax, label="u 5S-5N [m/s]")
-    axes[-1].set_xlabel("year"); axes[0].set_title("Equatorial zonal-mean zonal wind 5S-5N (monthly); dotted: the QBO-nudging window 4-90 hPa", fontsize=10)
+    axes[-1].set_xlabel("year"); axes[0].set_title(f"Equatorial zonal-mean zonal wind 5S-5N (monthly); dotted: the QBO-nudging window {a.p_top:g}-{a.p_bot:g} hPa", fontsize=10)
     fig.tight_layout(); f1 = os.path.join(a.outdir, "qbo_time_height_before_after.png"); fig.savefig(f1, dpi=120); plt.close(fig); print("wrote", f1)
 
     # ---- figure 2: profiles and where the change is
@@ -92,18 +92,19 @@ def main() -> None:
     # ---- metrics
     def at(da, p): return float(da.sel(plev=p, method="nearest"))
     lines = [f"# QBO nudging: before / after / ERA5, {a.years}", "",
-             f"| source | {std_kind} 10 / 20 / 30 / 50 hPa [m/s] | mean u 20 / 30 hPa [m/s] | RMS vs ERA5, eq. monthly u 10-70 hPa [m/s] |", "|---|---|---|---|"]
+             f"| source | {std_kind} 10 / 20 / 30 / 50 hPa [m/s] | mean u 20 / 30 hPa [m/s] | RMS vs ERA5, eq. monthly u 10-70 hPa [m/s] | RMS vs ERA5, 1-7 hPa [m/s] |", "|---|---|---|---|---|"]
     ref = eq["ERA5 (monthly, CDS)"]
     for name, um in eq.items():
         sd = deseason_std(um); mu = um.mean("time")
         common = np.intersect1d(um.tdec.values.round(4), ref.tdec.values.round(4))
-        band = (um.plev >= 10) & (um.plev <= 70)
-        if name.startswith("ERA5"):
-            rms = 0.0
-        else:
+        def rms_band(p_lo, p_hi):
+            if name.startswith("ERA5"):
+                return 0.0
+            band = (um.plev >= p_lo) & (um.plev <= p_hi)
             x = um.sortby("tdec").where(band, drop=True); r = ref.sortby("tdec").where(band, drop=True)
-            n = min(x.sizes["time"], r.sizes["time"]); rms = float(np.sqrt(np.nanmean((x.values[:n] - r.values[:n]) ** 2)))
-        lines.append(f"| {name} | {at(sd,10):.1f} / {at(sd,20):.1f} / {at(sd,30):.1f} / {at(sd,50):.1f} | {at(mu,20):+.1f} / {at(mu,30):+.1f} | {rms:.1f} |")
+            n = min(x.sizes["time"], r.sizes["time"]); return float(np.sqrt(np.nanmean((x.values[:n] - r.values[:n]) ** 2)))
+        rms = rms_band(10, 70); rms_top = rms_band(1, 7)          # the QBO layer; the layer above the original 4 hPa window top
+        lines.append(f"| {name} | {at(sd,10):.1f} / {at(sd,20):.1f} / {at(sd,30):.1f} / {at(sd,50):.1f} | {at(mu,20):+.1f} / {at(mu,30):+.1f} | {rms:.1f} | {rms_top:.1f} |")
     w = np.cos(np.deg2rad(du.lat)); inside = (np.abs(du.lat) <= a.lat_zero); pin = (du.plev >= a.p_top) & (du.plev <= a.p_bot)
     def rms_region(mask_lat, mask_p):
         d = du.where(mask_lat & mask_p); ww = (w * xr.ones_like(du)).where(mask_lat & mask_p)
