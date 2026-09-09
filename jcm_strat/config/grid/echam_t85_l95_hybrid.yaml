@@ -1,0 +1,7 @@
+# T85 / 95 hybrid levels — the ECHAM6 middle-atmosphere L95 grid (lid ~0.01 hPa) on the
+# 256 lon x 128 lat Gaussian grid. JCM ships T85 only at L47; this overlay preset fills the gap
+# for the Phase 9 resolution sweep. The level table is JCM's own (echam_levels.get_echam_levels).
+vertical: hybrid
+layers: 95
+spectral_truncation: 85
+spmd_mesh: null

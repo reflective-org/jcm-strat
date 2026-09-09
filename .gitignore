@@ -2,6 +2,10 @@
 .venv/
 cache/
 scratch/
+# the same three as symlinks (git worktrees point them at the main checkout)
+.venv
+cache
+scratch
 env/overrides.txt
 # model output
 runs/

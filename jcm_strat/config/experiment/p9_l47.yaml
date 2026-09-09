@@ -1,0 +1,16 @@
+# @package _global_
+# Phase 9, vertical axis: the strat47 grid (jcm_strat/levels.py; 7 mesosphere + 15 upper-
+# stratosphere (every other L95 interface, 1-30 hPa) + 17 lower-stratosphere levels identical to
+# L95 (30-159 hPa) + 8 troposphere). Sponge remapped as for p9_l63: the three mesospheric levels
+# that reach ~0.14 hPa each span 3 L95 levels, so 3 levels with enspodi 2^3.
+#   PREFIX=p9_t63l47 SCHEME=year EXTRA="+experiment=p9_l47" ...   (see chain_segments.sh)
+defaults:
+  - /experiment/p9_res
+  - override /grid: strat_t63_l47_hybrid
+
+level_table: strat
+
+run:
+  sponge:
+    levels: 3
+    enspodi: 8.0

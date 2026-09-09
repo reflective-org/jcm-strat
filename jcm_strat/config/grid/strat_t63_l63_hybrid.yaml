@@ -1,0 +1,9 @@
+# T63 / 63 hybrid levels — the Phase 9 "strat63" reduction of the ECHAM L95 grid: the 47 L95
+# levels between 1.08 and 159 hPa are kept exactly, the 21 mesospheric levels above 1 hPa are
+# thinned to 8 and the 27 tropospheric levels below 159 hPa to 8 (jcm_strat/levels.py).
+# Needs the top-level key ``level_table: strat`` (set by the p9_l63 experiment) so that
+# jcm_strat.main serves this table instead of failing on an unknown level count.
+vertical: hybrid
+layers: 63
+spectral_truncation: 63
+spmd_mesh: null
