@@ -16,8 +16,12 @@ step() { echo "[queue] $(date -Is) $*" | tee -a "$LOG"; }
 matrix_rows "$@" | while read -r row; do
   parse_row "$row" || continue
   if grep -q 'chain finished' "$REPO/runs/${PREFIX}_chain.log" 2>/dev/null; then step "skip $PREFIX (chain finished)"; continue; fi
+  if [ -e "$REPO/runs/${PREFIX}.claimed" ]; then step "skip $PREFIX (claimed by another queue: $(cat "$REPO/runs/${PREFIX}.claimed"))"; continue; fi
   marker="$P9_MARKER_DIR/.p9_${PREFIX}.done"
   until [ -e "$marker" ]; do step "waiting for prefetch of $PREFIX"; sleep 600; done
+  # another chain may still be finishing on this GPU (a queue restarted around a running chain)
+  while nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; do step "waiting for GPU $GPU to free up"; sleep 300; done
+  echo "GPU $GPU $(date -Is)" > "$REPO/runs/${PREFIX}.claimed"
   step "start chain $PREFIX (GPU $GPU): scheme=$SCHEME +experiment=$EXPERIMENT $EXTRA"
   PREFIX="$PREFIX" SCHEME="$SCHEME" EXPERIMENT="$EXPERIMENT" EXTRA="$EXTRA" GPU="$GPU" bash "$REPO/scripts/chain_segments.sh"
   step "chain $PREFIX exit=$?"
