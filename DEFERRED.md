@@ -55,3 +55,11 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | SAO at 1 hPa still 30 % of ERA5 (9.5 vs 30.7 m/s) | research | The weight is 0 at 1 hPa by construction (the target's top level). A top below 1 hPa with the target clamped to its 1 hPa value, or a one-sided taper, would hold 1 hPa itself. |
 | JCM's provenance probe crashed a segment (`UnicodeDecodeError` decoding `git diff HEAD`) when a tracked PDF was modified in the working tree | bug | Worked around with `.gitattributes` (`*.pdf binary`); the probe in `external/jax-gcm/jcm/provenance.py` should decode with `errors="replace"`. Upstream issue to file. |
 
+
+## Found in Phase 9
+
+| Item | Label | Notes |
+|---|---|---|
+| JCM truncates `save_interval / time_step` and `total_time / save_interval` silently (`model.py`), and the chunk loop labels a tail chunk shorter than a save without integrating it (`runners.py`), so a 7-min step or a 91-day segment loses time with no error; the 366-day 2008 segments of every chain so far integrated 365 days | bug | `jcm_strat/segments.py` and `chain_segments.sh` refuse both cases; upstream should raise. Upstream issue to file. |
+| ERA5 prefetch (`jcm.data.era5.dataset_on_model_grid`) is single-threaded and holds ~5-7x the output window in RAM (a 20 GB T63L63 year peaks near 140 GB); the whole Phase 9 matrix (2 TB) takes ~10 h in three parallel streams and is CPU-, not network-bound | perf | Chunk the window in time inside `_to_model_grid`, or regrid per level in float32. Upstream issue to file. |
+| Native terrain exists only for T63 and T106; T85 and T119 run on the interpolated T63 file (fine for the dry model, wrong once Lott-Miller SSO is on) | feature | The GMTED2010 builder in `jcm/data/mirror` runs on Glade; add t85 / t119 bundles there. |
