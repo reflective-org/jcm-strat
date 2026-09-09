@@ -32,6 +32,9 @@ grep -v '^\s*#' "$RUNS" | grep -v '^\s*$' | while read -r label rundir; do
   if [ "$label" != "T63L95" ] && [ -n "$BASE" ]; then
     python scripts/qbo_compare.py "$d" --before "$REPO/$BASE" --after "$REPO/$rundir" --years $YEARS \
       --label-before "before: T63L95 (Phase 8b)" --label-after "after: $label" > "$d/qbo.txt" 2>&1
+  elif [ -d "$REPO/runs/p8_5yr" ]; then   # the baseline itself: its own before-state is the 4 hPa Phase 8 chain
+    python scripts/qbo_compare.py "$d" --before "$REPO/runs/p8_5yr" --after "$REPO/$rundir" --years $YEARS \
+      --label-before "before: QBO window top 4 hPa (Phase 8)" --label-after "after: $label (Phase 8b)" > "$d/qbo.txt" 2>&1
   fi
   python scripts/throughput.py "$REPO/$rundir" --label "P9 $label" --grid "$label" --csv "$REPO/docs/outputs/throughput.csv" > "$d/throughput.txt" 2>&1
   step "$label done"

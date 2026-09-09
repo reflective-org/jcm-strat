@@ -305,6 +305,9 @@ def main():
             plot_climatology(name, m, era5, waccm, a.outdir, extra=extra)
     if a.panel:
         plot_climatology_panel(models, era5, waccm, a.outdir)
+    # metrics for EVERY run (until Phase 9 this loop reused the last model of the climatology loop,
+    # so with several --run arguments only the last one got a row)
+    for name, m in models.items():
         for refname, ref, mc in (("ERA5", era5, None), ("WACCM6", waccm, "month")):
             if ref is None: continue
             for seas in ("DJF", "JJA", "annual"):
