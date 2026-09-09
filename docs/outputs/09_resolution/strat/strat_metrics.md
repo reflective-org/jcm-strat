@@ -12,7 +12,14 @@
 | T63L63 | WACCM6 | DJF | 8.2 | 9.4 | 31 (ref 24) | 2 (ref 6) |
 | T63L63 | WACCM6 | JJA | 8.3 | 8.3 | -1 (ref -8) | 64 (ref 73) |
 | T63L63 | WACCM6 | annual | 6.1 | 6.2 | 14 (ref 9) | 31 (ref 43) |
+| T63L47 | ERA5 | DJF | 8.6 | 10.6 | 28 (ref 28) | 3 (ref -8) |
+| T63L47 | ERA5 | JJA | 8.2 | 11.6 | -2 (ref -9) | 62 (ref 72) |
+| T63L47 | ERA5 | annual | 6.0 | 4.6 | 13 (ref 10) | 30 (ref 33) |
+| T63L47 | WACCM6 | DJF | 8.0 | 9.4 | 28 (ref 24) | 3 (ref 6) |
+| T63L47 | WACCM6 | JJA | 8.1 | 8.5 | -2 (ref -8) | 62 (ref 73) |
+| T63L47 | WACCM6 | annual | 5.9 | 6.3 | 13 (ref 9) | 30 (ref 43) |
 
 ERA5 SSW central dates (60N, 10 hPa reversal, Nov-Mar, not final warmings): 2006-01-21, 2006-02-11, 2007-02-24, 2008-02-22, 2008-03-14, 2009-01-24
 T63L95 SSW-like reversals (5-day means, +-5 d): 2008-03-26, 2009-01-31, 2009-12-07
 T63L63 SSW-like reversals (5-day means, +-5 d): 2009-02-05, 2009-12-07
+T63L47 SSW-like reversals (5-day means, +-5 d): 2007-03-02, 2008-03-26, 2009-01-31, 2009-03-02
