@@ -32,5 +32,6 @@ terms:
       p_top_hpa: 1.0
   production_tracers:
     _target_: jcm_strat.advection_tracers.ProductionTracers
+    first_segment: false      # chain_segments.sh sets true on segment 1: inject the WACCM N2O/CFC-11 state
   omega_diagnostic:
     _target_: jcm.physics.diagnostics.omega.OmegaDiagnostic
