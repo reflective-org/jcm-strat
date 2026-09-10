@@ -1,0 +1,6 @@
+run:                    /data/JCM_stripped/jcm-strat-phase9/runs/p9_t119l47_5yr  (65 chunk files, 365 saves, day 5-1826)
+global-mean ps:         998.429 -> 998.422 hPa   drift -0.0077 hPa
+global KE (J/kg):       122.5 -> 121.3
+top-level zonal-mean T: mean(last 60 d) 249.8 K, trend -0.000 K/day
+T range:                min 177.7 K  max 312.9 K
+wrote /data/JCM_stripped/jcm-strat-phase9/docs/outputs/09_resolution/T119L47/T119L47_summary.png

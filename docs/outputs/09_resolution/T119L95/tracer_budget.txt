@@ -1,0 +1,9 @@
+run:                      p9_t119l95_5yr  (365 saves, day 1826)
+unity max |q-1| (any cell, any save): 3.09e-04
+unity global burden drift:            -3.81e-05
+sai burden vs expected (source*box mass*t): -3.13%  (expected 1.298e+00, got 1.257e+00)
+cell minimum: aoa -1.36e-06, unity 1.00e+00, sai 0.00e+00, e90 0.00e+00
+pull-up check: sai at top level, |lat|>70: 1.076e-01 vs global-mean column 1.257e+00 (ratio 0.086)
+age of air at ~20 hPa, last save: tropics(|lat|<=10) 3.16 yr, 50-70deg 4.27 yr, max 4.92 yr
+wrote /data/JCM_stripped/jcm-strat-phase9/docs/outputs/09_resolution/T119L95/p9_t119l95_5yr_tracer_budget.png
+wrote /data/JCM_stripped/jcm-strat-phase9/docs/outputs/09_resolution/T119L95/p9_t119l95_5yr_tracer_zonal.png

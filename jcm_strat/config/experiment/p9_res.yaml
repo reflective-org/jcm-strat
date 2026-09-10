@@ -1,0 +1,12 @@
+# @package _global_
+# Phase 9 experiment: the Phase 8b configuration (Polvani-Kushner seasonal stratosphere, ERA5-nudged
+# troposphere below 150 hPa, QBO nudging to ERA5 up to 1 hPa, four passive tracers) with nothing
+# changed. Grid and time step come from the command line so every run's .hydra/overrides.yaml
+# states its resolution; the vertical reductions are the p9_l63 / p9_l47 experiments. Usage:
+#   PREFIX=p9_t85l95 SCHEME=half EXTRA="grid=echam_t85_l95_hybrid run.time_step=9" bash scripts/chain_segments.sh
+#   PREFIX=p9_t119l95 SCHEME=quarter EXTRA="grid=echam_t119_l95_hybrid run.time_step=6" bash scripts/chain_segments.sh
+# Time steps must divide the 5-day save interval (7200 min): 12, 9, 8, 6 do; 7 does not.
+defaults:
+  - /experiment/p8_qbo
+
+level_table: null

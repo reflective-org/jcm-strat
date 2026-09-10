@@ -25,6 +25,7 @@ import argparse
 import glob
 import os
 import re
+import sys
 
 import matplotlib
 matplotlib.use("Agg")
@@ -42,6 +43,20 @@ def gauss_weights(lat_deg: np.ndarray) -> np.ndarray:
     out = np.empty_like(w)
     out[order_file] = w[np.argsort(nodes)]
     return out / out.sum()
+
+
+def install_level_table(rundir: str) -> None:
+    """Phase 9 runs on the L95-derived strat47/strat63 tables record ``level_table: strat`` in their
+    resolved config; serve those tables to ``get_echam_levels`` so the layer thicknesses are right."""
+    import yaml
+    cfg_path = os.path.join(rundir, ".hydra", "config.yaml")
+    if not os.path.exists(cfg_path):
+        return
+    name = (yaml.safe_load(open(cfg_path)) or {}).get("level_table")
+    if name:
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from jcm_strat import levels
+        levels.install(name)
 
 
 def layer_dp(nlev: int, nsp: np.ndarray) -> np.ndarray:
@@ -86,6 +101,7 @@ def main() -> None:
     a = ap.parse_args()
     run = os.path.basename(a.rundir.rstrip("/"))
     os.makedirs(a.outdir, exist_ok=True)
+    install_level_table(a.rundir)
     ds, day = load(a.rundir)                                 # day = end of each averaging window
     lat = np.asarray(ds.lat); w = gauss_weights(lat)
     p_nom = np.asarray(ds.level) * P0 / 100.0                # nominal hPa, surface-first

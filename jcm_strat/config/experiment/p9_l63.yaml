@@ -1,0 +1,17 @@
+# @package _global_
+# Phase 9, vertical axis: the strat63 grid (jcm_strat/levels.py; 8 mesosphere + 47 stratosphere
+# levels identical to L95 + 8 troposphere). The upper sponge is remapped so that tau(p) matches
+# L95's 10-level sponge (1.5 h at the top level, doubling per L95 level, reaching ~0.2 hPa): one
+# strat63 mesospheric level spans 2.75 L95 levels on average, so 4 levels with enspodi 2^2.75.
+#   PREFIX=p9_t63l63 SCHEME=year EXTRA="+experiment=p9_l63" ...   (see chain_segments.sh)
+#   PREFIX=p9_t85l63 SCHEME=half EXTRA="+experiment=p9_l63 grid.spectral_truncation=85 run.time_step=9"
+defaults:
+  - /experiment/p9_res
+  - override /grid: strat_t63_l63_hybrid
+
+level_table: strat
+
+run:
+  sponge:
+    levels: 4
+    enspodi: 6.73

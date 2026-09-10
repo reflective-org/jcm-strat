@@ -1,0 +1,11 @@
+/data/JCM_stripped/jcm-strat-phase9/scripts/aoa_vs_clams.py:135: RuntimeWarning: Mean of empty slice
+  m = np.abs(lat) <= 10; prof = np.nanmean(age[:, m], axis=1); ax.plot(prof, p, ls=ls, label=name)
+wrote /data/JCM_stripped/jcm-strat-phase9/docs/outputs/09_resolution/T119L63/p9_t119l63_5yr_aoa_triptych.png
+wrote /data/JCM_stripped/jcm-strat-phase9/docs/outputs/09_resolution/T119L63/p9_t119l63_5yr_aoa_profiles.png
+level            source                              tropics 10S-10N  50-70 deg  contrast
+~55 hPa (~20 km) model                                          2.13       3.50      1.38
+~55 hPa (~20 km) CLaMS                                          1.33       4.12      2.79
+~55 hPa (~20 km) WACCM (entry age)                              1.11       3.40      2.29
+~12 hPa (~30 km) model                                          3.43       4.07      0.64
+~12 hPa (~30 km) CLaMS                                          3.68       4.56      0.88
+~12 hPa (~30 km) WACCM (entry age)                              2.82       4.18      1.36
