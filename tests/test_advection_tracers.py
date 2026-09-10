@@ -5,6 +5,7 @@ import types
 os.environ.setdefault("JAX_PLATFORMS", "cpu")
 
 import jax.numpy as jnp
+import jax_datetime as jdt
 import numpy as np
 
 from jcm.forcing import SolarGeometry
@@ -23,7 +24,10 @@ def _model(**kw):
     coords = get_held_suarez_coords()
     physics = ComposablePhysics(terms=[HeldSuarezColumns(), ProductionTracers(**kw), OmegaDiagnostic()],
                                 checkpoint_terms=False, vectorize_columns=True)
-    return Model(coords=coords, time_step=DT / 60, physics=physics)
+    # as the production chain: a 1 January start on the Gregorian calendar, so the fraction of year
+    # is exactly 0 at the first step (JCM's 365_day default would put 2005-01-01 at day 9)
+    return Model(coords=coords, time_step=DT / 60, physics=physics,
+                 start_date=jdt.to_datetime("2005-01-01"), calendar="gregorian")
 
 
 def _state_and_term(model):
@@ -57,12 +61,12 @@ def test_declared_tracers_and_targets():
     targets = np.asarray(term._targets.get_value())
     for i, (_, _, _, amp) in enumerate(DEFAULT_PULSES):
         assert 0.0 <= targets[i].min() and targets[i].max() <= amp * 1.0001
-        assert targets[i].max() > 0.3 * amp                      # the blob is resolved on T31L8
+        if i == 0: assert targets[i].max() > 0.3 * amp              # the 30 hPa blob is resolved on T31L8; the higher ones are above its top
     q0 = np.asarray(term._q0.get_value()); k = np.asarray(term._k.get_value())
     assert q0.min() >= 0 and q0.max() <= 1.2 and k.min() >= 0
     p = np.asarray(term._pressure(state.normalized_surface_pressure))
     assert np.all(q0[:, p > 700e2] > 0.9)                        # WACCM: ~1 in the troposphere
-    assert q0[0][p < 5e2].mean() < q0[0][p > 700e2].mean()       # and depleted in the upper stratosphere
+    assert q0[0][p < 50e2].mean() < q0[0][p > 700e2].mean()      # and depleted in the stratosphere (T31L8 top ~25 hPa)
 
 
 def test_tendencies_by_region_and_date():
@@ -86,7 +90,7 @@ def test_tendencies_by_region_and_date():
     assert np.allclose(d2["pulse_1"][sfc] * DT, -1.0) and np.all(d2["pulse_1"][~sfc] == 0.0)
     for sp in STEADY:                                            # q = 1 everywhere initially
         assert np.all(d[sp][p > 700e2] == 0.0) and np.all(d[sp][p <= 700e2] <= 0.0)
-        assert d[sp][p < 5e2].min() < 0.0                        # loss active in the upper stratosphere
+        assert d[sp][p < 50e2].min() < 0.0                       # loss active in the stratosphere
     # the quarterly injection date (day 91.25) fires once: the step containing it
     x_fire = 91.25 / 365.0 + 0.5 * DT / DAY / 365.0
     assert np.allclose(_tend(term, state, _forcing(x_fire))["pulse_1"] * DT, targets[0], atol=1e-6)

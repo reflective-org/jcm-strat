@@ -34,12 +34,16 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 import jcm.main as _jcm_main
+import jcm.model as _model
+import jcm.predictions as _predictions
 from jcm.dycore.dinosaur import dycore as _dycore
 
 from jcm_strat import levels
 
 _ORIG_FIX = _dycore.DinosaurDycore._fix_nodal_tracer_mass
 _ORIG_INIT = _dycore.DinosaurDycore.__init__
+_ORIG_MODEL_INIT = _model.Model.__init__
+_ORIG_TO_XARRAY = _predictions.ModelPredictions.to_xarray
 _JCM_CONFIG_DIR = os.path.join(os.path.dirname(_jcm_main.__file__), "config")
 
 
