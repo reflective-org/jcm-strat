@@ -88,6 +88,53 @@ def install_mass_fixer_policy(enabled: bool = True, exclude=()) -> None:
     )
 
 
+def install_calendar(name: str | None) -> None:
+    """Make every ``Model`` use calendar ``name`` (``gregorian`` or ``365_day``).
+
+    JCM's ``Model`` defaults to ``365_day`` and neither ``build_model`` nor the run config sets it.
+    Under ``365_day`` the fraction of year is ``(days since 1970-01-01) % 365 / 365``, which for a
+    real Gregorian start date is 5-12 days ahead of the true day of year (9 d in 2005): the
+    Polvani-Kushner season and the QBO month ran that much early in Phases 6-9. ``gregorian`` gives
+    the true day of year, and exactly 0 at 00:00 on 1 January (KEY_DECISIONS, Phase 10).
+    """
+    if not name:
+        return
+    if name not in ("gregorian", "365_day"):
+        raise ValueError(f"calendar={name!r}; expected gregorian or 365_day")
+
+    def patched_init(self, *args, **kwargs):
+        kwargs["calendar"] = name
+        return _ORIG_MODEL_INIT(self, *args, **kwargs)
+
+    _model.Model.__init__ = patched_init
+    logging.getLogger("jcm_strat").info("jcm_strat: model calendar %s", name)
+
+
+def install_output_policy(drop=()) -> None:
+    """Drop the listed variables from every dataset ``ModelPredictions.to_xarray`` returns.
+
+    JCM writes every prognostic and every diagnostic a term provides; it has no output-variable
+    list (``run.tracer_vars`` selects *inputs*). At 6-hourly output one 3-D field is 10 GB per
+    simulated year at T63L95, so Phase 10 drops what is a diagnostic of other outputs.
+    """
+    drop = tuple(str(v) for v in (drop or ()))
+    if not drop:
+        return
+
+    def patched(self):
+        ds = _ORIG_TO_XARRAY(self)
+        return ds.drop_vars([v for v in drop if v in ds])
+
+    _predictions.ModelPredictions.to_xarray = patched
+    logging.getLogger("jcm_strat").info("jcm_strat: output drops %s", list(drop))
+
+
+def _as_list(raw):
+    if raw is None:
+        return []
+    return list(OmegaConf.to_container(raw)) if OmegaConf.is_config(raw) else list(raw)
+
+
 @hydra.main(version_base=None, config_path=_JCM_CONFIG_DIR, config_name="config")
 def main(cfg: DictConfig) -> None:
     enabled = bool(cfg.get("sl_mass_fixer", True))
@@ -98,6 +145,8 @@ def main(cfg: DictConfig) -> None:
     install_mass_fixer_policy(enabled, exclude)
     di = cfg.get("sl_departure_iterations", None)
     install_sl_options({"departure_iterations": int(di) if di is not None else None})
+    install_calendar(cfg.get("calendar", None))
+    install_output_policy(_as_list(cfg.get("output_drop", None)))
     # ``level_table: strat`` (Phase 9): serve the L95-derived strat47/strat63 hybrid tables and
     # their hyperdiffusion profiles for grid.layers 47/63 (jcm_strat/levels.py)
     levels.install(cfg.get("level_table", None))

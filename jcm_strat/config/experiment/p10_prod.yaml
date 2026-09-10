@@ -1,0 +1,41 @@
+# @package _global_
+# Phase 10 experiment: the Phase 8 configuration (ERA5-nudged troposphere, Polvani-Kushner
+# stratosphere, QBO nudging to 1 hPa) on the strat63 grid Phase 9 recommended (T63, 63 levels: the
+# L95 stratosphere intact, KEY_DECISIONS #31; experiment p9_l63 carries the grid, level table and
+# remapped sponge) as a PRODUCTION run for transport learning:
+#   * QBO relaxation time 1 d (the Phase 8 tau sweep; the branch default of 10 d is untouched),
+#   * the production tracer set (physics/strat_pk_qbo_prod.yaml) with omega in the output,
+#   * 6-hourly INSTANTANEOUS output (Phases 1-9: 5-day means) in 10-day chunks - the frames of a chunk
+#     sit on the GPU until the chunk is written (~90 MB per frame here), 40 frames is 3.5 GB next to the
+#     21 GB nudging target; 30-day chunks would be 10 GB,
+#   * geopotential dropped from the output (a diagnostic of T and p_s; jcm_strat/main.py output_drop),
+#   * the Gregorian calendar: JCM's default 365_day calendar puts the fraction of year at
+#     (days since 1970 mod 365)/365, i.e. 9 days ahead of the true date in 2005 and 12 in 2019, so the
+#     Polvani-Kushner season and the QBO month ran early in Phases 6-9. Under gregorian tyear is
+#     exactly 0 at 00:00 on 1 January, which the pulse injections rely on.
+# One calendar year per segment (true 365/366 days), chained by scripts/chain_segments.sh:
+#   EXPERIMENT=p10_prod PREFIX=p10 SCHEME=calendar YEARS=2005-2009 AGG=p10_5yr SAVE_INTERVAL=0.25 \
+#     tmux new-session -d -s strat_p10_chain 'bash scripts/chain_segments.sh'
+defaults:
+  - /experiment/p9_l63
+  - override /physics: strat_pk_qbo_prod
+
+physics:
+  terms:
+    held_suarez:
+      qbo:
+        tau_days: 1.0
+
+run:
+  save_interval: 0.25
+  output_averages: false
+  chunk_days: 10
+  total_time: 365
+  checkpoint_path: checkpoint.ckpt
+
+calendar: gregorian
+output_drop: [geopotential]
+
+# the clocks are not conserved quantities (KEY_DECISIONS #19); everything else stays under the fixer
+sl_mass_fixer: true
+sl_mass_fixer_exclude: [aoa, aoa150, aoa_sfc]

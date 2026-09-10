@@ -1,0 +1,36 @@
+# Phase 10 physics: the Phase 8 Polvani-Kushner stratosphere with QBO nudging (strat_pk_qbo.yaml,
+# unchanged apart from what the experiment overrides), the PRODUCTION tracer set instead of the
+# four Phase 3 passive tracers, and omega published as an output field.
+#
+# production_tracers (jcm_strat/advection_tracers.py): three age-of-air clocks (reset below 700 hPa,
+# below 150 hPa, in the lowest two layers), the sai injection tracer, five Gaussian pulse tracers
+# re-injected quarterly and absorbed in the lowest two layers, and two steady N2O/CFC-11-like tracers
+# with WACCM's zonal-mean initial state and loss frequency (jcm_strat/data/waccm_tracer_ref.nc).
+# unity and e90 are gone (Phase 10 decision). omega_diagnostic is last so the dycore fields it reads
+# have been reshaped to columns; adding it makes the model compute omega (jcm/model.py).
+vectorize_columns: true
+checkpoint_terms: true
+
+terms:
+  held_suarez:
+    _target_: jcm_strat.qbo_nudging.PolvaniKushnerQbo
+    gamma_k_per_km: 4.0
+    p_tropopause_hpa: 100.0
+    phi0_deg: 50.0
+    delta_phi_deg: 10.0
+    epsilon_k: 10.0
+    season_offset: 0.5
+    p_vortex_top_hpa: 3.0
+    tau_strat_days: 15.0
+    qbo:
+      era5_glob: /data/JCM_stripped/jcm-strat/cache/era5_ref/era5_zm_monthly_*.nc
+      year: 2005
+      tau_days: 10.0
+      lat_full_deg: 15.0
+      lat_zero_deg: 25.0
+      p_bot_hpa: 90.0
+      p_top_hpa: 1.0
+  production_tracers:
+    _target_: jcm_strat.advection_tracers.ProductionTracers
+  omega_diagnostic:
+    _target_: jcm.physics.diagnostics.omega.OmegaDiagnostic

@@ -8,7 +8,11 @@ integrating it (``jcm/runners.py`` chunk loop with ``model.py``'s ``int(total_ti
 save_interval)``). A 366-day year is run as 365 days, so 31 December of a leap year is skipped —
 which is what ``chain_years.sh`` has always done implicitly.
 
-    python -m jcm_strat.segments quarter 2005-2009      # prints "start days year" per segment
+Phase 10 adds the scheme ``calendar``: one segment per year of its TRUE length (365 or 366 days),
+allowed when the save interval divides one day (6-hourly output), so no day is skipped.
+
+    python -m jcm_strat.segments quarter 2005-2009            # prints "start days year" per segment
+    python -m jcm_strat.segments calendar 1990-2019 0.25      # 6-hourly save interval
 """
 from __future__ import annotations
 
@@ -32,8 +36,12 @@ def parse_years(spec: str) -> list[int]:
     return [int(s) for s in spec.split(",")]
 
 
-def segments(scheme: str, years) -> list[tuple[dt.date, int, int]]:
+def segments(scheme: str, years, save_interval_days: float = SAVE_INTERVAL_DAYS) -> list[tuple[dt.date, int, int]]:
     """``[(start_date, days, year), ...]`` for ``scheme`` over ``years``."""
+    if scheme == "calendar":                    # true calendar years, 6-hourly (or finer) output
+        if (1.0 / save_interval_days) % 1:
+            raise ValueError(f"scheme 'calendar' needs a save interval that divides one day, not {save_interval_days} d")
+        return [(dt.date(y, 1, 1), (dt.date(y + 1, 1, 1) - dt.date(y, 1, 1)).days, y) for y in years]
     if scheme == "smoke":                       # one 5-day segment at the start of the first year
         y = list(years)[0]
         return [(dt.date(y, 1, 1), SAVE_INTERVAL_DAYS, y)]
@@ -51,15 +59,17 @@ def segments(scheme: str, years) -> list[tuple[dt.date, int, int]]:
     return out
 
 
-def check_time_step(dt_min: float) -> None:
+def check_time_step(dt_min: float, save_interval_days: float = SAVE_INTERVAL_DAYS) -> None:
     """Refuse a time step that does not divide the save interval (JCM truncates silently)."""
-    if SAVE_INTERVAL_MIN % dt_min:
-        raise ValueError(f"run.time_step={dt_min} min does not divide the {SAVE_INTERVAL_DAYS}-day save "
-                         f"interval ({SAVE_INTERVAL_MIN} min); use 6, 8, 9, 10, 12 or 15")
+    save_min = round(save_interval_days * 24 * 60, 6)
+    if save_min % dt_min:
+        raise ValueError(f"run.time_step={dt_min} min does not divide the {save_interval_days}-day save "
+                         f"interval ({save_min:g} min)")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         sys.exit(__doc__)
-    for start, days, year in segments(sys.argv[1], parse_years(sys.argv[2])):
+    save = float(sys.argv[3]) if len(sys.argv) == 4 else SAVE_INTERVAL_DAYS
+    for start, days, year in segments(sys.argv[1], parse_years(sys.argv[2]), save):
         print(start.isoformat(), days, year)
