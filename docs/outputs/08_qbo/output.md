@@ -1,6 +1,6 @@
 # Phase 8 — QBO nudging: giving the stripped model the tropical wind oscillation it cannot grow
 
-Status: **runs complete, 2005 and the 2005–2009 chain; all acceptance checks pass except throughput (−13 %).** Branch `phase8-qbo-nudging` (off `phase6-circulation`), committed, not pushed. **Addendum 2026-09-09 (section at the end): the window top raised from 4 to 1 hPa, same runs repeated; now the default.** PDF: `docs/outputs/jcm-strat_phase8_qbo.pdf` (`scripts/make_phase8_report.py`).
+Status: **runs complete, 2005 and the 2005–2009 chain; all acceptance checks pass except throughput (−13 %).** Branch `phase8-qbo-nudging` (off `phase6-circulation`), committed, not pushed. **Addenda at the end: 2026-09-09 window top 4 -> 1 hPa (default); 2026-09-10 tau sweep 5 / 2 / 1 d, tau 1 d now the default (KEY_DECISIONS #27), and a mean-preserving target interpolation (runs p8f_*, pending at commit time).** PDF: `docs/outputs/jcm-strat_phase8_qbo.pdf` (`scripts/make_phase8_report.py`).
 
 ## Why
 
@@ -296,3 +296,62 @@ throughput 3910-3940 days/hr stepping (first segment 3517 while sharing the node
 4. **Not adopted as the default in this commit**: the sensitivity test is recorded; whether the
    default becomes 5 d, 2 d or 6 h is a decision to take with the transport question in view
    (DEFERRED, Found in Phase 8).
+
+## Addendum, 2026-09-10 (later): the tau sweep completed, 2 d and 1 d (`tau2/`, `tau1/`)
+
+Same protocol as the 5-day test: `qbo.tau_days=2.0` (runs `p8d_2005` ... `p8d_2009`, aggregate
+`p8d_5yr`) and `1.0` (`p8e_*`, `p8e_5yr`), 2005-2009, GPU 0, each compared against the tau 10 d chain
+`p8b_5yr`. All 2005-2009, monthly statistics against ERA5 monthly means.
+
+```
+tau      std 10 / 20 / 30 / 50 hPa [m/s]   % of ERA5 at 20 hPa   RMS vs ERA5 10-70 hPa   RMS 1-7 hPa   SAO 1 / 2 / 3 hPa    u RMSE 100-1 hPa vs ERA5
+10 d     13.7 / 14.1 / 12.4 / 7.8               81 %                    4.0                 12.5        9.5 / 15.8 / 13.8         4.9 m/s
+ 5 d     14.6 / 15.1 / 13.2 / 8.5               86 %                    3.1                 10.9       12.2 / 17.3 / 13.9         4.8
+ 2 d     15.4 / 15.8 / 13.9 / 9.0               90 %                    2.5                  8.9       14.9 / 18.1 / 13.7         4.6
+ 1 d     15.7 / 16.1 / 14.2 / 9.3               92 %                    2.3                  7.7       17.2 / 18.2 / 13.7         4.4
+ERA5     17.5 / 17.5 / 15.2 / 10.7             100 %                     -                    -        30.7 / 20.7 / 15.6          -
+two-spring prediction tau_m/(tau+tau_m) with tau_m = 40 d: 80 / 89 / 95 / 98 %
+
+unchanged across the sweep (tau 10 -> 1 d): T RMSE 100-1 hPa 6.3 -> 6.2 K; DJF u(60N,10hPa) 31 -> 30-31, JJA u(60S) 64 -> 64 m/s;
+Brewer-Dobson 70 hPa annual 7.7 -> 7.9 / 8.0 / 8.2 x 10^9 kg/s (WACCM6 6.1); age of air ~55 hPa tropics 2.16 -> 2.15 / 2.15 / 2.13 yr,
+contrast 1.64 -> 1.65 / 1.66 / 1.65; ~12 hPa tropics 3.68 -> 3.67 / 3.68 / 3.66; unity max |q-1| 2.6-2.8e-4, sai -0.77 %, minima >= 0;
+throughput 3860-3940 days/hr stepping, 8 ms/step, at every tau.
+RMS change in time-mean zonal-mean u vs tau 10 d: inside the window 0.7 / 1.4 / 1.8 m/s; |lat| > 30, 1-100 hPa 0.2 / 0.5 / 0.4; troposphere 0.0.
+SSW-like reversals: tau 10 d 2008-03-26, 2009-01-31, 2009-12-07; tau 5 d 2006-02-15, 2008-03-21, 2009-01-31, 2009-12-07;
+tau 2 d 2006-02-15, 2008-03-21, 2009-02-25, 2009-12-07; tau 1 d 2006-02-15, 2009-02-05, 2009-12-07 (ERA5 majors 2006-01-21/02-11, 2007-02-24, 2008-02-22, 2009-01-24).
+```
+
+![tau 2 d: equatorial wind](tau2/5yr/qbo_time_height_before_after.png)
+![tau 2 d: profiles](tau2/5yr/qbo_profiles.png)
+![tau 1 d: equatorial wind](tau1/5yr/qbo_time_height_before_after.png)
+![tau 1 d: profiles](tau1/5yr/qbo_profiles.png)
+![tau 1 d: vortex](tau1/5yr/strat/vortex_series.png)
+![tau 1 d: age of air](tau1/5yr/p8e_5yr_aoa_profiles.png)
+
+### Reading
+
+1. **The amplitude follows the two-spring law down to 2 d and then flattens.** 80 / 86 / 90 / 92 %
+   against the predicted 80 / 89 / 95 / 98 %. From 2 to 1 d the gain is 2 %, so the last ~8 % is not
+   the relaxation any more but the target itself: linear interpolation between month centres cuts
+   every peak (the (1,6,1)/8 filter: 0.6 % for the QBO's 28-month period, 12.5 % for the 6-month SAO) and the reference the amplitude is scored against
+   is ERA5's monthly means, which the model can only match if the interpolant reproduces them. That is
+   the mean-preserving interpolation (next addendum).
+2. **Above the QBO layer the gain does not flatten**: 12.5 / 10.9 / 8.9 / 7.7 m/s, and the SAO at
+   2 hPa reaches ERA5 (18.2 vs 20.7). The semiannual signal is fast enough that tau still matters.
+3. **Nothing outside the window moves at any tau.** Climatology improves monotonically (u RMSE
+   4.9 -> 4.4 m/s, all of it the tropics), age of air changes by 0.03 yr, tracers and throughput not
+   at all. No artefact at the window edges from the stiff wind spring against the 15-day temperature
+   relaxation.
+4. **The February 2006 vortex reversal** appears at tau 5, 2 and 1 d (never at 10 d), a few days after
+   ERA5's 2006-02-11 warming; the 2009 date wanders (01-31, 02-25, 02-05) and the March 2008
+   reversal is missing at 1 d. Sudden warmings are wave events that a small tropical change can
+   re-time (the QBO modulates the extratropical waveguide, the Holton-Tan effect), so a systematic
+   effect is plausible but three chains cannot separate it from internal variability. Noted, not
+   claimed.
+5. **Decision (KEY_DECISIONS #27): tau 1 d is the default.** It is the value at which the
+   relaxation stops being the limit, the model still sets its own temperature (the thermal-wind
+   adjustment takes about a day, so the wind does not run ahead of it as it would at 6 h), and it
+   stays in the range specified-dynamics models use (SD-WACCM: 50 h). The daily-versus-monthly target
+   question is settled the other way: the term already interpolates to every 12-minute step, a
+   daily target would add sub-monthly wind changes that are not QBO, and what the target needs is
+   the right shape, not a finer cadence.

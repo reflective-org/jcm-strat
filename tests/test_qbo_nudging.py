@@ -16,7 +16,7 @@ from jcm.physics_interface import compute_physics_step_gridpoint
 
 from jcm_strat.held_suarez_columns import HeldSuarezColumns
 from jcm_strat.polvani_kushner import PolvaniKushnerColumns
-from jcm_strat.qbo_nudging import PolvaniKushnerQbo, QboNudging
+from jcm_strat.qbo_nudging import PolvaniKushnerQbo, QboNudging, mean_preserving_nodes
 
 ERA5 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache", "era5_ref", "era5_zm_monthly_*.nc")
 pytestmark = pytest.mark.skipif(not glob.glob(ERA5), reason="ERA5 zonal-mean reference files not present")
@@ -83,3 +83,28 @@ def test_combined_term_equals_pk_plus_qbo():
         outs.append((np.asarray(tend.u_wind), np.asarray(tend.temperature)))
     assert np.allclose(outs[0][0], outs[1][0], rtol=1e-6, atol=1e-12)
     assert np.allclose(outs[0][1], outs[1][1], rtol=1e-6, atol=1e-12)
+
+
+def test_mean_preserving_nodes_reproduce_monthly_means():
+    """The piecewise-linear interpolant through the adjusted nodes has the prescribed monthly means,
+    and it overshoots the means at the peaks of a sinusoid (which plain interpolation cuts)."""
+    n = 36
+    t = np.arange(n)
+    m = np.stack([20.0 * np.sin(2 * np.pi * t / 28.0), 5.0 * np.cos(2 * np.pi * t / 6.0) - 3.0], axis=1)   # (n, 2)
+    v = mean_preserving_nodes(m)
+    assert v.shape == m.shape
+    # monthly means of the interpolant (fine sampling; nodes sit at month centres k, months span [k-0.5, k+0.5])
+    fine = np.linspace(-0.5, n - 0.5, n * 2000 + 1)
+    for col in range(m.shape[1]):
+        f = np.interp(fine, t, v[:, col])            # np.interp clamps at the ends like the term does
+        means = np.array([f[(fine >= k - 0.5) & (fine < k + 0.5)].mean() for k in range(n)])
+        np.testing.assert_allclose(means, m[:, col], atol=2e-3)
+    # the (1,6,1)/8 filter has eigenvalue (6 + 2 cos(2 pi / P)) / 8 for a sinusoid of period P months, so the
+    # nodes exceed the monthly means by 1/0.9937 = 0.6 percent for the QBO-like column (P = 28) and by
+    # 1/0.875 = 14.3 percent for the SAO-like one (P = 6)
+    assert 1.004 < np.abs(v[:, 0]).max() / np.abs(m[:, 0]).max() < 1.01
+    assert 1.13 < (v[:, 1].max() - v[:, 1].min()) / (m[:, 1].max() - m[:, 1].min()) < 1.16
+    # a constant is reproduced exactly (the filter rows sum to one, ends included)
+    const = np.full((n, 1), 3.0)
+    np.testing.assert_allclose(mean_preserving_nodes(const), const, atol=1e-12)
+
