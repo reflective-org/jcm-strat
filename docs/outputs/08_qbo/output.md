@@ -232,3 +232,67 @@ throughput 3890-3930 days/hr stepping (before 3820-3960), 8 ms/step, 1870-1900 e
    within noise. The change in the time-mean wind is one patch at 2–3 hPa over the equator.
 4. **Decision: 1 hPa is the default** (`strat_pk_qbo.yaml`, KEY_DECISIONS #26). The 4 hPa chain
    `p8_5yr` stays on disk as the before-state.
+
+## Addendum, 2026-09-10: relaxation time 5 days (`tau5/`), a sensitivity test
+
+### Why
+
+The 1 hPa window top left the QBO layer exactly as it was, so the 80 % amplitude is the relaxation,
+not the geometry. Two springs act on the tropical zonal-mean wind: the nudging (tau) towards ERA5, and
+the model's own dynamics (tropical upwelling advecting low angular momentum, the 15-day
+Polvani-Kushner relaxation eroding the thermal-wind temperature anomalies) towards the model's own
+easterly state. The wind settles at the weighted mean, so the anomalies shrink by
+tau_model / (tau + tau_model); 80 % at tau 10 d implies tau_model ~ 40 d, and predicts ~89 % at 5 d,
+95 % at 2 d, 99 % at 6 h. A shorter tau with the monthly target is the right combination: the QBO
+descends ~1 km per month, so a monthly target interpolated between month centres already resolves
+its transitions to within a week, while a daily target would impose sub-monthly wind changes that
+are not QBO on the zonal mean. One knob: `physics.terms.held_suarez.qbo.tau_days=5.0`.
+
+### Runs
+
+`p8c_tau5_2005` (2005 alone, GPU 2), then `p8c_2005` ... `p8c_2009`, aggregate `p8c_5yr`
+(`chain_years.sh` with `GPU=2`, the script now takes the GPU as a variable; 5 x 16 min while
+Phase 9 ran on GPU 0). Before = `p8b_2005` / `p8b_5yr` (tau 10 d, window top 1 hPa).
+
+### Results (`tau5/1yr/`, `tau5/5yr/`)
+
+```
+                              deseasonalised std [m/s]    RMS vs ERA5 eq. monthly u [m/s]   SAO amplitude [m/s]
+                              10 / 20 / 30 / 50 hPa       10-70 hPa      1-7 hPa            1 / 2 / 3 hPa
+tau 10 d (p8b_5yr)            13.7 / 14.1 / 12.4 / 7.8      4.0          12.5               9.5 / 15.8 / 13.8
+tau 5 d  (p8c_5yr)            14.6 / 15.1 / 13.2 / 8.5      3.1          10.9              12.2 / 17.3 / 13.9
+ERA5 2005-2009 (monthly)      17.5 / 17.5 / 15.2 / 10.7      -             -               30.7 / 20.7 / 15.6
+amplitude as a fraction of ERA5 at 20 hPa: 81 % -> 86 % (prediction 89 %)
+2005 alone: RMS 10-70 hPa 4.2 -> 3.0; 1-7 hPa 10.6 -> 9.4
+RMS change in time-mean zonal-mean u, tau 5 minus tau 10: inside the window 0.7 m/s; |lat| > 30, 1-100 hPa 0.2; troposphere 0.0
+
+climatology vs ERA5 2005-2009, 100-1 hPa: T RMSE 6.2 K (tau 10: 6.3); u RMSE 4.8 m/s (4.9)
+DJF u(60N, 10 hPa) 30 m/s (31; ERA5 28); JJA u(60S, 10 hPa) 64 (64; 72)
+reversals 2006-02-15, 2008-03-21, 2009-01-31, 2009-12-07 (tau 10: 2008-03-26, 2009-01-31, 2009-12-07; ERA5 2006-02-11 among them)
+Brewer-Dobson 70 hPa DJF/JJA/annual 9.4 / 6.8 / 7.9 (9.4 / 6.6 / 7.7); 100 hPa 10.9 (10.7)
+age of air ~55 hPa tropics 2.15 yr (2.16), 50-70 deg 3.80 (3.81), contrast 1.65 (1.64); ~12 hPa tropics 3.67 (3.68)
+tracers: unity max |q-1| 2.8e-4, sai -0.77 % vs analytic, minima >= 0, top-level polar sai 7.3 % of the column
+throughput 3910-3940 days/hr stepping (first segment 3517 while sharing the node's CPUs), 8 ms/step
+```
+
+![equatorial wind, tau 10 / tau 5 / ERA5](tau5/5yr/qbo_time_height_before_after.png)
+![profiles and the change](tau5/5yr/qbo_profiles.png)
+![vortex](tau5/5yr/strat/vortex_series.png)
+![age of air](tau5/5yr/p8c_5yr_aoa_profiles.png)
+![2005 alone](tau5/1yr/qbo_time_height_before_after.png)
+
+### Reading
+
+1. **Halving tau closed about a quarter of the remaining amplitude gap, at every level**, from 80 to
+   85-86 % of ERA5, and the QBO-layer error fell from 4.0 to 3.1 m/s. This is what the two-spring
+   estimate predicts (89 %), so the model's own restoring time is indeed of order 40 days and the rest
+   of the gap is tau: 2 d would give ~95 %, 6 h essentially all of it.
+2. **Nothing else moved.** Climatology, jets, Brewer-Dobson flux, age of air (identical to 0.01 yr)
+   and tracer conservation are the tau 10 d numbers within noise; the time-mean wind changes by
+   0.2 m/s outside the window. The stiffer wind spring forcing the QBO's thermal structure against
+   the 15-day temperature relaxation shows no artefact at the window edges in the zonal means.
+3. **A 2006 vortex reversal appears** (2006-02-15; ERA5 2006-02-11) that neither the tau 10 d nor the
+   Phase 6 chain had. One event, far outside the window: internal variability until shown otherwise.
+4. **Not adopted as the default in this commit**: the sensitivity test is recorded; whether the
+   default becomes 5 d, 2 d or 6 h is a decision to take with the transport question in view
+   (DEFERRED, Found in Phase 8).

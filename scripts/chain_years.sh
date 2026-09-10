@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Phase 4: run 2005-2009 as five chained one-year segments on GPU 0, then link the segment
+# Phase 4: run 2005-2009 as five chained one-year segments on one GPU (GPU=0 default), then link the segment
 # outputs into runs/p4_5yr/ with cumulative day numbers so every analysis script sees one run.
 #
 #   tmux new-session -d -s strat_p4_chain 'bash scripts/chain_years.sh'
@@ -17,11 +17,15 @@ EXPERIMENT="${EXPERIMENT:-p4_5yr}"; PREFIX="${PREFIX:-p4}"
 # EXTRA_PER_YEAR: optional extra hydra overrides per segment; the literal {year} is replaced by the
 # segment's calendar year, e.g. EXTRA_PER_YEAR="physics.terms.held_suarez.qbo.year={year}".
 EXTRA_PER_YEAR="${EXTRA_PER_YEAR:-}"
+# GPU: which card to run on (default 0, the project default; 1 or 2 only by agreement, see the
+# GPU rule in the README). The chain refuses to start if that card already has a process.
+GPU="${GPU:-0}"; export CUDA_VISIBLE_DEVICES="$GPU"
 LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"
 step() { echo "[chain] $(date -Is) $*" | tee -a "$LOG"; }
-if nvidia-smi -i 0 --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
-  step "refusing: GPU 0 is busy"; exit 1
+if nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
+  step "refusing: GPU $GPU is busy"; exit 1
 fi
+step "GPU $GPU"
 
 YEARS=(2005 2006 2007 2008 2009)
 prev=""
