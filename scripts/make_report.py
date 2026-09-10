@@ -160,7 +160,18 @@ def build(out_pdf: str) -> None:
           para("Held-Suarez acts at every level. Below about the tropopause the equilibrium temperature has real structure "
                "(warm tropics, cold poles). Above it the target is clamped to a flat 200 K at every latitude and the relaxation time "
                "is 40 days. The stratosphere is therefore pulled toward an isothermal state with no seasonal cycle and no "
-               "polar-night jet. A separate upper sponge relaxes the top ten levels toward 250 K as a numerical lid."),
+               "polar-night jet."),
+          para("Upper sponge. A separate sponge, inherited unchanged from JCM's run=longrun configuration, acts as a "
+               "numerical lid on the top ten of the 95 levels (about 0.01 to 0.15 hPa, entirely in the mesosphere). It applies "
+               "Rayleigh drag to the horizontal wind and relaxes temperature both toward its zonal mean and toward an absolute "
+               "target of 250 K. The timescale is 1.5 h at the top level and doubles with each level downward, so it is about "
+               "770 h at level ten and zero below that; the stratosphere the tracers live in is untouched. The 250 K target "
+               "was calibrated in JCM for a T63L47 grid spun up from a dry Jablonowski-Williamson state with realistic ozone and "
+               "has not been re-tuned for Held-Suarez at L95; the top level sitting flat at 249.9 K after one year is that target "
+               "holding. jcm-strat defines no sponge of its own: every experiment selects JCM's longrun run block, so the same "
+               "five parameters (levels 10, timescale 1.5 h, softening 2 per level, temperature damping on, target 250 K) appear "
+               "in every resolved config under docs/resolved_configs/ and apply to all phases in this report. The planned "
+               "roughly 30-level grid will need its own four-or-five-level sponge (handover note), not yet done."),
           bullets(["One year, no NaNs in any of 13 chunks, surface pressure drift +0.005 hPa, top-level temperature flat.",
                    "Speed: 5 787 simulated days per hour stepping, about 110 times Phase 0. A simulated year takes 9 minutes "
                    "end to end including compile and output.",
