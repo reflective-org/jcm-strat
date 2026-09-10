@@ -1,0 +1,8 @@
+run:            /data/JCM_stripped/jcm-strat-phase9/runs/p9_t85l47_5yr
+dt:             9.0 min
+chunk 0:        30 d in 53 s (includes compile)
+steady state:   1796 d in 2114 s over 64 chunk(s)
+throughput:     3059.2 simulated days / hour
+per step:       7 ms
+end-to-end:     1826 d in 4848 s incl. compile + output = 1356 days / hour  (65 chunks)
+csv row appended to /data/JCM_stripped/jcm-strat-phase9/docs/outputs/throughput.csv

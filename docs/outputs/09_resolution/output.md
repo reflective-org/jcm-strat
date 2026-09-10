@@ -91,7 +91,12 @@ cost stand beside it, unweighted (`scripts/resolution_metrics.py`).
 | `p9_t63l47_*` → `p9_t63l47_5yr` | 1825 | 5 | **done**, 58 min on GPU 0 (21:45–22:43), all segments exit 0 |
 | `p9_t85l95_*` → `p9_t85l95_5yr` | 1825 | 10 | running (GPU 0, from 22:48) |
 | `p9_t119l95_*` → `p9_t119l95_5yr` | 1825 | 20 | queued |
-| `p9_t85l63`, `p9_t85l47`, `p9_t119l63`, `p9_t119l47` | 1825 | 10 / 5 / 20 / 10 | wave 2; T85L63 running (GPU 2), T85L47 running (GPU 1) — Susanne released GPUs 0–2 for this day |
+| `p9_t85l63_*` → `p9_t85l63_5yr` | 1825 | 10 | **done**, 1 h 44 min on GPU 2 (22:08–23:52), all segments exit 0 |
+| `p9_t85l47_*` → `p9_t85l47_5yr` | 1825 | 5 | **done**, 1 h 23 min on GPU 1 (22:28–23:51), all segments exit 0 |
+| `p9_t119l63_*` → `p9_t119l63_5yr` | 1825 | 20 | running (GPU 1, from 2026-09-10 00:40) |
+| `p9_t119l47_*` → `p9_t119l47_5yr` | 1825 | 10 | queued (GPU 2, waiting for its ERA5 windows) |
+
+Susanne released GPUs 0–2 to this phase for 2026-09-09/10, so from 22:08 UTC the chains ran three at a time (one queue per GPU, `phase9_queue.sh` claim files).
 
 ## Acceptance
 
