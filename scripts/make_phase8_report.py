@@ -65,7 +65,8 @@ def build(out_pdf):
     s = [P("jcm-strat Phase 8: giving the model a QBO", TITLE),
          P("Nudging the tropical stratospheric wind towards ERA5 on the Phase 6 configuration (Polvani-Kushner stratosphere, "
            "ERA5-nudged troposphere, four passive tracers, T63L95, 12 minute step). Two versions: the nudging window reaching up to "
-           "4 hPa, run for 2005 and for the 2005 to 2009 chain, and then the same runs with the window top raised to 1 hPa. "
+           "4 hPa, run for 2005 and for the 2005 to 2009 chain, and then the same runs with the window top raised to 1 hPa; then a "
+           "sensitivity test of the relaxation time (5 instead of 10 days) over the same five years. "
            f"Record as of {today}, branch phase8-qbo-nudging.", SUB)]
 
     # ------------------------------------------------------------------ 1
@@ -233,11 +234,56 @@ def build(out_pdf):
     s += RESULTS_1HPA
 
     # ------------------------------------------------------------------ 7
-    s += [PageBreak(), P("7. Reading and what comes next", H1), *READING]
+    s += [PageBreak(), P("7. A shorter relaxation time: tau 5 days", H1),
+          P("Raising the window top left the QBO layer exactly as it was, so the 80 percent amplitude is the relaxation, not the "
+            "geometry. Two springs act on the tropical zonal-mean wind: the nudging, pulling toward ERA5 with time constant tau, and the "
+            "model's own dynamics, pulling toward the model's own easterly state (tropical upwelling lifting slow-spinning air, and the "
+            "15-day Polvani-Kushner temperature relaxation eroding the warm and cold layers a westerly jet needs). The wind settles at the "
+            "weighted mean, so the swings shrink by the factor tau_model / (tau + tau_model). Eighty percent at tau 10 days implies a model "
+            "restoring time of about 40 days and predicts 89 percent at 5 days, 95 at 2 days, 99 at 6 hours. The monthly target is kept: "
+            "the QBO descends about 1 km a month, so a monthly target interpolated between month centres resolves its transitions to within "
+            "a week, and a daily one would only add sub-monthly wind changes that are not QBO. One key: tau_days 5. Runs p8c_2005 to "
+            "p8c_2009 (aggregate p8c_5yr) on GPU 2 while Phase 9 occupied GPU 0; before-state p8b_5yr (tau 10 days, window top 1 hPa)."),
+          table([["2005-2009", "deseasonalised std 10 / 20 / 30 / 50 hPa [m/s]", "RMS vs ERA5, 10-70 hPa", "RMS vs ERA5, 1-7 hPa", "SAO amplitude 1 / 2 / 3 hPa"],
+                 ["tau 10 d (p8b_5yr)", "13.7 / 14.1 / 12.4 / 7.8", "4.0", "12.5", "9.5 / 15.8 / 13.8"],
+                 ["tau 5 d (p8c_5yr)", "14.6 / 15.1 / 13.2 / 8.5", "3.1", "10.9", "12.2 / 17.3 / 13.9"],
+                 ["ERA5 (monthly, CDS)", "17.5 / 17.5 / 15.2 / 10.7", "-", "-", "30.7 / 20.7 / 15.6"]],
+                [3.6 * cm, 4.4 * cm, 2.9 * cm, 2.9 * cm, 3.2 * cm], hl=[2]),
+          Spacer(1, 4),
+          P("Amplitude at 20 hPa as a fraction of ERA5: 81 to 86 percent (prediction 89). Change in the time-mean zonal-mean wind, tau 5 minus "
+            "tau 10: 0.7 m/s inside the window, 0.2 outside it in the stratosphere, 0.0 in the troposphere.", CAP),
+          table([["check", "tau 10 d", "tau 5 d", "reference"],
+                 ["stratospheric climatology vs ERA5, 100-1 hPa, annual", "T 6.3 K, u 4.9 m/s", "T 6.2 K, u 4.8 m/s", "Phase 6: 6.4 K, 5.6 m/s"],
+                 ["polar vortex, DJF u(60N, 10 hPa) / JJA u(60S, 10 hPa)", "31 / 64 m/s", "30 / 64 m/s", "ERA5 28 / 72"],
+                 ["SSW-like reversals", "2008-03-26, 2009-01-31, 2009-12-07", "2006-02-15, 2008-03-21, 2009-01-31, 2009-12-07", "ERA5 majors 2006-01/02, 2007-02, 2008-02, 2009-01"],
+                 ["Brewer-Dobson upward mass flux at 70 hPa, DJF / JJA / annual", "9.4 / 6.6 / 7.7", "9.4 / 6.8 / 7.9", "WACCM6 8.6 / 5.4 / 6.1 (x 10^9 kg/s)"],
+                 ["age of air at 20 km, tropics / 50-70 deg / contrast", "2.16 / 3.81 / 1.64 yr", "2.15 / 3.80 / 1.65 yr", "CLaMS 1.33 / 4.12 / 2.79"],
+                 ["tracer conservation: unity max deviation, sai vs analytic, polar top-level sai", "2.7e-4, -0.8 percent, 7.6 percent", "2.8e-4, -0.8 percent, 7.3 percent", "Phase 3 levels"],
+                 ["throughput, stepping", "3890-3930 days per hour, 8 ms per step", "3910-3940 days per hour, 8 ms per step", "Phase 6: 4445"]],
+                [5.2 * cm, 3.7 * cm, 3.7 * cm, 4.4 * cm]),
+          Spacer(1, 6),
+          fig("tau5/5yr/qbo_time_height_before_after.png",
+              "Figure 15. Equatorial wind 2005 to 2009 at tau 10 days (top), tau 5 days (middle) and ERA5 (bottom). The westerly phases at 5 to "
+              "20 hPa are broader and about 5 m/s stronger and the semiannual westerlies at 1 to 3 hPa more distinct; the picture is otherwise "
+              "the same.", maxh=12 * cm),
+          fig("tau5/5yr/qbo_profiles.png",
+              "Figure 16. Left: the time-mean equatorial wind is unchanged. Middle: the QBO amplitude rises at every level by 6 to 9 percent. "
+              "Right: the change in the time-mean zonal-mean wind is below 2 m/s everywhere.", maxh=7 * cm),
+          fig("tau5/5yr/strat/vortex_series.png",
+              "Figure 17. Polar-vortex wind at 10 hPa, tau 10 (blue) and tau 5 (orange) days. The one visible difference is a reversal in "
+              "February 2006, a few days after ERA5's warming, which the tau 10 day chain did not produce; a single event far outside the "
+              "window, read as internal variability.", maxh=8 * cm),
+          fig("tau5/5yr/p8c_5yr_aoa_profiles.png",
+              "Figure 18. Age of air at tau 5 days (blue) against tau 10 days (orange dashed): identical to a hundredth of a year.", maxh=7 * cm),
+          P("Halving tau closed about a quarter of the remaining amplitude gap at every level, as the two-spring estimate predicts, and "
+            "nothing else in the model moved. The remaining gap is again tau: 2 days would give about 95 percent, 6 hours all of it. This "
+            "commit records the test and keeps 10 days as the default; which tau becomes the default is a decision to take with the transport "
+            "question in view (DEFERRED.md, Found in Phase 8).")]
+    s += [PageBreak(), P("8. Reading and what comes next", H1), *READING]
 
-    s += [P("8. Where things are", H2),
-          P("Runs under runs/p8_* (window top 4 hPa) and runs/p8b_* (1 hPa); record docs/outputs/08_qbo/output.md with the figures beside "
-            "it (5yr/, 1yr/, 1hpa_top/); the term jcm_strat/qbo_nudging.py with tests/test_qbo_nudging.py; configuration "
+    s += [P("9. Where things are", H2),
+          P("Runs under runs/p8_* (window top 4 hPa), runs/p8b_* (1 hPa) and runs/p8c_* (1 hPa, tau 5 days); record docs/outputs/08_qbo/output.md with the figures beside "
+            "it (5yr/, 1yr/, 1hpa_top/, tau5/); the term jcm_strat/qbo_nudging.py with tests/test_qbo_nudging.py; configuration "
             "jcm_strat/config/physics/strat_pk_qbo.yaml and experiment p8_qbo; the comparison script scripts/qbo_compare.py; the ERA5 "
             "target fetch scripts/fetch_era5_strat_ref.py (cache/era5_ref/). Decisions 23, 24 and 26 in KEY_DECISIONS.md; open items: "
             "issue 44 (cheaper zonal mean), issue 6 (close on merge).")]
@@ -309,15 +355,16 @@ READING = bullets([
     "extratropics 1.56 to 1.63 (CLaMS 2.79). A five-year mean averages over two QBO cycles; the QBO's value for aerosol is in phase-dependent "
     "statements (residence time in the easterly against the westerly phase, subtropical leakage), which the model can now make. The remaining "
     "0.9 year tropical excess is the Phase 4 diagnosis unchanged (issue 25).",
-    "<b>The window top was not what limits the westerly phases.</b> Raising it to 1 hPa left the QBO layer exactly as it was: same amplitude, "
-    "same weak westerlies (+5 to +10 m/s where ERA5 has +10 to +20). That deficit is the 10-day relaxation against the model's own easterly "
-    "pull, plus the monthly target smoothing the extremes. The next knob is tau. At 6 hours, the tropospheric value, the tropical zonal-mean "
-    "wind would be prescribed rather than guided and the amplitude would reach the target; the thermal-wind temperature anomalies would then "
-    "be forced against the 15-day Polvani-Kushner relaxation, which is the physical effect wanted for transport but needs checking at the "
-    "taper edges. A daily instead of monthly target (CDS; the fetch script already does it for 10 hPa) is worth having only once tau is well "
-    "below 10 days.",
-    "<b>Decision.</b> The 1 hPa top is the default from now on (KEY_DECISIONS 26); the 4 hPa chain stays on disk as the before-state. Tau "
-    "and the daily target are recorded in DEFERRED.md as the next experiment, not started.",
+    "<b>The window top was not what limits the westerly phases; tau is.</b> Raising the top to 1 hPa left the QBO layer exactly as it was. "
+    "Halving tau to 5 days raised the amplitude from 80 to 86 percent of ERA5 at every level and moved nothing else, exactly as the two-spring "
+    "estimate (model restoring time about 40 days) predicts. At 2 days the estimate gives 95 percent, at 6 hours, the tropospheric value, the "
+    "tropical zonal-mean wind is prescribed rather than guided. The thermal-wind temperature anomalies are then forced against the 15-day "
+    "Polvani-Kushner relaxation, which drives the QBO's secondary circulation, the part the tracers feel; no artefact appeared at 5 days. The "
+    "monthly target is the right one for the QBO; a daily target (CDS; the fetch script already does it for 10 hPa) only matters once tau is "
+    "below about 2 days, to smooth the month-centre interpolation.",
+    "<b>Decisions.</b> The 1 hPa top is the default from now on (KEY_DECISIONS 26); the 4 hPa chain stays on disk as the before-state. Tau "
+    "stays at 10 days in this commit; the 5-day chain is recorded as a sensitivity test, and which tau becomes the default (5 days, 2 days or "
+    "6 hours) is open in DEFERRED.md.",
     "<b>Cost.</b> The zonal-mean reduction adds about 1 ms to a 7 ms step, minus 13 percent stepping throughput, the same for both window tops; "
     "a cheaper reduction on the dycore grid is issue 44. A five-year chain takes 70 to 80 minutes on one GPU.",
 ])
