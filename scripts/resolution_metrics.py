@@ -282,7 +282,11 @@ def main():
         ax.set_xscale("log", base=2); ax.set_xticks(cols); ax.set_xticklabels([f"T{truncs[c]}\n{c}" for c in cols], fontsize=8)
         ax.set_title(title, fontsize=9.5, color=C["ink"]); ax.grid(True, color=C["grid"]); ax.set_axisbelow(True)
         for sp in ("top", "right"): ax.spines[sp].set_visible(False)
-        if key == "days_per_hr": ax.set_yscale("log")
+        if key == "days_per_hr":
+            ax.set_yscale("log")
+        else:
+            ax.set_ylim(bottom=0)          # errors and ages from zero, so a flat line reads as flat
+            ax.set_ylim(top=ax.get_ylim()[1] * 1.08)
     axes[2, 0].set_xlabel("horizontal truncation / number of columns"); axes[2, 1].set_xlabel("horizontal truncation / number of columns")
     axes[0, 0].legend(frameon=False, fontsize=9, title="vertical grid", title_fontsize=9)
     fig.suptitle(f"Phase 9 resolution sweep, {a.years}: transport fidelity and cost against resolution", fontsize=12, color=C["ink"])
