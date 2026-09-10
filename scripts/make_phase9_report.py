@@ -76,13 +76,11 @@ def build(out_pdf):
     rows = metrics_rows()
     # columns: run, grid, columns, dt, AoA RMSE, bias, age55, age12, transit, upflux, T, u, jets, QBO, stepping, ms, hours
     keep = [0, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16]
-    hdr = ["run", "columns", "dt [min]", "AoA RMSE vs CLaMS [yr]", "age 55 hPa: tropics / 50-70 / contrast [yr]",
-           "age 12 hPa: tropics / 50-70 / contrast [yr]", "transit 70-10 hPa [yr]", "up-flux 70 hPa [10^9 kg/s]", "T RMSE vs ERA5 [K]",
-           "u RMSE vs ERA5 [m/s]", "u(60N) DJF / u(60S) JJA [m/s]", "QBO RMS vs ERA5 [m/s]", "stepping [d/hr]", "5-yr wall [h]"]
-    trows = [hdr] + [[r[i] for i in keep] for r in rows[1:]]
-    colw = [1.55, 1.25, 0.9, 1.35, 2.35, 2.35, 1.25, 1.35, 1.15, 1.15, 1.55, 1.25, 1.2, 1.0]
-    scale = W / sum(colw)
-    colw = [c * scale * cm / cm for c in colw]
+    hdr = ["run", "cols", "dt", "AoA RMSE [yr]", "age 55 hPa trop / 50-70 / contrast [yr]",
+           "age 12 hPa trop / 50-70 / contrast [yr]", "transit [yr]", "up-flux 70 hPa", "T RMSE [K]",
+           "u RMSE [m/s]", "u60N DJF / u60S JJA", "QBO RMS [m/s]", "d/hr", "wall [h]"]
+    trows = [hdr] + [[r[i].replace(" / ", "/") for i in keep] for r in rows[1:]]
+    colw = [1.5, 1.05, 0.6, 1.1, 2.3, 2.3, 1.1, 1.25, 1.0, 1.0, 1.5, 1.1, 0.95, 0.9]
     colw = [c * (W / sum(colw)) for c in colw]
 
     s = [P("jcm-strat Phase 9: resolution sensitivity of stratospheric transport", TITLE),
@@ -160,7 +158,9 @@ def build(out_pdf):
             "WACCM6 with the same method; the QBO as the RMS of the equatorial monthly wind against ERA5 over 10 to 70 hPa. Read from "
             "docs/outputs/09_resolution/resolution_metrics.md."),
           table(trows, colw), Spacer(1, 6),
-          P("Reference rows: CLaMS is the target for the age columns (contrast 2.79 years, transit 2.94 years); WACCM6 gives 6.1 for the "
+          P("Columns: cols = grid columns; dt in minutes; AoA RMSE against CLaMS over 100-5 hPa; transit = tropical 70 to 10 hPa from the age "
+            "profile; up-flux in 10^9 kg/s, annual; T and u RMSE 100-1 hPa vs ERA5; jets in m/s at 10 hPa; QBO RMS of equatorial monthly u vs "
+            "ERA5 10-70 hPa; d/hr = simulated days per hour stepping; wall = the 5-year chain end to end. Reference rows: CLaMS is the target for the age columns (contrast 2.79 years, transit 2.94 years); WACCM6 gives 6.1 for the "
             "70 hPa up-flux (ERA5-era literature 6 to 8); ERA5 is the zero of the T, u and QBO columns and has u(60N, 10 hPa) 28 m/s in DJF "
             "and u(60S) 72 m/s in JJA.", CAP),
           fig("resolution_sweep.png",
