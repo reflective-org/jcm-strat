@@ -3,8 +3,9 @@
 # four Phase 3 passive tracers, and omega published as an output field.
 #
 # production_tracers (jcm_strat/advection_tracers.py): three age-of-air clocks (reset below 700 hPa,
-# below 150 hPa, in the lowest two layers), the sai injection tracer, five Gaussian pulse tracers
-# re-injected quarterly and absorbed in the lowest two layers, and two steady N2O/CFC-11-like tracers
+# below 150 hPa, in the lowest two layers), the sai injection tracer, five Gaussian pulse tracers injected
+# once and absorbed in the lowest two layers, four continuous Gaussian sources with the same sink, and two
+# steady N2O/CFC-11-like tracers
 # with WACCM's zonal-mean initial state and loss frequency (jcm_strat/data/waccm_tracer_ref.nc).
 # unity and e90 are gone (Phase 10 decision). omega_diagnostic is last so the dycore fields it reads
 # have been reshaped to columns; adding it makes the model compute omega (jcm/model.py).
@@ -33,6 +34,7 @@ terms:
       p_top_hpa: 1.0
   production_tracers:
     _target_: jcm_strat.advection_tracers.ProductionTracers
-    first_segment: false      # chain_segments.sh sets true on segment 1: inject the WACCM N2O/CFC-11 state
+    injection: once           # pulses injected once at the start of the run (quarterly: the 2005-2009 review run)
+    first_segment: false      # chain_segments.sh sets true on segment 1: inject the pulses and the WACCM N2O/CFC-11 state
   omega_diagnostic:
     _target_: jcm.physics.diagnostics.omega.OmegaDiagnostic

@@ -13,13 +13,19 @@ Tracers (all ``nondimensionalize=False``, so state, dycore and netCDF carry the 
 ``aoa_sfc``   the same clock reset only in the lowest ``sfc_layers`` model layers: the CLaMS/WACCM
               surface boundary condition.
 ``sai``       continuous source of 1e-6 per second in the box 15S-15N, 25-55 hPa, no sink (as before).
-``pulse_<i>`` pulse injections: on fixed dates (``n_pulses_per_year`` per year, the first on 1 January
-              at 00:00, then every 365/n days) the field is SET to a Gaussian blob G_i(lat, lon, p) of
-              amplitude A_i centred at (lat_i, lon_i, p_i) with widths ``pulse_sigma_deg`` (great-circle)
-              and ``pulse_sigma_decades`` (log10 p). Between injections the only process besides
-              transport is absorption in the lowest ``absorb_layers`` layers (relaxed to zero on one
-              step). No other source or sink, so the global mass falls only through the surface and
-              the field between injections is pure advection of a known initial shape.
+``pulse_<i>`` single injections: on the first step of the run (``injection: once``, the production
+              setting; ``first_segment=true`` marks that segment) the field is SET to a Gaussian blob
+              G_i(lat, lon, p) of amplitude A_i centred at (lat_i, lon_i, p_i) with widths
+              ``pulse_sigma_deg`` (great-circle) and ``pulse_sigma_decades`` (log10 p), and never
+              again. Afterwards the only process besides transport is absorption in the lowest
+              ``absorb_layers`` layers (relaxed to zero on one step): the field is pure advection of a
+              known initial shape until it has mixed out and drained through the surface. With
+              ``injection: quarterly`` (the 2005-2009 review run) the blob is re-set on 1 January and
+              every 365/``n_pulses_per_year`` days of each year.
+``src_<i>``   continuous sources: every step adds A_i G_i / ``source_timescale_days`` (the blob alone
+              would reach A_i in that time) at a fourth set of sites; the same surface absorption is
+              the only sink. Source and sink balance after a few years, leaving steady plumes with
+              permanent 3-D gradients that breathe with the seasons and the QBO.
 ``n2o``,      steady tracers with a tropospheric source and a stratospheric photochemical sink:
 ``cfc11``     held at 1 wherever p > ``n2o_source_pressure_hpa``, loss  -k(lat, p) q  elsewhere with
               WACCM's zonal-mean loss-frequency climatology, and initialised (first step of the
@@ -68,6 +74,13 @@ DEFAULT_PULSES = (
     (30.0, 300.0, 3.0, 0.1),      # upper stratosphere
     (-15.0, 60.0, 300.0, 0.05),   # tropical upper troposphere, crosses the tropopause
 )
+# continuous sources (lat deg, lon deg E, p hPa, amplitude): sites distinct from the pulses
+DEFAULT_SOURCES = (
+    (0.0, 180.0, 20.0, 1.0),      # tropical middle stratosphere
+    (30.0, 60.0, 100.0, 0.5),     # NH subtropical lowermost stratosphere
+    (-60.0, 300.0, 5.0, 0.2),     # SH polar upper stratosphere
+    (-30.0, 240.0, 55.0, 0.3),    # SH subtropical lower stratosphere (Susanne, 2026-09-11)
+)
 STEADY = ("n2o", "cfc11")
 
 
@@ -85,11 +98,15 @@ class ProductionTracers(PhysicsTerm):
         "cfc11": {"units": "1", "long_name": "CFC-11-like tracer: 1 below 700 hPa, WACCM loss frequency above, WACCM zonal-mean initial state"},
     }
     _pulse_names: tuple[str, ...] = tuple(f"pulse_{i + 1}" for i in range(len(DEFAULT_PULSES)))
+    _source_names: tuple[str, ...] = tuple(f"src_{i + 1}" for i in range(len(DEFAULT_SOURCES)))
 
     def __init__(
         self,
         pulses: Sequence[Sequence[float]] = DEFAULT_PULSES,
+        injection: str = "once",
         n_pulses_per_year: int = 4,
+        sources: Sequence[Sequence[float]] = DEFAULT_SOURCES,
+        source_timescale_days: float = 90.0,
         pulse_sigma_deg: float = 12.0,
         pulse_sigma_decades: float = 0.25,
         absorb_layers: int = 2,
@@ -107,7 +124,14 @@ class ProductionTracers(PhysicsTerm):
         self.pulses = tuple(tuple(float(v) for v in p) for p in pulses)
         if len(self.pulses) != len(DEFAULT_PULSES):
             raise ValueError(f"ProductionTracers declares {len(DEFAULT_PULSES)} pulse tracers; got {len(self.pulses)} centres")
+        if injection not in ("once", "quarterly"):
+            raise ValueError(f"injection={injection!r}; expected 'once' or 'quarterly'")
+        self.injection = injection
         self.n_pulses = int(n_pulses_per_year)
+        self.sources = tuple(tuple(float(v) for v in p) for p in sources)
+        if len(self.sources) != len(DEFAULT_SOURCES):
+            raise ValueError(f"ProductionTracers declares {len(DEFAULT_SOURCES)} source tracers; got {len(self.sources)} sites")
+        self.source_rate = 1.0 / (float(source_timescale_days) * DAY)      # per second, times A_i G_i
         self.sigma_h = float(np.deg2rad(pulse_sigma_deg))
         self.sigma_z = float(pulse_sigma_decades)
         self.absorb_layers = int(absorb_layers)
@@ -130,8 +154,9 @@ class ProductionTracers(PhysicsTerm):
         clocks = tuple(TracerSpec(n, units="day", initial_value=0.0, nondimensionalize=False)
                        for n in ("aoa", "aoa150", "aoa_sfc"))
         pulses = tuple(TracerSpec(n, units="1", initial_value=0.0, nondimensionalize=False) for n in cls._pulse_names)
+        sources = tuple(TracerSpec(n, units="1", initial_value=0.0, nondimensionalize=False) for n in cls._source_names)
         steady = tuple(TracerSpec(n, units="1", initial_value=1.0, nondimensionalize=False) for n in STEADY)
-        return clocks + (TracerSpec("sai", units="1", initial_value=0.0, nondimensionalize=False),) + pulses + steady
+        return clocks + (TracerSpec("sai", units="1", initial_value=0.0, nondimensionalize=False),) + pulses + sources + steady
 
     # ------------------------------------------------------------------ setup
     def cache_coords(self, coords) -> None:
@@ -148,17 +173,16 @@ class ProductionTracers(PhysicsTerm):
         self._lat = nnx.Variable(jnp.asarray(lat))
         self._absorb_mask = nnx.Variable(jnp.asarray(lowest(self.absorb_layers)))
         self._sfc_mask = nnx.Variable(jnp.asarray(lowest(self.sfc_layers)))
-        # pulse targets on the reference pressure (sigma * P0): (npulse, nlev, ncols)
+        # blobs on the reference pressure (sigma * P0): pulses (npulse, nlev, ncols), sources (nsrc, nlev, ncols)
         zeta = np.log10(sigma * P0_PA / 1000e2)                                                # log10(p / 1000 hPa)
-        targets = []
-        for lat0, lon0, p0, amp in self.pulses:
+        def blob(lat0, lon0, p0, amp):
             la0, lo0 = np.deg2rad(lat0), np.deg2rad(lon0)
             cosang = np.sin(lat) * np.sin(la0) + np.cos(lat) * np.cos(la0) * np.cos(lon - lo0)
             theta = np.arccos(np.clip(cosang, -1.0, 1.0))                                      # (ncols,)
             z0 = np.log10(p0 / 1000.0)
-            g = amp * np.exp(-0.5 * (theta / self.sigma_h) ** 2)[None, :] * np.exp(-0.5 * ((zeta - z0) / self.sigma_z) ** 2)[:, None]
-            targets.append(g)
-        self._targets = nnx.Variable(jnp.asarray(np.stack(targets), jnp.float32))
+            return amp * np.exp(-0.5 * (theta / self.sigma_h) ** 2)[None, :] * np.exp(-0.5 * ((zeta - z0) / self.sigma_z) ** 2)[:, None]
+        self._targets = nnx.Variable(jnp.asarray(np.stack([blob(*c) for c in self.pulses]), jnp.float32))
+        self._sources = nnx.Variable(jnp.asarray(np.stack([blob(*c) for c in self.sources]), jnp.float32))
         # WACCM reference: (lev, lat) -> model (nlev, ncols), latitude first then ln p
         ref = xr.open_dataset(self.ref_file)
         lat_deg = np.rad2deg(lat)
@@ -186,8 +210,11 @@ class ProductionTracers(PhysicsTerm):
         tyear = solar.tyear if solar is not None else jnp.asarray(0.0)
         x = tyear * 365.0                                     # model-days into the year
         period = 365.0 / self.n_pulses
-        fire = jnp.floor(x / period) != jnp.floor((x - dt / DAY) / period)     # an injection date lies in this step
         first = jnp.logical_and(self.first_segment, x < dt / DAY)             # very first step of the run
+        if self.injection == "once":
+            fire = first
+        else:
+            fire = jnp.floor(x / period) != jnp.floor((x - dt / DAY) / period)  # an injection date lies in this step
         absorb = self._absorb_mask.get_value()[:, jnp.newaxis]
         sfc = self._sfc_mask.get_value()[:, jnp.newaxis]
         tr = state.tracers
@@ -201,6 +228,10 @@ class ProductionTracers(PhysicsTerm):
         for i, name in enumerate(self._pulse_names):
             q = tr[name]
             d[name] = jnp.where(fire, (targets[i] - q) / dt, jnp.where(absorb, -q / dt, 0.0))
+        srcs = self._sources.get_value()
+        for i, name in enumerate(self._source_names):
+            q = tr[name]
+            d[name] = jnp.where(absorb, -q / dt, self.source_rate * srcs[i])
         q0 = self._q0.get_value(); kk = self._k.get_value()
         for i, name in enumerate(STEADY):
             q = tr[name]
@@ -217,5 +248,11 @@ for _i, (_lat, _lon, _p, _amp) in enumerate(DEFAULT_PULSES):
     ProductionTracers.output_attrs[f"pulse_{_i + 1}"] = {
         "units": "1",
         "long_name": (f"pulse tracer {_i + 1}: Gaussian blob (amplitude {_amp}, centre {_lat} deg lat, {_lon} deg E, "
-                      f"{_p} hPa; sigma 12 deg, 0.25 decades) injected on 1 Jan and every 365/4 d, absorbed in the lowest two layers"),
+                      f"{_p} hPa; sigma 12 deg, 0.25 decades) injected once at the start of the run, absorbed in the lowest two layers"),
+    }
+for _i, (_lat, _lon, _p, _amp) in enumerate(DEFAULT_SOURCES):
+    ProductionTracers.output_attrs[f"src_{_i + 1}"] = {
+        "units": "1",
+        "long_name": (f"continuous-source tracer {_i + 1}: Gaussian blob source (amplitude {_amp} per 90 d, centre {_lat} deg lat, "
+                      f"{_lon} deg E, {_p} hPa; sigma 12 deg, 0.25 decades) every step, absorbed in the lowest two layers"),
     }

@@ -119,24 +119,27 @@ class QboNudging(PhysicsTerm):
         if not files:
             raise FileNotFoundError(f"QboNudging: no ERA5 zonal-mean files match {era5_glob}")
         dss = [xr.open_dataset(f, decode_times=False) for f in files]
-        self.years = [int(d.attrs["year"]) for d in dss]
-        self._u_raw = np.concatenate([d.uzm.values for d in dss], axis=0).astype(np.float64)   # (nmonths, 25, 721)
-        if self.mean_preserving:
-            self._u_raw = mean_preserving_nodes(self._u_raw)
-        self._p_raw = dss[0].level.values.astype(np.float64)                                     # hPa, ascending
-        self._lat_raw = dss[0].lat.values.astype(np.float64)                                     # deg, ascending
-        self.year = int(year); self.year0 = self.years[0]; self.nmonths = self._u_raw.shape[0]
-        # _target_now clamps the month index at the record's ends, so a missing year would silently
-        # freeze the target on the first or last available month, and a gap would shift every later
-        # month: refuse both here (Phase 10, before the 1990-2019 chain).
-        if self.years != list(range(self.years[0], self.years[-1] + 1)):
-            raise ValueError(f"QboNudging: ERA5 zonal-mean years are not contiguous: {self.years} ({era5_glob})")
-        if self.use_calendar and self.year not in self.years:
-            raise FileNotFoundError(f"QboNudging: no ERA5 zonal-mean file for {self.year} in {era5_glob} "
-                                    f"(have {self.years[0]}-{self.years[-1]}; scripts/fetch_era5_strat_ref.py)")
+        years = [int(d.attrs["year"]) for d in dss]
+        self.year = int(year)
+        # _target_now indexes the concatenated record by (year - year0) * 12, so the record must be
+        # contiguous from its first year to the one in use: keep the contiguous block of files that
+        # contains `year` (files being downloaded for other years may leave gaps elsewhere), and refuse
+        # a missing year instead of silently clamping onto a frozen month (Phase 10).
+        anchor = self.year if self.use_calendar else years[0]
+        if anchor not in years:
+            raise FileNotFoundError(f"QboNudging: no ERA5 zonal-mean file for {anchor} in {era5_glob} "
+                                    f"(have {years}; scripts/fetch_era5_strat_ref.py)")
+        i = years.index(anchor); lo = hi = i
+        while lo > 0 and years[lo - 1] == years[lo] - 1: lo -= 1
+        while hi < len(years) - 1 and years[hi + 1] == years[hi] + 1: hi += 1
+        dss = dss[lo:hi + 1]; self.years = years[lo:hi + 1]
         if self.use_calendar and self.year + 1 not in self.years:
             logging.getLogger("jcm_strat").warning("QboNudging: no ERA5 file for %d; the second half of December %d "
                                                    "holds the December mean instead of interpolating", self.year + 1, self.year)
+        self._u_raw = np.concatenate([d.uzm.values for d in dss], axis=0).astype(np.float64)   # (nmonths, 25, 721)
+        self._p_raw = dss[0].level.values.astype(np.float64)                                     # hPa, ascending
+        self._lat_raw = dss[0].lat.values.astype(np.float64)                                     # deg, ascending
+        self.year0 = self.years[0]; self.nmonths = self._u_raw.shape[0]
         self.tau_days = float(tau_days)
         self.lat_full = float(lat_full_deg); self.lat_zero = float(lat_zero_deg)
         self.p_bot = float(p_bot_hpa); self.p_top = float(p_top_hpa); self.taper = float(taper_decades)

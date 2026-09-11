@@ -37,7 +37,7 @@ P0 = 101325.0
 TRACERS = ("aoa", "unity", "sai", "e90")
 # Phase 10 production runs carry a different set (jcm_strat/advection_tracers.py); the script uses
 # whichever of these the files hold, and the unity/e90 panels only when those tracers exist
-KNOWN = TRACERS + ("aoa150", "aoa_sfc", "n2o", "cfc11") + tuple(f"pulse_{i}" for i in range(1, 6))
+KNOWN = TRACERS + ("aoa150", "aoa_sfc", "n2o", "cfc11") + tuple(f"pulse_{i}" for i in range(1, 6)) + tuple(f"src_{i}" for i in range(1, 5))
 
 
 def gauss_weights(lat_deg: np.ndarray) -> np.ndarray:

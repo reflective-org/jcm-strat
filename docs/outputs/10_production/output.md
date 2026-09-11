@@ -111,11 +111,52 @@ quick look (every 50 days) is in `quicklook/`. *[to be filled from the finished 
 *[to be written after the diagnostics: pulse dispersal time scales per injection site, steady
 tracer equilibration, clock ordering and the entry-age vs surface-age difference, omega]*
 
-## Next
+## Review and the production design (2026-09-11)
 
-1. Rerun 2005–2009 with `n2o`, `cfc11` exempt from the fixer and the QBO branch head (1551065:
-   tau 1 d default, mean-preserving monthly target) merged in — `p10b`, ~2.5 h on GPU 0.
-2. Review the tracers with Susanne; adjust centres, amplitudes, injection cadence if wanted.
-3. 1990–2019: prefetch 25 strat63 ERA5 year windows (~520 GB, ~3 h on 3 CPU streams) and the CDS
-   QBO target 1989–2020 (`scripts/fetch_era5_strat_ref.py --monthly-only`), then
-   `YEARS=1990-2019 AGG=p10_30yr` (~13 h GPU 0, ~2.3 TB).
+Susanne reviewed the quick-look figures and approved the 30-year run with these changes:
+
+| item | 2005–2009 review run | 1990–2019 production run |
+|---|---|---|
+| pulses | re-injected quarterly | **injected once**, at the first step of 1990-01-01, then pure advection + surface absorption ("one injection at t0 and see how it gets advected") |
+| continuous sources | none (only `sai`) | **`src_1..4`**: Gaussian sources every step, A·G/90 d, surface absorption — 0°/180°E/20 hPa (1.0), 30°N/60°E/100 hPa (0.5), 60°S/300°E/5 hPa (0.2), **30°S/240°E/55 hPa (0.3, her request)** |
+| n2o, cfc11 | under the mass fixer (→ 1.07 artefact) | **exempt** (`sl_mass_fixer_exclude`), see below |
+| QBO target | tau 1 d, linear monthly interpolation | tau 1 d, **mean-preserving** monthly nodes (QBO branch head merged, KEY_DECISIONS #32) |
+
+**Why the N2O-like tracers leave the fixer** (her question). The fixer restores the global mass a
+tracer had after the physics by one multiplicative factor per step. That is right for a tracer whose
+physics adds or removes *mass* (the pulses' absorption, the sources' emission, `sai`) — the target
+then already contains the physics. It is wrong for a tracer whose physics imposes a *value*: `n2o`
+is set to 1 below 700 hPa each step, so every step's factor (1 + ε, ε ≈ 1e-6 the SL mass error) is
+re-applied to air that already sits at 1 above 700 hPa, and compounds over the months such air spends
+in the tropical upper troposphere — 1.07 after two years in `p10_5yr`. The clocks were exempted for
+the same reason in Phase 3 (KEY_DECISIONS #19). Without the fixer the tracer's mass error is the SL
+scheme's own, which `unity` measured at a few 1e-4 per year in Phases 4–9: three orders of magnitude
+smaller than the artefact, and irrelevant for a field whose value is pinned at its source. Exempt.
+
+The 30-year chain is `scripts/phase10_run30.sh` (tmux `strat_p10_30yr`): waits for the ERA5 prefetch
+(four CPU streams) and the CDS QBO target 1989–2020, runs a 5-day smoke, then
+`chain_segments.sh` with `YEARS=1990-2019 AGG=p10_30yr`. Output: `runs/p10_<YYYY>0101/` per year
+(37 files × 40 frames, ~130 GB raw → ~90 GB compressed), aggregate `runs/p10_30yr/` (symlinks with
+cumulative day numbers). Expected ~30 min per year → ~15 h.
+
+## Questions that came up, and my answers
+
+*(kept while the run proceeds; Susanne reviews once the 30 years are done)*
+
+- **Should the pulses keep the surface sink now that they are injected once?** Yes: without it a
+  pulse ends as a uniform constant that never leaves, and the ML model would see a field with no
+  gradients but non-zero mass; with it the field drains to zero on the transport time scale to the
+  surface (years), which is itself a transport signal.
+- **Do the once-only pulses become useless after a few years?** After 1–3 years each is a nearly
+  homogeneous, slowly draining background (the 5-year run shows the 30 hPa blob at 3 % of its peak
+  after 60 days and zonally uniform). They still cost a field each in the output; if that matters for
+  the 30-year archive they can be dropped from the netCDF after the fact — nothing else depends on
+  them. The continuous sources carry the long-term gradients.
+- **Is 90 days the right source time scale?** Only the amplitude depends on it (the equilibrium
+  burden scales as A × residence time / 90 d); the *shape* of the plume does not. Any value is fine
+  for a model that normalises its inputs; 90 d keeps the equilibrium mixing ratios O(1e-2–1e-1),
+  well inside float32.
+- **Why are the first years' clocks unusable?** A clock cannot read older than the run (issue #44):
+  the three age tracers are converged only after ~6–8 years of the 30. Analyses of age should use
+  1998 onward; the ML training set can use every year since it learns the local transport, not the
+  absolute age.

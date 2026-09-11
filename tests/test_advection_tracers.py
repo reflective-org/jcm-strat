@@ -7,6 +7,7 @@ os.environ.setdefault("JAX_PLATFORMS", "cpu")
 import jax.numpy as jnp
 import jax_datetime as jdt
 import numpy as np
+import pytest
 
 from jcm.forcing import SolarGeometry
 from jcm.model import Model
@@ -14,7 +15,7 @@ from jcm.physics.composable_physics import ComposablePhysics
 from jcm.physics.diagnostics.omega import OmegaDiagnostic
 from jcm.physics.held_suarez.utils import get_held_suarez_coords
 
-from jcm_strat.advection_tracers import DAY, DEFAULT_PULSES, STEADY, ProductionTracers
+from jcm_strat.advection_tracers import DAY, DEFAULT_PULSES, DEFAULT_SOURCES, STEADY, ProductionTracers
 from jcm_strat.held_suarez_columns import HeldSuarezColumns
 
 DT = 600.0
@@ -57,7 +58,11 @@ def test_declared_tracers_and_targets():
     names = set(state.tracers)
     assert {"aoa", "aoa150", "aoa_sfc", "sai", "n2o", "cfc11"} <= names
     assert {f"pulse_{i + 1}" for i in range(len(DEFAULT_PULSES))} <= names
+    assert {f"src_{i + 1}" for i in range(len(DEFAULT_SOURCES))} <= names
     assert not ({"unity", "e90"} & names)
+    srcs = np.asarray(term._sources.get_value())
+    for i, (_, _, _, amp) in enumerate(DEFAULT_SOURCES):
+        assert 0.0 <= srcs[i].min() and srcs[i].max() <= amp * 1.0001
     targets = np.asarray(term._targets.get_value())
     for i, (_, _, _, amp) in enumerate(DEFAULT_PULSES):
         assert 0.0 <= targets[i].min() and targets[i].max() <= amp * 1.0001
@@ -70,7 +75,7 @@ def test_declared_tracers_and_targets():
 
 
 def test_tendencies_by_region_and_date():
-    model = _model(first_segment=True)
+    model = _model(first_segment=True, injection="quarterly")
     state, term = _state_and_term(model)
     p = np.asarray(term._pressure(state.normalized_surface_pressure))
     sfc = np.asarray(term._sfc_mask.get_value())[:, None] & np.ones_like(p, bool)
@@ -100,22 +105,45 @@ def test_tendencies_by_region_and_date():
     assert np.allclose(d["aoa150"][p <= 150e2], 1.0 / DAY) and np.all(d["aoa150"][p > 150e2] <= 0.0)
     assert np.allclose(d["aoa_sfc"][~sfc], 1.0 / DAY) and np.all(d["aoa_sfc"][sfc] <= 0.0)
     assert d["sai"].max() > 0 and d["sai"].min() == 0.0
+    # continuous sources: emission A G / 90 d everywhere but the absorbing layers, at any date
+    srcs = np.asarray(term._sources.get_value())
+    for i in range(len(DEFAULT_SOURCES)):
+        e = d[f"src_{i + 1}"]
+        assert np.allclose(e[~sfc], (srcs[i] / (90.0 * DAY))[~sfc]) and np.all(e[sfc] <= 0.0)
     # without first_segment the steady tracers are not overwritten on 1 January
-    state_b, term_b = _state_and_term(_model(first_segment=False))
+    state_b, term_b = _state_and_term(_model(first_segment=False, injection="quarterly"))
     d_b = _tend(term_b, state_b, _forcing(0.0))
     assert np.all(d_b["n2o"][p > 700e2] == 0.0)
+
+
+def test_single_injection_mode():
+    """Production setting: the pulses are set once, on the first step of the first segment, never again."""
+    state, term = _state_and_term(_model(first_segment=True))          # injection="once" is the default
+    p = np.asarray(term._pressure(state.normalized_surface_pressure))
+    sfc = np.asarray(term._sfc_mask.get_value())[:, None] & np.ones_like(p, bool)
+    targets = np.asarray(term._targets.get_value())
+    d0 = _tend(term, state, _forcing(0.0))
+    assert np.allclose(d0["pulse_1"] * DT, targets[0], atol=1e-6)
+    for x in (91.25 / 365.0 + 0.5 * DT / DAY / 365.0, 0.5, 0.999):     # quarterly dates and any other time: nothing
+        d = _tend(term, state, _forcing(x))
+        assert np.all(d["pulse_1"][~sfc] == 0.0)
+    state_b, term_b = _state_and_term(_model(first_segment=False))    # later segments: never
+    assert np.all(_tend(term_b, state_b, _forcing(0.0))["pulse_1"][~sfc] == 0.0)
+    with pytest.raises(ValueError):
+        ProductionTracers(injection="monthly")
 
 
 def test_short_run_six_hourly_snapshots():
     model = _model(first_segment=True)
     ds = model.run(total_time=1, save_interval=0.25, output_averages=False).to_xarray()
     assert ds.sizes["time"] == 4
-    for k in ("aoa", "aoa150", "aoa_sfc", "sai", "n2o", "cfc11", "pulse_1", "omega", "u_wind"):
+    for k in ("aoa", "aoa150", "aoa_sfc", "sai", "n2o", "cfc11", "pulse_1", "src_1", "omega", "u_wind"):
         assert k in ds and not bool(np.any(np.isnan(ds[k].values))), k
     assert "unity" not in ds and "e90" not in ds
     assert ds["omega"].shape == ds["temperature"].shape and float(np.abs(ds["omega"].values).max()) > 0
     assert ds["aoa"].values.min() >= -1e-6 and ds["aoa"].values.max() > 0.5
     assert ds["pulse_1"].values.max() > 0.5 and ds["pulse_1"].values.min() >= -1e-6
+    assert ds["src_1"].values.max() > 0 and ds["src_1"].values.min() >= -1e-6
     # the global mass fixer rescales the whole field by one factor per step; on T31L8 with the sharp
     # WACCM gradient that is ~0.5 percent (unity saw 2.6e-4 at T63 in Phases 4-8)
     assert ds["n2o"].values.max() <= 1.02 and ds["n2o"].values.min() >= 0.0

@@ -35,6 +35,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tracer_budget import P0, gauss_weights, install_level_table, layer_dp  # noqa: E402
 
 PULSES = tuple(f"pulse_{i}" for i in range(1, 6))
+SOURCES = tuple(f"src_{i}" for i in range(1, 5))
 REF = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "jcm_strat", "data", "waccm_tracer_ref.nc")
 
 
@@ -80,6 +81,7 @@ def analytic_target(name, lat, lon, p_hpa, term):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("rundir"); ap.add_argument("outdir"); ap.add_argument("--label", default=""); ap.add_argument("--stride", type=int, default=4)
+    ap.add_argument("--injection", default="once", choices=["once", "quarterly"], help="the run's pulse schedule (production: once)")
     a = ap.parse_args()
     run = os.path.basename(a.rundir.rstrip("/")); os.makedirs(a.outdir, exist_ok=True)
     install_level_table(a.rundir)
@@ -89,6 +91,7 @@ def main():
     files, day = frames(a.rundir)
     ds = xr.open_mfdataset(files, combine="nested", concat_dim="time", decode_times=False)
     names = [k for k in PULSES if k in ds]; steady = [k for k in ("n2o", "cfc11") if k in ds]; clocks = [k for k in ("aoa", "aoa150", "aoa_sfc") if k in ds]
+    sources = [k for k in SOURCES if k in ds]
     lat = np.asarray(ds.lat); lon = np.asarray(ds.lon); w = gauss_weights(lat)
     p_nom = np.asarray(ds.level) * P0 / 100.0                                  # hPa, file order
     k30 = int(np.argmin(np.abs(p_nom - 30.0)))
@@ -96,7 +99,7 @@ def main():
     lines = [f"# {a.label or run}: production-tracer metrics", "", f"frames: {ds.sizes['time']} (every {np.median(np.diff(day)) * 24:.0f} h), day {day[-1]:.1f}; time series every {a.stride} frames", ""]
 
     # ---- burdens (mass-weighted global mean mixing ratio) and extremes
-    burden = {k: np.zeros(sel.size) for k in names + steady + clocks}; qmin = {k: np.zeros(sel.size) for k in names}; qmax = {k: np.zeros(sel.size) for k in names}
+    burden = {k: np.zeros(sel.size) for k in names + sources + steady + clocks}; qmin = {k: np.zeros(sel.size) for k in names}; qmax = {k: np.zeros(sel.size) for k in names}
     for j, i in enumerate(sel):
         nsp = np.asarray(ds.normalized_surface_pressure.isel(time=i)); wgt = layer_dp(ds.sizes["level"], nsp) * w[None, None, :]; M = wgt.sum()
         for k in burden:
@@ -118,7 +121,7 @@ def main():
         b = burden[k]
         # injections happen on a known schedule (1 Jan and every 365/4 d of each calendar year, segments.txt
         # gives the year starts); between two injection dates the burden may only fall (surface absorption)
-        inj = injection_days(a.rundir, day[-1])
+        inj = injection_days(a.rundir, day[-1]) if a.injection == "quarterly" else np.asarray([0.0])
         cycle = np.searchsorted(inj, tday, side="right")                # which injection cycle each sample is in
         bad = sum(int(np.any(np.diff(b[cycle == c]) > 1e-6 * b.max())) for c in np.unique(cycle))
         lines.append(f"| {k} | {amp} | {rmse:.3f} | {b[0]:.3e} | {qmin[k].min():.2e} | {qmax[k].max():.3f} | "
@@ -145,7 +148,12 @@ def main():
         lines.append(f"\n{k}: burden first/last {burden[k][0]:.4f} / {burden[k][-1]:.4f}; last-frame min/max {float(ds[k].isel(time=-1).min()):.2e} / {float(ds[k].isel(time=-1).max()):.4f}")
     ax = axes[0, 2]
     for k in steady: ax.plot(tday, burden[k], label=k)
-    ax.set_title("steady tracers: global-mean mixing ratio"); ax.legend(); ax.set_xlabel("day")
+    for k in sources: ax.plot(tday, burden[k] / max(burden[k].max(), 1e-30), "--", label=f"{k} (/max)")
+    ax.set_title("steady tracers (solid) and continuous sources (dashed, scaled)"); ax.legend(fontsize=7); ax.set_xlabel("day")
+    for k in sources:
+        b = burden[k]; half = tday[np.argmax(b >= 0.5 * b[-1])] if b[-1] > 0 else float("nan")
+        lines.append(f"\n{k}: burden last {b[-1]:.3e}, reaches half of it at day {half:.0f}; still rising at the end: "
+                     f"{'yes' if b.size > 4 and b[-1] > 1.02 * b[-5] else 'no'}; last-frame max {float(ds[k].isel(time=-1).max()):.3e}")
     for c, k in enumerate(clocks[:3]):
         z = np.asarray(ds[k].isel(time=-1)).mean(axis=1) / 365.25
         m = axes[1, c].contourf(lat, p_nom, z, levels=np.linspace(0, max(0.5, z.max()), 11), cmap="viridis", extend="min"); fig.colorbar(m, ax=axes[1, c], label="yr")
