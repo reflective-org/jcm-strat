@@ -1,5 +1,5 @@
-# Phase 10 physics: the Phase 8 Polvani-Kushner stratosphere with QBO nudging (strat_pk_qbo.yaml,
-# unchanged apart from what the experiment overrides), the PRODUCTION tracer set instead of the
+# Phase 10 physics: the Phase 8 Polvani-Kushner stratosphere with QBO nudging (strat_pk_qbo.yaml at the
+# QBO branch head: tau 1 d, mean-preserving monthly target, KEY_DECISIONS #32), the PRODUCTION tracer set instead of the
 # four Phase 3 passive tracers, and omega published as an output field.
 #
 # production_tracers (jcm_strat/advection_tracers.py): three age-of-air clocks (reset below 700 hPa,
@@ -25,7 +25,8 @@ terms:
     qbo:
       era5_glob: /data/JCM_stripped/jcm-strat/cache/era5_ref/era5_zm_monthly_*.nc
       year: 2005
-      tau_days: 10.0
+      tau_days: 1.0
+      mean_preserving: true
       lat_full_deg: 15.0
       lat_zero_deg: 25.0
       p_bot_hpa: 90.0
