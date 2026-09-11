@@ -9,7 +9,7 @@
 #   * 6-hourly INSTANTANEOUS output (Phases 1-9: 5-day means) in 10-day chunks - the frames of a chunk
 #     sit on the GPU until the chunk is written (~90 MB per frame here), 40 frames is 3.5 GB next to the
 #     21 GB nudging target; 30-day chunks would be 10 GB,
-#   * geopotential dropped from the output (a diagnostic of T and p_s; jcm_strat/main.py output_drop),
+#   * every prognostic written, geopotential included (Susanne, 2026-09-11; `output_drop` stays available),
 #   * the Gregorian calendar: JCM's default 365_day calendar puts the fraction of year at
 #     (days since 1970 mod 365)/365, i.e. 9 days ahead of the true date in 2005 and 12 in 2019, so the
 #     Polvani-Kushner season and the QBO month ran early in Phases 6-9. Under gregorian tyear is
@@ -35,7 +35,7 @@ run:
   checkpoint_path: checkpoint.ckpt
 
 calendar: gregorian
-output_drop: [geopotential]
+output_drop: []
 
 # Not conserved quantities, so exempt from the global mass fixer (KEY_DECISIONS #19): the three clocks,
 # and the two steady tracers whose source holds them at 1 - under the fixer its per-step global factor

@@ -27,7 +27,7 @@ except:
 | calendar | JCM default `365_day` | **gregorian** | under `365_day` the fraction of year is (days since 1970 mod 365)/365: 9 days ahead of the true date in 2005, 12 in 2019, so the Polvani-Kushner season and the QBO month ran early in Phases 6–9 |
 | output | 5-day means, 30-day chunks | **instantaneous every 6 h**, 10-day chunks (40 frames ≈ 3.5 GB on the GPU) | emulator step; the chunk's frames sit on the GPU until written |
 | omega | not written | **written** (`OmegaDiagnostic`; lags u, v, T by one 12-min step in snapshot mode) | vertical advection |
-| geopotential | written | dropped (`output_drop`, jcm_strat.main) | diagnostic of T and p_s; 4.6 MB per frame |
+| geopotential | written | written (dropped in the 2005-2009 review run, restored for production at Susanne's request) | `output_drop` in jcm_strat.main can drop any variable |
 | tracers | aoa, unity, sai, e90 (`PassiveTracers`) | **`ProductionTracers`** below; unity and e90 gone | see below |
 | mass fixer | all but aoa | all but aoa, aoa150, aoa_sfc | clocks are not conserved (KEY_DECISIONS #19) |
 | segments | 365 d per year | true calendar years (2008 = 366 d) | 6-hourly saves divide any year |

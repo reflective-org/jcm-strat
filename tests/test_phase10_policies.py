@@ -45,7 +45,7 @@ def test_calendar_hook(restore_patches):
 def test_output_drop_hook(restore_patches):
     strat_main.install_output_policy(["geopotential", "not_a_variable"])
     ds = _model_hs().run(total_time=1, save_interval=1).to_xarray()
-    assert "geopotential" not in ds and "temperature" in ds
+    assert "geopotential" not in ds and "temperature" in ds   # the hook itself; p10_prod writes geopotential
 
 
 @pytest.mark.skipif(not glob.glob(ERA5_GLOB), reason="ERA5 zonal-mean reference not on this machine")
