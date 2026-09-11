@@ -10,7 +10,7 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | [#3](https://github.com/reflective-org/jcm-strat/issues/3) | Time-step sweep 12→30→60→120 min | research | SL PR reports an accuracy knee near 30 min. |
 | [#4](https://github.com/reflective-org/jcm-strat/issues/4) | Reduced ~30–44-level grid | feature | New table in `echam_levels.py` + `(63, N)` diffusion orders; ≥ 20 levels over 150–1 hPa. |
 | [#5](https://github.com/reflective-org/jcm-strat/issues/5) | Polvani-Kushner 2002 stratosphere (polar-night jet without radiation) | feature | ~150 lines extending `HeldSuarez`. |
-| [#6](https://github.com/reflective-org/jcm-strat/issues/6) | QBO nudging of tropical stratospheric wind | blocked | Needs ERA5 above 60 hPa (CDS 37-level or SPARC QBO tape). |
+| [#6](https://github.com/reflective-org/jcm-strat/issues/6) | QBO nudging of tropical stratospheric wind | feature | **Done in Phase 8** (`docs/outputs/08_qbo`); close when the branch is merged. Cheaper zonal-mean reduction: #44. |
 | [#7](https://github.com/reflective-org/jcm-strat/issues/7) | Segment-parallel 30-year runs | research | Only if the project ever needs more than GPU 0. |
 | [#8](https://github.com/reflective-org/jcm-strat/issues/8) | Local mass consistency / expose `mass_fixer=False` on the CLI | research | Only if Phase-3 `unity` deviations are large. |
 | [#9](https://github.com/reflective-org/jcm-strat/issues/9) | MAM4 aerosol + SO2 injection (`jcm[mam4]`, GPL) | feature | |
@@ -45,3 +45,13 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 |---|---|---|
 | Semi-implicit off-centering vs time step: is `sl_off_centering` (0.2) what limits the step to < 60 min? | research | Two departure iterations did not help at 30 min and only delayed the blow-up at 60/90; sweep off-centering 0.2-0.5 at 45 and 60 min. |
 | Antarctic jet weakening with the step (66 -> 54 m/s at 30 min) | research | Accuracy signature of the fast winter jet; check whether it is the dycore or the 6-hourly nudging interpolation, and whether the 5-year age of air changes at 30 min. |
+
+## Found in Phase 8
+
+| Item | Label | Notes |
+|---|---|---|
+| QBO amplitude vs tau: **settled** — sweep 10 / 5 / 2 / 1 d = 80 / 86 / 90 / 92 % of ERA5 over 2005-2009 (`p8b/c/d/e_5yr`), nothing else moving; tau 1 d is the default (KEY_DECISIONS #27). The last ~8 % is the target shape, addressed by the mean-preserving interpolation (`p8f_*`). The recurring February 2006 vortex reversal at short tau turned out to be variability: it vanishes in the mean-preserving chain `p8f_5yr`, which differs from `p8e_5yr` by a 0.6 % change of the tropical target. **Closed.** | research | tau 6 h not run: at 1 d the gain per halving is already ~2 %. |
+| Daily instead of monthly QBO target | dropped | The term interpolates the monthly means to every 12-minute step already; a daily target would impose sub-monthly zonal-mean wind changes that are not QBO. What the target needed was the right shape (mean-preserving nodes, done), not cadence. Revisit only if a sub-monthly tropical signal is wanted on purpose. |
+| SAO at 1 hPa still 30 % of ERA5 (9.5 vs 30.7 m/s) | research | The weight is 0 at 1 hPa by construction (the target's top level). A top below 1 hPa with the target clamped to its 1 hPa value, or a one-sided taper, would hold 1 hPa itself. |
+| JCM's provenance probe crashed a segment (`UnicodeDecodeError` decoding `git diff HEAD`) when a tracked PDF was modified in the working tree | bug | Worked around with `.gitattributes` (`*.pdf binary`); the probe in `external/jax-gcm/jcm/provenance.py` should decode with `errors="replace"`. Upstream issue to file. |
+

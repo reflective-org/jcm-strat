@@ -1,0 +1,2 @@
+# Tracked PDFs are binary: keeps `git diff` (and JCM's provenance probe, which decodes it as UTF-8) from dumping their bytes.
+*.pdf binary

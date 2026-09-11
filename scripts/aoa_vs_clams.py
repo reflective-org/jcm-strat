@@ -84,6 +84,8 @@ def main() -> None:
     ap.add_argument("--years", default="2005-2009"); ap.add_argument("--label", default="")
     ap.add_argument("--paradis-clock", default=None, help="offline_clock.nc from scripts/paradis_offline_clock.py (surface-reset clock)")
     ap.add_argument("--paradis-entry-clock", action="store_true", help="also show the offline clock reset below 150 hPa (off by default)")
+    ap.add_argument("--second-run", default=None, help="a second run directory to show alongside (e.g. the configuration before a change)")
+    ap.add_argument("--second-label", default="before", help="legend/panel name of --second-run")
     a = ap.parse_args()
     y0, y1 = (int(s) for s in a.years.split("-")); years = list(range(y0, y1 + 1))
     run = os.path.basename(a.rundir.rstrip("/")); os.makedirs(a.outdir, exist_ok=True)
@@ -95,6 +97,9 @@ def main() -> None:
     sources = [(pm, latm, am, f"model {run}\n(last 12 saves, ends day {last_day})", "model", "-"),
                (pc, latc, ac, f"CLaMS v3.1 / ERA5, {a.years} mean\n(surface clock)", "CLaMS", "--"),
                (pw, latw, aw, f"WACCM6 REF-D1, {a.years} mean\n(entry age, base 103 hPa)", "WACCM (entry age)", ":")]
+    if a.second_run:
+        p2, lat2, a2, day2 = model_age(a.second_run)
+        sources.insert(1, (p2, lat2, a2, f"{a.second_label}: {os.path.basename(a.second_run.rstrip('/'))}\n(last 12 saves, ends day {day2})", a.second_label, (0, (5, 2))))
     if a.paradis_clock:
         pz = xr.open_dataset(a.paradis_clock); span = f"{pz.attrs.get('start','')[:10]}..{pz.attrs.get('end','')[:10]}"
         pp, latp = np.asarray(pz.level), np.asarray(pz.lat)
