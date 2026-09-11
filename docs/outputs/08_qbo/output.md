@@ -1,6 +1,6 @@
 # Phase 8 — QBO nudging: giving the stripped model the tropical wind oscillation it cannot grow
 
-Status: **runs complete, 2005 and the 2005–2009 chain; all acceptance checks pass except throughput (−13 %).** Branch `phase8-qbo-nudging` (off `phase6-circulation`), committed, not pushed. **Addendum 2026-09-09 (section at the end): the window top raised from 4 to 1 hPa, same runs repeated; now the default.** PDF: `docs/outputs/jcm-strat_phase8_qbo.pdf` (`scripts/make_phase8_report.py`).
+Status: **runs complete, 2005 and the 2005–2009 chain; all acceptance checks pass except throughput (−13 %).** Branch `phase8-qbo-nudging` (off `phase6-circulation`), committed, not pushed. **Addenda at the end: 2026-09-09 window top 4 -> 1 hPa (default); 2026-09-10 tau sweep 5 / 2 / 1 d, tau 1 d now the default (KEY_DECISIONS #27), and a mean-preserving target interpolation (runs p8f_*, pending at commit time).** PDF: `docs/outputs/jcm-strat_phase8_qbo.pdf` (`scripts/make_phase8_report.py`).
 
 ## Why
 
@@ -296,3 +296,122 @@ throughput 3910-3940 days/hr stepping (first segment 3517 while sharing the node
 4. **Not adopted as the default in this commit**: the sensitivity test is recorded; whether the
    default becomes 5 d, 2 d or 6 h is a decision to take with the transport question in view
    (DEFERRED, Found in Phase 8).
+
+## Addendum, 2026-09-10 (later): the tau sweep completed, 2 d and 1 d (`tau2/`, `tau1/`)
+
+Same protocol as the 5-day test: `qbo.tau_days=2.0` (runs `p8d_2005` ... `p8d_2009`, aggregate
+`p8d_5yr`) and `1.0` (`p8e_*`, `p8e_5yr`), 2005-2009, GPU 0, each compared against the tau 10 d chain
+`p8b_5yr`. All 2005-2009, monthly statistics against ERA5 monthly means.
+
+```
+tau      std 10 / 20 / 30 / 50 hPa [m/s]   % of ERA5 at 20 hPa   RMS vs ERA5 10-70 hPa   RMS 1-7 hPa   SAO 1 / 2 / 3 hPa    u RMSE 100-1 hPa vs ERA5
+10 d     13.7 / 14.1 / 12.4 / 7.8               81 %                    4.0                 12.5        9.5 / 15.8 / 13.8         4.9 m/s
+ 5 d     14.6 / 15.1 / 13.2 / 8.5               86 %                    3.1                 10.9       12.2 / 17.3 / 13.9         4.8
+ 2 d     15.4 / 15.8 / 13.9 / 9.0               90 %                    2.5                  8.9       14.9 / 18.1 / 13.7         4.6
+ 1 d     15.7 / 16.1 / 14.2 / 9.3               92 %                    2.3                  7.7       17.2 / 18.2 / 13.7         4.4
+ERA5     17.5 / 17.5 / 15.2 / 10.7             100 %                     -                    -        30.7 / 20.7 / 15.6          -
+two-spring prediction tau_m/(tau+tau_m) with tau_m = 40 d: 80 / 89 / 95 / 98 %
+
+unchanged across the sweep (tau 10 -> 1 d): T RMSE 100-1 hPa 6.3 -> 6.2 K; DJF u(60N,10hPa) 31 -> 30-31, JJA u(60S) 64 -> 64 m/s;
+Brewer-Dobson 70 hPa annual 7.7 -> 7.9 / 8.0 / 8.2 x 10^9 kg/s (WACCM6 6.1); age of air ~55 hPa tropics 2.16 -> 2.15 / 2.15 / 2.13 yr,
+contrast 1.64 -> 1.65 / 1.66 / 1.65; ~12 hPa tropics 3.68 -> 3.67 / 3.68 / 3.66; unity max |q-1| 2.6-2.8e-4, sai -0.77 %, minima >= 0;
+throughput 3860-3940 days/hr stepping, 8 ms/step, at every tau.
+RMS change in time-mean zonal-mean u vs tau 10 d: inside the window 0.7 / 1.4 / 1.8 m/s; |lat| > 30, 1-100 hPa 0.2 / 0.5 / 0.4; troposphere 0.0.
+SSW-like reversals: tau 10 d 2008-03-26, 2009-01-31, 2009-12-07; tau 5 d 2006-02-15, 2008-03-21, 2009-01-31, 2009-12-07;
+tau 2 d 2006-02-15, 2008-03-21, 2009-02-25, 2009-12-07; tau 1 d 2006-02-15, 2009-02-05, 2009-12-07 (ERA5 majors 2006-01-21/02-11, 2007-02-24, 2008-02-22, 2009-01-24).
+```
+
+![tau 2 d: equatorial wind](tau2/5yr/qbo_time_height_before_after.png)
+![tau 2 d: profiles](tau2/5yr/qbo_profiles.png)
+![tau 1 d: equatorial wind](tau1/5yr/qbo_time_height_before_after.png)
+![tau 1 d: profiles](tau1/5yr/qbo_profiles.png)
+![tau 1 d: vortex](tau1/5yr/strat/vortex_series.png)
+![tau 1 d: age of air](tau1/5yr/p8e_5yr_aoa_profiles.png)
+
+### Reading
+
+1. **The amplitude follows the two-spring law down to 2 d and then flattens.** 80 / 86 / 90 / 92 %
+   against the predicted 80 / 89 / 95 / 98 %. From 2 to 1 d the gain is 2 %, so the last ~8 % is not
+   the relaxation any more but the target itself: linear interpolation between month centres cuts
+   every peak (the (1,6,1)/8 filter: 0.6 % for the QBO's 28-month period, 12.5 % for the 6-month SAO) and the reference the amplitude is scored against
+   is ERA5's monthly means, which the model can only match if the interpolant reproduces them. That is
+   the mean-preserving interpolation (next addendum).
+2. **Above the QBO layer the gain does not flatten**: 12.5 / 10.9 / 8.9 / 7.7 m/s, and the SAO at
+   2 hPa reaches ERA5 (18.2 vs 20.7). The semiannual signal is fast enough that tau still matters.
+3. **Nothing outside the window moves at any tau.** Climatology improves monotonically (u RMSE
+   4.9 -> 4.4 m/s, all of it the tropics), age of air changes by 0.03 yr, tracers and throughput not
+   at all. No artefact at the window edges from the stiff wind spring against the 15-day temperature
+   relaxation.
+4. **The February 2006 vortex reversal** appears at tau 5, 2 and 1 d (never at 10 d), a few days after
+   ERA5's 2006-02-11 warming; the 2009 date wanders (01-31, 02-25, 02-05) and the March 2008
+   reversal is missing at 1 d. Sudden warmings are wave events that a small tropical change can
+   re-time (the QBO modulates the extratropical waveguide, the Holton-Tan effect), so a systematic
+   effect is plausible but three chains cannot separate it from internal variability. Noted, not
+   claimed.
+5. **Decision (KEY_DECISIONS #27): tau 1 d is the default.** It is the value at which the
+   relaxation stops being the limit, the model still sets its own temperature (the thermal-wind
+   adjustment takes about a day, so the wind does not run ahead of it as it would at 6 h), and it
+   stays in the range specified-dynamics models use (SD-WACCM: 50 h). The daily-versus-monthly target
+   question is settled the other way: the term already interpolates to every 12-minute step, a
+   daily target would add sub-monthly wind changes that are not QBO, and what the target needs is
+   the right shape, not a finer cadence.
+
+## Addendum, 2026-09-11 (unattended): mean-preserving target interpolation (`interp/`)
+
+`qbo.mean_preserving: true` (default): the month-centre node values are adjusted so that the piecewise-linear
+interpolation reproduces ERA5's monthly means exactly (the AMIP "bcs" method; `mean_preserving_nodes` in
+`jcm_strat/qbo_nudging.py`, unit-tested). Runs `p8f_2005` ... `p8f_2009`, aggregate `p8f_5yr`, tau 1 d, window
+top 1 hPa, against the tau 1 d chain with plain interpolation `p8e_5yr`. This addendum, the PDF rebuild and the
+commit were produced by `runs/p8f_pipeline.sh` after the interactive session ended; the numbers below are copied
+from the metric files by `runs/p8f_finish.py`.
+
+```
+# QBO nudging: before / after / ERA5, 2005-2009
+
+| source | deseasonalised std 10 / 20 / 30 / 50 hPa [m/s] | mean u 20 / 30 hPa [m/s] | RMS vs ERA5, eq. monthly u 10-70 hPa [m/s] | RMS vs ERA5, 1-7 hPa [m/s] |
+|---|---|---|---|---|
+| tau 1 d, linear target (p8e_5yr) | 15.7 / 16.1 / 14.2 / 9.3 | -12.6 / -7.8 | 2.3 | 7.7 |
+| tau 1 d, mean-preserving target (p8f_5yr) | 15.9 / 16.2 / 14.3 / 9.4 | -12.6 / -7.8 | 2.2 | 7.1 |
+| ERA5 (monthly, CDS) | 17.5 / 17.5 / 15.2 / 10.7 | -12.9 / -8.0 | 0.0 | 0.0 |
+
+RMS change in time-mean zonal-mean u, after minus before: inside the window (|lat| <= 25, 1-90 hPa) 0.1 m/s; outside it in the stratosphere (|lat| > 30, 1-100 hPa) 0.3 m/s; troposphere (200-1000 hPa, all latitudes) 0.0 m/s.
+
+amplitude at 20 hPa as a fraction of ERA5: 92 % -> 93 %
+SAO amplitude 1 / 2 / 3 hPa, p8f_5yr: 19.2 / 20.7 / 15.5   (ERA5 30.7 / 20.7 / 15.6; p8e_5yr 17.2 / 18.2 / 13.7)
+climatology vs ERA5 2005-2009, 100-1 hPa, annual: meanpres: T RMSE 6.2 K, u RMSE 4.4 m/s, u(60N) DJF 14 (ref 10), u(60S) JJA 32 (ref 33)
+linear SSW-like reversals (5-day means, +-5 d): 2006-02-15, 2009-02-05, 2009-12-07
+meanpres SSW-like reversals (5-day means, +-5 d): 2008-03-21, 2009-01-31, 2009-12-07
+Brewer-Dobson p8f_5yr annual (70 / 100 / 30 / 10 hPa, 10^9 kg/s): 8.2   (p8e_5yr 8.2 / 11.1 / 3.7 / 1.37)
+age of air (last 12 months):
+~55 hPa (~20 km) model                                          2.13       3.78      1.65
+~55 hPa (~20 km) linear target                                  2.13       3.78      1.65
+~12 hPa (~30 km) model                                          3.68       4.39      0.71
+~12 hPa (~30 km) linear target                                  3.66       4.40      0.74
+tracers: unity max |q-1| (any cell, any save): 2.58e-04; sai burden vs expected (source*box mass*t): -0.77%  (expected 1.270e+00, got 1.260e+00); cell minimum: aoa -8.35e-07, unity 1.00e+00, sai 0.00e+00, e90 0.00e+00
+throughput (days/hr stepping per segment): 3897.9, 3895.3, 3901.6, 3945.2, 3889.1
+```
+
+![equatorial wind: linear / mean-preserving / ERA5](interp/5yr/qbo_time_height_before_after.png)
+![profiles and the change](interp/5yr/qbo_profiles.png)
+![vortex](interp/5yr/strat/vortex_series.png)
+![age of air](interp/5yr/p8f_5yr_aoa_profiles.png)
+
+### Reading
+
+1. **Exactly the filter prediction.** The QBO amplitude gains 0.6 % (16.1 -> 16.2 m/s at 20 hPa, 92 -> 93 % of
+   ERA5) and the SAO gains 12-14 %: at 2 and 3 hPa it now matches ERA5 to 0.1 m/s (20.7 / 15.5 vs 20.7 / 15.6),
+   at 1 hPa it is 19.2 vs 30.7 because the nudging weight is zero there by construction. The error above the QBO
+   layer falls from 7.7 to 7.1 m/s; inside it from 2.3 to 2.2.
+2. **The remaining 7 % of QBO amplitude is now the model, not the target.** With tau 1 d and a target whose
+   monthly means are ERA5's, the wind still comes out 7 % short at 10-50 hPa: the model's own easterly tendency
+   over one day (the two-spring offset, tau_model ~ 40 d gives 2.5 %) plus what the 5-day output means and the
+   monthly scoring smooth away. This is the floor of the method at this tau; only a shorter tau (6 h) would move
+   it, and by little.
+3. **Nothing else moved.** Time-mean wind change 0.1 m/s inside the window, 0.3 outside, 0.0 in the troposphere;
+   climatology, jets, Brewer-Dobson flux, age of air (2.13 yr tropical at 20 km in both) and tracers identical.
+4. **The vortex reversals shuffled again**: the February 2006 event that appeared at tau 5, 2 and 1 d with the
+   linear target is absent here, and the March 2008 one is back. Two chains that differ only by a 0.6 % change in
+   the tropical target giving different reversal dates settles the open item: the reversal timing is internal
+   variability of the wave events, not a systematic response to tau.
+5. **Defaults confirmed** (KEY_DECISIONS #27): tau 1 d, mean-preserving target, window top 1 hPa. This is the
+   configuration Phase 9 and Phase 10 inherit.

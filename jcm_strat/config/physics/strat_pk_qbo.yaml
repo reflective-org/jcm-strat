@@ -1,9 +1,12 @@
 # Phase 8 physics: the Phase 6 Polvani-Kushner stratosphere and the four passive tracers, plus
 # QBO nudging of the tropical stratospheric zonal-mean wind towards ERA5 monthly means
 # (jcm_strat/qbo_nudging.py, issue #6). Only the zonal mean is relaxed, in |lat| < 25 deg and
-# 1-90 hPa (full weight 15 deg / 2.2-40 hPa), tau 10 d. The first Phase 8 chain (runs/p8_*) used
-# p_top_hpa 4; the 1 hPa top (runs/p8b_*) removed the easterly bias above the window at no cost
-# elsewhere (KEY_DECISIONS #26).
+# 1-90 hPa (full weight 15 deg / 2.2-40 hPa), tau 1 d, mean-preserving target. The first Phase 8
+# chain (runs/p8_*) used p_top_hpa 4; the 1 hPa top (runs/p8b_*) removed the easterly bias above
+# the window at no cost elsewhere (KEY_DECISIONS #26). tau: 10 d gave 80 percent of ERA5's QBO
+# amplitude, the sweep 5 / 2 / 1 d (runs/p8c_*, p8d_*, p8e_*) 86 / 90 / 92 percent with nothing
+# else moving (KEY_DECISIONS #27). mean_preserving adjusts the month-centre nodes so the linear
+# interpolation reproduces ERA5's monthly means (runs/p8f_*).
 #
 # The QBO nudging lives inside the Polvani-Kushner term (PolvaniKushnerQbo): same maths as a
 # separate term (unit-tested), one read of the fraction of year. Memory note: the first Phase 8
@@ -30,7 +33,8 @@ terms:
     qbo:
       era5_glob: /data/JCM_stripped/jcm-strat/cache/era5_ref/era5_zm_monthly_*.nc
       year: 2005
-      tau_days: 10.0
+      tau_days: 1.0
+      mean_preserving: true
       lat_full_deg: 15.0
       lat_zero_deg: 25.0
       p_bot_hpa: 90.0
