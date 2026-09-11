@@ -377,7 +377,21 @@ def INTERP_RESULTS():
                 "Figure 23. Time-mean equatorial wind, QBO amplitude and the change in the time-mean zonal-mean wind, mean-preserving minus plain.",
                 maxh=7 * cm),
             fig("interp/5yr/strat/vortex_series.png", "Figure 24. Polar-vortex wind at 10 hPa, both versions.", maxh=8 * cm),
-            fig("interp/5yr/p8f_5yr_aoa_profiles.png", "Figure 25. Age of air, mean-preserving (blue) against plain interpolation (orange dashed).", maxh=7 * cm)]
+            fig("interp/5yr/p8f_5yr_aoa_profiles.png", "Figure 25. Age of air, mean-preserving (blue) against plain interpolation (orange dashed).", maxh=7 * cm),
+            P("Reading", H2),
+            P("Exactly the filter prediction. The QBO amplitude gains 0.6 percent (16.1 to 16.2 m/s at 20 hPa, 92 to 93 percent of ERA5) "
+              "and the semiannual oscillation gains 12 to 14 percent: at 2 and 3 hPa it now matches ERA5 to 0.1 m/s (20.7 / 15.5 against "
+              "20.7 / 15.6); at 1 hPa it stays at 19 against 31 because the nudging weight is zero there by construction. The error above "
+              "the QBO layer falls from 7.7 to 7.1 m/s, inside it from 2.3 to 2.2. The remaining 7 percent of QBO amplitude is the model, "
+              "not the target: the model's own easterly pull over one day, plus what the 5-day output means and the monthly scoring smooth "
+              "away. Nothing else moved: the time-mean wind changes by 0.1 m/s inside the window and 0.3 outside, climatology, jets, "
+              "Brewer-Dobson flux, age of air (2.13 years in the tropics at 20 km in both) and tracers are identical."),
+            P("The vortex reversals shuffled again: the February 2006 event that appeared at tau 5, 2 and 1 days with the linear target is "
+              "absent here and the March 2008 one is back. Two chains that differ only by a 0.6 percent change of the tropical target giving "
+              "different reversal dates settles the question left open in section 7: the reversal timing is internal variability of the "
+              "wave events, not a response to the nudging."),
+            P("Decision (KEY_DECISIONS 27): the mean-preserving target is the default, together with tau 1 day and the 1 hPa window top. "
+              "The linear-target chains p8b to p8e stay on disk as before-states. This is the QBO configuration Phases 9 and 10 inherit.")]
     return out
 
 
