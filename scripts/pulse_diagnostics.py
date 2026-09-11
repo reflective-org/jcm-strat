@@ -51,6 +51,20 @@ def frames(rundir):
     return files, np.asarray(days)
 
 
+def injection_days(rundir, last_day, n_per_year=4):
+    """Cumulative run days of every scheduled injection: day 0 of each calendar-year segment plus k*365/n."""
+    seg = os.path.join(rundir, "segments.txt")
+    if os.path.exists(seg):
+        starts, off = [], 0
+        for line in open(seg):
+            d, days, _ = line.split()[:3]
+            starts.append((off, int(days))); off += int(days)
+    else:
+        starts = [(0, int(np.ceil(last_day)))]
+    out = [s0 + k * 365.0 / n_per_year for s0, ndays in starts for k in range(n_per_year) if k * 365.0 / n_per_year < ndays]
+    return np.asarray([d for d in out if d <= last_day])
+
+
 def analytic_target(name, lat, lon, p_hpa, term):
     """The blob the term injects, on the file's (lev, lon, lat) grid, from the term's own parameters."""
     i = int(name.split("_")[1]) - 1
@@ -101,9 +115,14 @@ def main():
         amp = term.pulses[int(k.split("_")[1]) - 1][3]
         q0 = np.asarray(ds[k].isel(time=0)); tgt = analytic_target(k, lat, lon, p_nom * nsp0.mean(), term)
         rmse = float(np.sqrt(np.mean((q0 - tgt) ** 2))) / amp
-        b = burden[k]; jumps = np.where(np.diff(b) > 0.2 * b[:-1].max())[0]
-        seg_ok = all(np.all(np.diff(b[s + 1:e + 1]) <= 1e-9 * b.max()) for s, e in zip([-1, *jumps], [*jumps, b.size - 1]))
-        lines.append(f"| {k} | {amp} | {rmse:.3f} | {b[0]:.3e} | {qmin[k].min():.2e} | {qmax[k].max():.3f} | {'yes' if seg_ok else 'NO'} ({jumps.size} injections seen) |")
+        b = burden[k]
+        # injections happen on a known schedule (1 Jan and every 365/4 d of each calendar year, segments.txt
+        # gives the year starts); between two injection dates the burden may only fall (surface absorption)
+        inj = injection_days(a.rundir, day[-1])
+        cycle = np.searchsorted(inj, tday, side="right")                # which injection cycle each sample is in
+        bad = sum(int(np.any(np.diff(b[cycle == c]) > 1e-6 * b.max())) for c in np.unique(cycle))
+        lines.append(f"| {k} | {amp} | {rmse:.3f} | {b[0]:.3e} | {qmin[k].min():.2e} | {qmax[k].max():.3f} | "
+                     f"{'yes' if bad == 0 else f'NO ({bad} of {np.unique(cycle).size} cycles rise)'} ({inj.size} injections scheduled to day {day[-1]:.0f}) |")
     # ---- pulse_1 evolution
     if "pulse_1" in ds:
         offs = [0, 5, 20, 60]; fig, axes = plt.subplots(2, len(offs), figsize=(4.2 * len(offs), 7))
@@ -111,7 +130,7 @@ def main():
             i = int(np.argmin(np.abs(day - (day[0] + off)))); q = np.asarray(ds["pulse_1"].isel(time=i))
             m = axes[0, c].pcolormesh(lon, lat, q[k30].T, vmin=0, vmax=max(q[k30].max(), 1e-3), cmap="magma_r", shading="auto"); fig.colorbar(m, ax=axes[0, c])
             axes[0, c].set_title(f"pulse_1 at {p_nom[k30]:.0f} hPa, day {day[i]:.2f}")
-            z = q.mean(axis=1); m = axes[1, c].contourf(lat, p_nom, z, levels=np.linspace(0, max(z.max(), 1e-3), 11), cmap="magma_r"); fig.colorbar(m, ax=axes[1, c])
+            z = q.mean(axis=1); m = axes[1, c].contourf(lat, p_nom, z, levels=np.linspace(0, max(z.max(), 1e-3), 11), cmap="magma_r", extend="min"); fig.colorbar(m, ax=axes[1, c])
             axes[1, c].set_yscale("log"); axes[1, c].set_ylim(1000, 0.01); axes[1, c].set_title("zonal mean")
         fig.suptitle(f"{a.label or run}: advection of pulse_1 after the first injection"); fig.tight_layout()
         f = os.path.join(a.outdir, f"{run}_pulse_evolution.png"); fig.savefig(f, dpi=120); print("wrote", f)
@@ -119,16 +138,17 @@ def main():
     fig, axes = plt.subplots(2, 3, figsize=(15, 8)); ref = xr.open_dataset(REF) if os.path.exists(REF) else None
     for c, k in enumerate(steady[:2]):
         z = np.asarray(ds[k].isel(time=-1)).mean(axis=1); lv = np.linspace(0, 1, 11)
-        m = axes[0, c].contourf(lat, p_nom, z, levels=lv, cmap="Blues"); fig.colorbar(m, ax=axes[0, c])
+        m = axes[0, c].contourf(lat, p_nom, z, levels=lv, cmap="Blues", extend="max"); fig.colorbar(m, ax=axes[0, c])
+        if z.max() > 1.001: axes[0, c].contour(lat, p_nom, z, levels=[1.001, 1.02, 1.05], colors="k", linewidths=0.7)
         if ref is not None: axes[0, c].contour(ref.lat, ref.lev, ref[f"{k}_q0"].T if ref[f"{k}_q0"].dims[0] == "lat" else ref[f"{k}_q0"], levels=lv[1:-1], colors="r", linewidths=0.6)
-        axes[0, c].set_title(f"{k} zonal mean, day {day[-1]:.0f} (red: WACCM initial state)")
+        axes[0, c].set_title(f"{k} zonal mean, day {day[-1]:.0f} (red: WACCM initial state; black: > 1)", fontsize=9)
         lines.append(f"\n{k}: burden first/last {burden[k][0]:.4f} / {burden[k][-1]:.4f}; last-frame min/max {float(ds[k].isel(time=-1).min()):.2e} / {float(ds[k].isel(time=-1).max()):.4f}")
     ax = axes[0, 2]
     for k in steady: ax.plot(tday, burden[k], label=k)
     ax.set_title("steady tracers: global-mean mixing ratio"); ax.legend(); ax.set_xlabel("day")
     for c, k in enumerate(clocks[:3]):
         z = np.asarray(ds[k].isel(time=-1)).mean(axis=1) / 365.25
-        m = axes[1, c].contourf(lat, p_nom, z, levels=np.linspace(0, max(0.5, z.max()), 11), cmap="viridis"); fig.colorbar(m, ax=axes[1, c], label="yr")
+        m = axes[1, c].contourf(lat, p_nom, z, levels=np.linspace(0, max(0.5, z.max()), 11), cmap="viridis", extend="min"); fig.colorbar(m, ax=axes[1, c], label="yr")
         axes[1, c].set_title(f"{k} zonal mean (yr), day {day[-1]:.0f}")
     for ax in list(axes[0, :2]) + list(axes[1]): ax.set_yscale("log"); ax.set_ylim(1000, 0.01); ax.axhline(150, color="grey", ls=":", lw=0.8)
     fig.suptitle(a.label or run); fig.tight_layout(); f = os.path.join(a.outdir, f"{run}_steady_clocks.png"); fig.savefig(f, dpi=120); print("wrote", f)
