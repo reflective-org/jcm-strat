@@ -1,0 +1,12 @@
+# Phase 9 runs for scripts/phase9_analysis.sh: LABEL rundir (relative to the repo). The T63L95
+# point is the Phase 8b chain (QBO nudging to 1 hPa), which every other run repeats at another
+# resolution. The runs/p8b_* directories live in the main checkout; the worktree's runs/ symlinks them.
+T63L95  runs/p8b_5yr
+T63L63  runs/p9_t63l63_5yr
+T63L47  runs/p9_t63l47_5yr
+T85L95  runs/p9_t85l95_5yr
+T119L95 runs/p9_t119l95_5yr
+T85L63  runs/p9_t85l63_5yr
+T85L47  runs/p9_t85l47_5yr
+T119L63 runs/p9_t119l63_5yr
+T119L47 runs/p9_t119l47_5yr

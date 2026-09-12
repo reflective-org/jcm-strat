@@ -33,6 +33,15 @@ Simulated days per wall-clock hour, one H100 (GPU 0), `run=longrun` unless state
 | 6 | reference: full ECHAM physics + SD nudging (12 h target), GPU 1 | T63L95 | 12 | 139.9 (e2e 131) | 214 | `ref_echam_sd_2005` | 2026-09-03 |
 | 7 | P6 configuration, dt 30 | T63L95 | 30 | 10432 (e2e 1891) | 7 | `p7_dt30` | 2026-09-03 |
 | 7 | P6 configuration, dt 45, 2 departure iterations | T63L95 | 45 | 12369 (e2e 3028) | 9 | `p7_dt45_it2` | 2026-09-03 |
+| 8b | P8b: + QBO nudging to 1 hPa (the Phase 9 T63L95 point), five chained years | T63L95 | 12 | 3890–3930 per segment (e2e 1872–1904) | 8 | `p8b_5yr` | 2026-09-09 |
+| 9 | P8b configuration, strat63 (L95 with mesosphere and troposphere thinned) | T63 strat63 | 12 | 5374 (e2e 1750) | 6 | `p9_t63l63_5yr` | 2026-09-09 |
+| 9 | same, strat47 (also 1–30 hPa every other level) | T63 strat47 | 12 | 6228 (e2e 1948) | 5 | `p9_t63l47_5yr` | 2026-09-09 |
+| 9 | same, T85 (ten half-year segments) | T85L95 | 9 | 1636 (e2e 847) | 14 | `p9_t85l95_5yr` | 2026-09-10 |
+| 9 | same | T85 strat63 | 9 | 2356 (e2e 1075) | 10 | `p9_t85l63_5yr` | 2026-09-09 |
+| 9 | same | T85 strat47 | 9 | 3059 (e2e 1356) | 7 | `p9_t85l47_5yr` | 2026-09-09 |
+| 9 | same, T119 = 1° (twenty quarter-year segments) | T119L95 | 6 | 557 (e2e 403) | 27 | `p9_t119l95_5yr` | 2026-09-10 |
+| 9 | same | T119 strat63 | 6 | 790 (e2e 516) | 19 | `p9_t119l63_5yr` | 2026-09-10 |
+| 9 | same (ten half-year segments) | T119 strat47 | 6 | 1045 (e2e 697) | 14 | `p9_t119l47_5yr` | 2026-09-10 |
 
 ## Wall-clock per simulated year and per six simulated hours
 
@@ -48,6 +57,13 @@ One H100, T63L95. Stepping excludes JIT compile and output writing; end-to-end i
 | Phase 4: same, five chained one-year segments (per-segment mean) | 12 min | 4,467 / 2,087 | 4.9 min / 10.5 min | 0.20 s |
 | Phase 6: + Polvani-Kushner stratosphere (chosen) | 12 min | 4,445 / 2,012 | 4.9 min / 10.9 min | 0.20 s |
 | Phase 6 reference: full ECHAM physics + SD nudging (12 h target) | 12 min | 140 / 131 | 2.6 h / 2.8 h | 6.4 s |
+| Phase 8b: + QBO nudging to 1 hPa (T63L95) | 12 min | 3,900 / 1,890 | 5.6 min / 11.6 min | 0.23 s |
+| Phase 9: same on strat63 (T63, 63 levels, stratosphere intact) — recommended | 12 min | 5,374 / 1,750 | 4.1 min / 12.5 min | 0.17 s |
+| Phase 10: strat63 production — 15 tracers, omega, 6-hourly instantaneous output (output-bound) | 12 min | 4,760 / 860 | 4.6 min / 26 min | 0.20 s |
+| Phase 9: same on strat47 (T63, 47 levels) | 12 min | 6,228 / 1,948 | 3.5 min / 11.2 min | 0.14 s |
+| Phase 9: same at T85L95 (dt 9) | 9 min | 1,636 / 847 | 13.4 min / 26 min | 0.55 s |
+| Phase 9: same at T119L95, the 1° grid (dt 6) | 6 min | 557 / 403 | 39 min / 54 min | 1.6 s |
+| Phase 10 | production tracer set, 6-h instantaneous output, QBO tau 1 d | strat63 | 12 | 4,760 (e2e 860) | 6 | p10_2005-2009 review chain (`p10rev_5yr`); 1990-2019 chain `p10_30yr` running | 2026-09-11 |
 
 (e2e = end-to-end incl. compile and output writing.) Reference from upstream (A100-40GB, `docs/source/design/dinosaur_sl_jam_configuration.md` in
 JCM): T63L47 full science 115 days/hr at dt=15 min; T63L95 full science 52 days/hr.

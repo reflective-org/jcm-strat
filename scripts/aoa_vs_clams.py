@@ -3,7 +3,7 @@
 
     python scripts/aoa_vs_clams.py runs/<session> <outdir> --years 2005-2009 [--label TEXT]
 
-Model: zonal-mean ``aoa`` (days -> years) averaged over the last 12 saves (the final year).
+Model: zonal-mean ``aoa`` (days -> years) averaged over the last ``--last-saves`` 5-day means (default 12 = 60 days).
 CLaMS: /data/CLaMS/CLaMS_v3/clams_v3.1_era5_zm_lat.zip, ``AGE`` (years) on month x press x lat,
        annual mean over the requested years. CLaMS' clock increases linearly at the Earth's
        surface, so it is the like-for-like reference for our clock (reset below 700 hPa).
@@ -86,20 +86,22 @@ def main() -> None:
     ap.add_argument("--paradis-entry-clock", action="store_true", help="also show the offline clock reset below 150 hPa (off by default)")
     ap.add_argument("--second-run", default=None, help="a second run directory to show alongside (e.g. the configuration before a change)")
     ap.add_argument("--second-label", default="before", help="legend/panel name of --second-run")
+    ap.add_argument("--last-saves", type=int, default=12,
+                    help="model saves (5-day means) to average: 12 = the last 60 days (Phases 4-8), 73 = the last year")
     a = ap.parse_args()
     y0, y1 = (int(s) for s in a.years.split("-")); years = list(range(y0, y1 + 1))
     run = os.path.basename(a.rundir.rstrip("/")); os.makedirs(a.outdir, exist_ok=True)
 
-    pm, latm, am, last_day = model_age(a.rundir)
+    pm, latm, am, last_day = model_age(a.rundir, a.last_saves)
     pc, latc, ac = clams_age(years)
     pw, latw, aw = waccm_age(years)
     # (p, lat, age, panel title, legend name, line style)
-    sources = [(pm, latm, am, f"model {run}\n(last 12 saves, ends day {last_day})", "model", "-"),
+    sources = [(pm, latm, am, f"model {run}\n(last {a.last_saves} saves, ends day {last_day})", "model", "-"),
                (pc, latc, ac, f"CLaMS v3.1 / ERA5, {a.years} mean\n(surface clock)", "CLaMS", "--"),
                (pw, latw, aw, f"WACCM6 REF-D1, {a.years} mean\n(entry age, base 103 hPa)", "WACCM (entry age)", ":")]
     if a.second_run:
-        p2, lat2, a2, day2 = model_age(a.second_run)
-        sources.insert(1, (p2, lat2, a2, f"{a.second_label}: {os.path.basename(a.second_run.rstrip('/'))}\n(last 12 saves, ends day {day2})", a.second_label, (0, (5, 2))))
+        p2, lat2, a2, day2 = model_age(a.second_run, a.last_saves)
+        sources.insert(1, (p2, lat2, a2, f"{a.second_label}: {os.path.basename(a.second_run.rstrip('/'))}\n(last {a.last_saves} saves, ends day {day2})", a.second_label, (0, (5, 2))))
     if a.paradis_clock:
         pz = xr.open_dataset(a.paradis_clock); span = f"{pz.attrs.get('start','')[:10]}..{pz.attrs.get('end','')[:10]}"
         pp, latp = np.asarray(pz.level), np.asarray(pz.lat)

@@ -12,7 +12,7 @@ small zonal-mean files under $JCM_STRAT_REPO/cache/era5_ref/:
 Needed because the WeatherBench2 store used for nudging stops at 50 hPa, and the existing
 AIDE tape covers 1989-1994 on six levels only. Run in tmux with the AIDE download env:
   tmux new-session -d -s preproc_era5_ref \
-    '/home/susanne/docs/AIDE-atmosphere_validation/AIDE-atmosphere/era5_env/bin/python \
+    '/data/AIDE-atmosphere_validation/AIDE-atmosphere/era5_env/bin/python \
      scripts/fetch_era5_strat_ref.py 2005 2009 2>&1 | tee runs/preproc_era5_ref.log'
 """
 import os, sys, time, zipfile, io
@@ -120,12 +120,15 @@ def fetch_daily_u10(year):
     log(f"{year} daily u10: wrote {out} ({len(days)} days)")
 
 if __name__ == "__main__":
-    y0, y1 = int(sys.argv[1]), int(sys.argv[2])
+    # usage: fetch_era5_strat_ref.py Y0 Y1 [--monthly-only]   (Phase 10: the QBO target alone, 32 years)
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    y0, y1 = int(args[0]), int(args[1])
     years = list(range(y0, y1 + 1))
     with ThreadPoolExecutor(max_workers=4) as ex:
         list(ex.map(fetch_monthly, years))
-    # the daily reduction runs sequentially: concurrent netCDF4/HDF5 reads from threads crashed
-    # the process silently (no traceback) when four years were reduced at once
-    for y in years:
-        fetch_daily_u10(y)
+    if "--monthly-only" not in sys.argv:
+        # the daily reduction runs sequentially: concurrent netCDF4/HDF5 reads from threads crashed
+        # the process silently (no traceback) when four years were reduced at once
+        for y in years:
+            fetch_daily_u10(y)
     log("done")

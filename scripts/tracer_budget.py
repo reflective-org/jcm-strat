@@ -25,6 +25,7 @@ import argparse
 import glob
 import os
 import re
+import sys
 
 import matplotlib
 matplotlib.use("Agg")
@@ -34,6 +35,9 @@ import xarray as xr
 
 P0 = 101325.0
 TRACERS = ("aoa", "unity", "sai", "e90")
+# Phase 10 production runs carry a different set (jcm_strat/advection_tracers.py); the script uses
+# whichever of these the files hold, and the unity/e90 panels only when those tracers exist
+KNOWN = TRACERS + ("aoa150", "aoa_sfc", "n2o", "cfc11") + tuple(f"pulse_{i}" for i in range(1, 6)) + tuple(f"src_{i}" for i in range(1, 5))
 
 
 def gauss_weights(lat_deg: np.ndarray) -> np.ndarray:
@@ -42,6 +46,20 @@ def gauss_weights(lat_deg: np.ndarray) -> np.ndarray:
     out = np.empty_like(w)
     out[order_file] = w[np.argsort(nodes)]
     return out / out.sum()
+
+
+def install_level_table(rundir: str) -> None:
+    """Phase 9 runs on the L95-derived strat47/strat63 tables record ``level_table: strat`` in their
+    resolved config; serve those tables to ``get_echam_levels`` so the layer thicknesses are right."""
+    import yaml
+    cfg_path = os.path.join(rundir, ".hydra", "config.yaml")
+    if not os.path.exists(cfg_path):
+        return
+    name = (yaml.safe_load(open(cfg_path)) or {}).get("level_table")
+    if name:
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from jcm_strat import levels
+        levels.install(name)
 
 
 def layer_dp(nlev: int, nsp: np.ndarray) -> np.ndarray:
@@ -60,13 +78,15 @@ def layer_dp(nlev: int, nsp: np.ndarray) -> np.ndarray:
         raise
 
 
-def load(rundir: str) -> xr.Dataset:
+def load(rundir: str, stride: int = 1) -> xr.Dataset:
     files = sorted(glob.glob(os.path.join(rundir, "longrun_day*.nc")),
                    key=lambda p: int(re.search(r"_day(\d+)\.nc$", p).group(1)))
     if not files:
         raise SystemExit("no longrun_day*.nc in " + rundir)
+    with xr.open_dataset(files[0], decode_times=False) as d0:
+        present = [k for k in KNOWN if k in d0]
     ds = xr.open_mfdataset(files, combine="nested", concat_dim="time", decode_times=False,
-                           data_vars=[*TRACERS, "normalized_surface_pressure"])
+                           data_vars=[*present, "normalized_surface_pressure"])
     # each file is one chunk holding several window means; reconstruct the day at the END of
     # every window from the chunk-end day in the filename and the number of saves per file
     ends = [int(re.search(r"_day(\d+)\.nc$", f).group(1)) for f in files]
@@ -77,35 +97,43 @@ def load(rundir: str) -> xr.Dataset:
             n = d.sizes["time"]
         step = (s1 - s0) / n
         days.extend(s0 + step * (j + 1) for j in range(n))
-    return ds, np.asarray(days, dtype=float)
+    days = np.asarray(days, dtype=float)
+    if stride > 1:                                            # 6-hourly runs: every stride-th save
+        ds = ds.isel(time=slice(stride - 1, None, stride)); days = days[stride - 1::stride]
+    return ds, days
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("rundir"); ap.add_argument("outdir"); ap.add_argument("--label", default="")
+    ap.add_argument("--stride", type=int, default=1, help="use every N-th save (6-hourly output: 20 = every 5 days)")
     a = ap.parse_args()
     run = os.path.basename(a.rundir.rstrip("/"))
     os.makedirs(a.outdir, exist_ok=True)
-    ds, day = load(a.rundir)                                 # day = end of each averaging window
+    install_level_table(a.rundir)
+    ds, day = load(a.rundir, a.stride)                       # day = end of each averaging window / snapshot time
+    tracers = tuple(k for k in KNOWN if k in ds)
+    has_unity = "unity" in ds; has_e90 = "e90" in ds
     lat = np.asarray(ds.lat); w = gauss_weights(lat)
     p_nom = np.asarray(ds.level) * P0 / 100.0                # nominal hPa, surface-first
     nt = ds.sizes["time"]
     interval = float(np.median(np.diff(day))) if nt > 1 else float(day[0])
     nsp = np.asarray(ds.normalized_surface_pressure)          # (t, lon, lat)
 
-    burden = {k: np.zeros(nt) for k in TRACERS}
-    umin = np.zeros(nt); umax = np.zeros(nt); cellmin = {k: np.inf for k in TRACERS}
+    burden = {k: np.zeros(nt) for k in tracers}
+    umin = np.ones(nt); umax = np.ones(nt); cellmin = {k: np.inf for k in tracers}
     sai_expected = np.zeros(nt)
     box_mass_frac = np.zeros(nt)
     for i in range(nt):
         dp = layer_dp(ds.sizes["level"], nsp[i])               # (lev, lon, lat)
         wgt = dp * w[None, None, :]
         M = wgt.sum()
-        for k in TRACERS:
+        for k in tracers:
             q = np.asarray(ds[k].isel(time=i))
             burden[k][i] = (q * wgt).sum() / M
             cellmin[k] = min(cellmin[k], float(q.min()))
-        u = np.asarray(ds["unity"].isel(time=i)); umin[i], umax[i] = u.min(), u.max()
+        if has_unity:
+            u = np.asarray(ds["unity"].isel(time=i)); umin[i], umax[i] = u.min(), u.max()
         # sai source box (jcm_strat.tracers defaults): |lat|<=15, 25<=p<=55 hPa
         p3 = np.broadcast_to(p_nom[:, None, None], dp.shape) * nsp[i][None]
         box = (np.abs(lat)[None, None, :] <= 15.0) & (p3 >= 25.0) & (p3 <= 55.0)
@@ -115,8 +143,8 @@ def main() -> None:
     t_mid = day - 0.5 * interval                             # the file holds a window mean
     sai_expected = rate * box_mass_frac.mean() * t_mid
 
-    unity_dev = max(abs(umin - 1).max(), abs(umax - 1).max())
-    unity_drift = burden["unity"][-1] / burden["unity"][0] - 1
+    unity_dev = max(abs(umin - 1).max(), abs(umax - 1).max()) if has_unity else float("nan")
+    unity_drift = (burden["unity"][-1] / burden["unity"][0] - 1) if has_unity else float("nan")
     sai_err = burden["sai"][-1] / sai_expected[-1] - 1
     # pull-up: sai at the top model level over the polar caps vs its global-mean column
     sai_last = np.asarray(ds["sai"].isel(time=-1))            # (lev, lon, lat)
@@ -138,18 +166,50 @@ def main() -> None:
     print(f"unity max |q-1| (any cell, any save): {unity_dev:.2e}")
     print(f"unity global burden drift:            {unity_drift:+.2e}")
     print(f"sai burden vs expected (source*box mass*t): {sai_err:+.2%}  (expected {sai_expected[-1]:.3e}, got {burden['sai'][-1]:.3e})")
-    print("cell minimum: " + ", ".join(f"{k} {cellmin[k]:.2e}" for k in TRACERS))
+    print("cell minimum: " + ", ".join(f"{k} {cellmin[k]:.2e}" for k in tracers))
+    for k in ("aoa150", "aoa_sfc"):
+        if k in ds:
+            z = np.asarray(ds[k].isel(time=-1)).mean(axis=1) / 365.25
+            print(f"{k} at ~20 hPa, last save: tropics {float((z[k20, trop] * w[trop]).sum() / w[trop].sum()):.2f} yr, "
+                  f"50-70deg {float((z[k20, extra] * w[extra]).sum() / w[extra].sum()):.2f} yr")
+    for k in ("n2o", "cfc11"):
+        if k in ds:
+            print(f"{k} global burden first/last: {burden[k][0]:.4f} / {burden[k][-1]:.4f}; cell min/max last: "
+                  f"{float(ds[k].isel(time=-1).min()):.2e} / {float(ds[k].isel(time=-1).max()):.4f}")
+    pulses = [k for k in tracers if k.startswith("pulse_")]
+    if pulses:
+        print("pulse burdens (first / max / last): " + ", ".join(f"{k} {burden[k][0]:.2e}/{burden[k].max():.2e}/{burden[k][-1]:.2e}" for k in pulses))
     print(f"pull-up check: sai at top level, |lat|>70: {polar_top:.3e} vs global-mean column {global_col:.3e} (ratio {polar_top/global_col if global_col else float('nan'):.3f})")
     print(f"age of air at ~20 hPa, last save: tropics(|lat|<=10) {aoa_trop:.2f} yr, 50-70deg {aoa_extra:.2f} yr, max {aoa_last.max():.2f} yr")
 
     # --- plot 1: budgets
     fig, axes = plt.subplots(2, 2, figsize=(11, 7))
-    ax = axes[0, 0]; ax.plot(day, (burden["unity"] - 1) * 1e6); ax.set_title("unity: global burden - 1 (ppm)"); ax.set_xlabel("day")
-    ax = axes[0, 1]; ax.plot(day, (umax - 1) * 1e3, label="max"); ax.plot(day, (umin - 1) * 1e3, label="min"); ax.legend()
-    ax.set_title("unity: cell extremes - 1 (x1e-3)"); ax.set_xlabel("day")
+    ax = axes[0, 0]
+    if has_unity:
+        ax.plot(day, (burden["unity"] - 1) * 1e6); ax.set_title("unity: global burden - 1 (ppm)")
+    else:
+        for k in pulses: ax.plot(day, burden[k], label=k)
+        ax.set_yscale("log"); ax.legend(fontsize=7); ax.set_title("pulse tracers: global-mean mixing ratio")
+    ax.set_xlabel("day")
+    ax = axes[0, 1]
+    if has_unity:
+        ax.plot(day, (umax - 1) * 1e3, label="max"); ax.plot(day, (umin - 1) * 1e3, label="min"); ax.legend()
+        ax.set_title("unity: cell extremes - 1 (x1e-3)")
+    else:
+        for k in ("n2o", "cfc11"):
+            if k in ds: ax.plot(day, burden[k], label=k)
+        ax.legend(); ax.set_title("steady tracers: global-mean mixing ratio")
+    ax.set_xlabel("day")
     ax = axes[1, 0]; ax.plot(day, burden["sai"], label="model"); ax.plot(day, sai_expected, "--", label="expected: source x box mass x t")
     ax.legend(); ax.set_title("sai: global-mean mixing ratio"); ax.set_xlabel("day")
-    ax = axes[1, 1]; ax.plot(day, burden["e90"]); ax.set_title("e90: global-mean mixing ratio"); ax.set_xlabel("day")
+    ax = axes[1, 1]
+    if has_e90:
+        ax.plot(day, burden["e90"]); ax.set_title("e90: global-mean mixing ratio")
+    else:
+        for k in ("aoa", "aoa150", "aoa_sfc"):
+            if k in ds: ax.plot(day, burden[k] / 365.25, label=k)
+        ax.legend(); ax.set_title("clocks: global-mean age (yr)")
+    ax.set_xlabel("day")
     fig.suptitle(f"{a.label or run}: tracer budgets"); fig.tight_layout()
     f1 = os.path.join(a.outdir, f"{run}_tracer_budget.png"); fig.savefig(f1, dpi=130); print("wrote", f1)
 
@@ -160,17 +220,26 @@ def main() -> None:
     fig.colorbar(cf, ax=axes[0, 0], label="yr"); axes[0, 0].set_title("age of air (clock, reset below 700 hPa)")
     s = zm("sai"); cf = axes[0, 1].contourf(lat, p_nom, s, levels=np.linspace(0, max(s.max(), 1e-9), 11), cmap="magma_r")
     fig.colorbar(cf, ax=axes[0, 1]); axes[0, 1].set_title("sai (source 15S-15N, 25-55 hPa)")
-    e = zm("e90"); cf = axes[1, 0].contourf(lat, p_nom, e, levels=np.linspace(0, 100, 11), cmap="Blues")
-    axes[1, 0].contour(lat, p_nom, e, levels=[90], colors="r", linewidths=1.0)
-    fig.colorbar(cf, ax=axes[1, 0]); axes[1, 0].set_title("e90 (red: 90 contour = tropopause marker)")
-    d = (zm("unity") - 1) * 1e3; lim = max(1e-3, np.abs(d).max())
-    cf = axes[1, 1].contourf(lat, p_nom, d, levels=np.linspace(-lim, lim, 13), cmap="RdBu_r")
-    fig.colorbar(cf, ax=axes[1, 1], label="x1e-3"); axes[1, 1].set_title("unity - 1 (local transport error)")
+    if has_e90:
+        e = zm("e90"); cf = axes[1, 0].contourf(lat, p_nom, e, levels=np.linspace(0, 100, 11), cmap="Blues")
+        axes[1, 0].contour(lat, p_nom, e, levels=[90], colors="r", linewidths=1.0)
+        fig.colorbar(cf, ax=axes[1, 0]); axes[1, 0].set_title("e90 (red: 90 contour = tropopause marker)")
+    elif "n2o" in ds:
+        e = zm("n2o"); cf = axes[1, 0].contourf(lat, p_nom, e, levels=np.linspace(0, 1, 11), cmap="Blues")
+        fig.colorbar(cf, ax=axes[1, 0]); axes[1, 0].set_title("n2o (1 below 700 hPa, WACCM loss above)")
+    if has_unity:
+        d = (zm("unity") - 1) * 1e3; lim = max(1e-3, np.abs(d).max())
+        cf = axes[1, 1].contourf(lat, p_nom, d, levels=np.linspace(-lim, lim, 13), cmap="RdBu_r")
+        fig.colorbar(cf, ax=axes[1, 1], label="x1e-3"); axes[1, 1].set_title("unity - 1 (local transport error)")
+    elif "aoa150" in ds:
+        d = zm("aoa150") / 365.25
+        cf = axes[1, 1].contourf(lat, p_nom, d, levels=np.linspace(0, max(0.5, d.max()), 11), cmap="viridis")
+        fig.colorbar(cf, ax=axes[1, 1], label="yr"); axes[1, 1].set_title("age of air, clock reset below 150 hPa")
     for ax in axes.ravel():
         ax.set_yscale("log"); ax.set_ylim(1000, 0.01); ax.axhline(150, color="grey", ls=":", lw=0.8)
     for ax in axes[1]: ax.set_xlabel("latitude")
     for ax in axes[:, 0]: ax.set_ylabel("nominal pressure (hPa)")
-    fig.suptitle(f"{a.label or run}: zonal means, day {day[-1]:.0f} (5-day mean)"); fig.tight_layout()
+    fig.suptitle(f"{a.label or run}: zonal means, day {day[-1]:.0f}"); fig.tight_layout()
     f2 = os.path.join(a.outdir, f"{run}_tracer_zonal.png"); fig.savefig(f2, dpi=130); print("wrote", f2)
 
 

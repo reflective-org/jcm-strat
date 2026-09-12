@@ -1,0 +1,13 @@
+# Phase 9 run matrix: prefix, segment scheme, hydra overrides (the +experiment token selects the
+# experiment, the rest are passed to every segment). Read by phase9_prefetch.sh, phase9_smoke.sh
+# and phase9_queue.sh in this order. The T63L95 point is the Phase 8b chain (runs/p8b_5yr).
+# Wave 1: the two axes.
+p9_t63l63   year     +experiment=p9_l63
+p9_t63l47   year     +experiment=p9_l47
+p9_t85l95   half     +experiment=p9_res grid=echam_t85_l95_hybrid run.time_step=9
+p9_t119l95  quarter  +experiment=p9_res grid=echam_t119_l95_hybrid run.time_step=6
+# Wave 2: cross points.
+p9_t85l63   half     +experiment=p9_l63 grid.spectral_truncation=85 run.time_step=9
+p9_t85l47   year     +experiment=p9_l47 grid.spectral_truncation=85 run.time_step=9
+p9_t119l63  quarter  +experiment=p9_l63 grid.spectral_truncation=119 run.time_step=6
+p9_t119l47  half     +experiment=p9_l47 grid.spectral_truncation=119 run.time_step=6
