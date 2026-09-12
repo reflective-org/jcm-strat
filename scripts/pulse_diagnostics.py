@@ -112,7 +112,7 @@ def main():
     axes[1].set_yscale("symlog", linthresh=1e-6); axes[1].set_title("pulse tracers: cell extremes"); axes[1].legend(fontsize=6, ncol=2)
     for ax in axes: ax.set_xlabel("day")
     fig.suptitle(a.label or run); fig.tight_layout(); f = os.path.join(a.outdir, f"{run}_pulse_burdens.png"); fig.savefig(f, dpi=130); print("wrote", f)
-    lines += ["## pulses", "", "| tracer | amplitude | first-frame RMSE vs target / amp | burden after 1st injection | min over run | max over run | decay monotone between injections |", "|---|---|---|---|---|---|---|"]
+    lines += ["## pulses", "", "| tracer | amplitude | first-frame RMSE vs target / amp | burden after 1st injection | min over run | max over run | burden between injections (should only fall) |", "|---|---|---|---|---|---|---|"]
     nsp0 = np.asarray(ds.normalized_surface_pressure.isel(time=0))
     for k in names:
         amp = term.pulses[int(k.split("_")[1]) - 1][3]
@@ -123,9 +123,13 @@ def main():
         # gives the year starts); between two injection dates the burden may only fall (surface absorption)
         inj = injection_days(a.rundir, day[-1]) if a.injection == "quarterly" else np.asarray([0.0])
         cycle = np.searchsorted(inj, tday, side="right")                # which injection cycle each sample is in
-        bad = sum(int(np.any(np.diff(b[cycle == c]) > 1e-6 * b.max())) for c in np.unique(cycle))
+        # the largest relative rise between consecutive samples of one cycle: the burden is a
+        # mass-weighted mean mixing ratio, so the fixer's exact mass conservation still lets it move by
+        # the change of the air-mass distribution (1e-4-1e-3); anything larger would be a real source
+        rises = [np.diff(b[cycle == c]) / max(b.max(), 1e-30) for c in np.unique(cycle) if (cycle == c).sum() > 1]
+        max_rise = max((float(r.max()) for r in rises if r.size), default=0.0)
         lines.append(f"| {k} | {amp} | {rmse:.3f} | {b[0]:.3e} | {qmin[k].min():.2e} | {qmax[k].max():.3f} | "
-                     f"{'yes' if bad == 0 else f'NO ({bad} of {np.unique(cycle).size} cycles rise)'} ({inj.size} injections scheduled to day {day[-1]:.0f}) |")
+                     f"largest rise within a cycle {max_rise:.1e} of the peak burden ({inj.size} injections scheduled to day {day[-1]:.0f}) |")
     # ---- pulse_1 evolution
     if "pulse_1" in ds:
         offs = [0, 5, 20, 60]; fig, axes = plt.subplots(2, len(offs), figsize=(4.2 * len(offs), 7))

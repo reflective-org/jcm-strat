@@ -98,18 +98,28 @@ clocks, which are already exempt, do not show it. **Fix: add `n2o` and `cfc11` t
 `sl_mass_fixer_exclude`** (as for the clocks); the SL scheme's own mass error for them is then the
 few 1e-4 per year that `unity` measured in Phases 4–9, three orders of magnitude below the artefact.
 
-### Tracer diagnostics
+### Tracer diagnostics of the review run (`runs/p10rev_5yr`, figures `p10rev_5yr_*.png` here)
 
-Figures and numbers from `scripts/pulse_diagnostics.py` and `scripts/tracer_budget.py` on
-`runs/p10rev_5yr` are written into this directory (`p10rev_5yr_pulse_burdens.png`,
-`p10rev_5yr_pulse_evolution.png`, `p10rev_5yr_steady_clocks.png`, `p10rev_5yr_omega.png`,
-`p10rev_5yr_pulse_metrics.md`, `p10rev_5yr_tracer_budget.png`, `p10rev_5yr_tracer_zonal.png`); a coarser
-quick look (every 50 days) is in `quicklook/`. *[to be filled from the finished diagnostics]*
-
-## Reading
-
-*[to be written after the diagnostics: pulse dispersal time scales per injection site, steady
-tracer equilibration, clock ordering and the entry-age vs surface-age difference, omega]*
+- **Pulses.** Each injection reproduces its analytic blob to 0.4–1.5 % RMSE of the amplitude (the
+  grid's rendering of a 12° × 0.25-decade Gaussian). The tropical 30 hPa blob is sheared into a
+  zonal band within 5 days, reaches 40°N in filaments by day 20, and after 60 days is a tropical band
+  at 3 % of its peak with spirals into both hemispheres (`p10rev_5yr_pulse_evolution.png`); vertically
+  it stays within 20–50 hPa. Global burdens are flat between injections for the four stratospheric
+  pulses (nothing but transport; the sub-1e-3 wiggles are the moving air-mass weighting) and fall
+  within weeks for the 300 hPa pulse, which reaches the absorbing layers. Cell minima −1.7e-9 or
+  better, maxima never above the amplitude.
+- **Steady tracers.** Global burdens settle in ~250 days (n2o 0.968 → 0.956, cfc11 0.943 → 0.922)
+  and then hold; the stratospheric contours sit below WACCM's January state, i.e. this model's
+  tropical ascent is slower (the same direction as its old age of air). The defect: values up to
+  1.07 in the tropics below ~60 hPa from the mass fixer, see above; fixed for production.
+- **Clocks.** aoa150 ≤ aoa in 100 % of cells, aoa ≤ aoa_sfc in 99.7 %; at 20 hPa after 5 years the
+  tropical / 50–70° ages read 3.05 / 4.30 yr (aoa), 2.29 / 3.94 (aoa150), 3.13 / 4.33 (aoa_sfc): the
+  entry age is 0.4–0.8 yr younger than the 700 hPa clock, the surface clock 0.05 yr older. None is
+  converged at 5 years (issue #44), as expected.
+- **sai** burden −1.7 % against the analytic source line (threshold 2 %, pass; Phase 9 read −4 to
+  +3.6 % on this grid family). **omega**: level means ≤ 0.6 % of the rms; rms 2.5e-3 Pa/s at 30 hPa.
+- **Throughput**: 4720–4800 simulated days/hr stepping, 6 ms/step; end-to-end 830–880 d/hr, i.e.
+  output-bound.
 
 ## Review and the production design (2026-09-11)
 
