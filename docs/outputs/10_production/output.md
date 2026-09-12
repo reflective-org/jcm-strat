@@ -1,6 +1,6 @@
 # Phase 10 — production tracer set and 6-hourly output: the 2005–2009 review run
 
-Status: **chain complete (five calendar years, strat63, QBO tau 1 d); tracer diagnostics in
+Status: **review chain complete, renamed `p10rev_*` on 2026-09-12 so the production chain (`p10_1990..2019`) does not skip 2005-2009 as already done; (five calendar years, strat63, QBO tau 1 d); tracer diagnostics in
 progress; one defect found (the N2O-like tracers exceed 1 under the global mass fixer, see
 Results) — a rerun with those two tracers exempt from the fixer is proposed before the 30-year
 production run.** Branch `phase10-production` (off `phase9-resolution` at 042f234), worktree
@@ -55,12 +55,12 @@ and CAMS have no N2O, so WACCM is the only source of an initial state on this ma
 |---|---|---|---|---|---|---|
 | `p10_smoke5` | 2005-01-01 | 5 | 1 min | — | — | 1.5 GB (one 5-day file, 20 frames) |
 | `p10_smoke30` | 2005-01-01 | 30 | 4 min | — | — | 8.5 GB |
-| `p10_20050101` | 2005 | 365 | 25 min | 4718 d/hr, 6 ms/step | 880 d/hr | 108.6 → 73.2 GB |
-| `p10_20060101` | 2006 | 365 | 25 min | 4723 | 881 | 108.6 → 77.0 |
-| `p10_20070101` | 2007 | 365 | 26 min | 4805 | 836 | 108.6 → 78.1 |
-| `p10_20080101` | 2008 | 366 | 26 min | 4748 | 834 | 108.9 → 78.6 |
-| `p10_20090101` | 2009 | 365 | 26 min | 4787 | 853 | 108.6 → 78.4 |
-| `p10_5yr` | aggregate | 1826 | 2 h 20 min | | | 385 GB, 185 files × 40 frames, 17 variables |
+| `p10rev_20050101` | 2005 | 365 | 25 min | 4718 d/hr, 6 ms/step | 880 d/hr | 108.6 → 73.2 GB |
+| `p10rev_20060101` | 2006 | 365 | 25 min | 4723 | 881 | 108.6 → 77.0 |
+| `p10rev_20070101` | 2007 | 365 | 26 min | 4805 | 836 | 108.6 → 78.1 |
+| `p10rev_20080101` | 2008 | 366 | 26 min | 4748 | 834 | 108.9 → 78.6 |
+| `p10rev_20090101` | 2009 | 365 | 26 min | 4787 | 853 | 108.6 → 78.4 |
+| `p10rev_5yr` | aggregate | 1826 | 2 h 20 min | | | 385 GB, 185 files × 40 frames, 17 variables |
 
 Stepping is 12 % slower than Phase 9's strat63 (5374 d/hr): eleven nodal tracers instead of four
 plus the omega diagnostic. End-to-end is now **output-bound**: 13 s of stepping per 10-day chunk
@@ -101,9 +101,9 @@ few 1e-4 per year that `unity` measured in Phases 4–9, three orders of magnitu
 ### Tracer diagnostics
 
 Figures and numbers from `scripts/pulse_diagnostics.py` and `scripts/tracer_budget.py` on
-`runs/p10_5yr` are written into this directory (`p10_5yr_pulse_burdens.png`,
-`p10_5yr_pulse_evolution.png`, `p10_5yr_steady_clocks.png`, `p10_5yr_omega.png`,
-`p10_5yr_pulse_metrics.md`, `p10_5yr_tracer_budget.png`, `p10_5yr_tracer_zonal.png`); a coarser
+`runs/p10rev_5yr` are written into this directory (`p10rev_5yr_pulse_burdens.png`,
+`p10rev_5yr_pulse_evolution.png`, `p10rev_5yr_steady_clocks.png`, `p10rev_5yr_omega.png`,
+`p10rev_5yr_pulse_metrics.md`, `p10rev_5yr_tracer_budget.png`, `p10rev_5yr_tracer_zonal.png`); a coarser
 quick look (every 50 days) is in `quicklook/`. *[to be filled from the finished diagnostics]*
 
 ## Reading
@@ -128,7 +128,7 @@ physics adds or removes *mass* (the pulses' absorption, the sources' emission, `
 then already contains the physics. It is wrong for a tracer whose physics imposes a *value*: `n2o`
 is set to 1 below 700 hPa each step, so every step's factor (1 + ε, ε ≈ 1e-6 the SL mass error) is
 re-applied to air that already sits at 1 above 700 hPa, and compounds over the months such air spends
-in the tropical upper troposphere — 1.07 after two years in `p10_5yr`. The clocks were exempted for
+in the tropical upper troposphere — 1.07 after two years in `p10rev_5yr`. The clocks were exempted for
 the same reason in Phase 3 (KEY_DECISIONS #19). Without the fixer the tracer's mass error is the SL
 scheme's own, which `unity` measured at a few 1e-4 per year in Phases 4–9: three orders of magnitude
 smaller than the artefact, and irrelevant for a field whose value is pinned at its source. Exempt.
