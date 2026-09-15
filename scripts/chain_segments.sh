@@ -39,7 +39,7 @@ SCHEME="${SCHEME:-year}"; YEARS="${YEARS:-2005-2009}"; GPU="${GPU:-0}"; SAVE_INT
 EXTRA="${EXTRA:-}"; EXTRA_PER_SEG="${EXTRA_PER_SEG:-physics.terms.held_suarez.qbo.year={year}}"
 COMPACT="${COMPACT:-1}"
 if [ -z "${FIRST_SEG_EXTRA+x}" ]; then      # unset: the production experiments inject their WACCM initial state on segment 1
-  case "$EXPERIMENT" in p10_*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
+  case "$EXPERIMENT" in p10_*|p11*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
 fi
 export CUDA_VISIBLE_DEVICES="$GPU"
 LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"

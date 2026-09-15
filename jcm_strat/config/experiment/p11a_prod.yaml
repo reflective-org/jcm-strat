@@ -1,0 +1,16 @@
+# @package _global_
+# Phase 11 experiment A: p10_prod (strat63, ERA5-nudged troposphere, Polvani-Kushner stratosphere, QBO
+# nudging to 1 hPa with tau 1 d, 6-hourly instantaneous output, Gregorian calendar) with the revised
+# production tracers (physics/strat_pk_qbo_prod11.yaml): unit amplitudes, sharp-edged twins, no surface
+# sink, tracer lid above 1 hPa for the clocks and n2o/cfc11. Run A leaves the pulses, sources and sai
+# without any sink; p11b_prod adds the lid sink for them.
+# One calendar year per segment, chained by scripts/chain_segments.sh:
+#   EXPERIMENT=p11a_prod PREFIX=p11a SCHEME=calendar YEARS=1990-1994 AGG=p11a_5yr SAVE_INTERVAL=0.25 \
+#     tmux new-session -d -s strat_p11a 'bash scripts/chain_segments.sh'
+defaults:
+  - /experiment/p10_prod
+  - override /physics: strat_pk_qbo_prod11
+
+# clocks and steady tracers impose a value, not a mass: exempt from the global mass fixer (KEY_DECISIONS #19, #34)
+sl_mass_fixer: true
+sl_mass_fixer_exclude: [aoa, aoa150, aoa_sfc, n2o, cfc11]
