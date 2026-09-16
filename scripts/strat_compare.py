@@ -54,7 +54,9 @@ def load_model(rundir, lat_out):
     ds = xr.open_mfdataset(files, combine="by_coords", decode_times=True)[["temperature", "u_wind"]]
     zm = ds.mean("lon").rename(temperature="T", u_wind="u").sortby("lat")
     zm = zm.assign_coords(lat=zm.lat.values)
-    zm = zm.interp(lat=lat_out) if not np.allclose(zm.lat.values, lat_out) else zm
+    # runs at another truncation (Phase 9) are interpolated onto the first run's latitudes
+    same_grid = zm.lat.size == np.size(lat_out) and np.allclose(zm.lat.values, lat_out)
+    zm = zm if same_grid else zm.interp(lat=lat_out)
     p = zm.level.values * P0_HPA
     zm = _interp_logp(zm, p, P_LEVELS, "level")
     zm = zm.sortby("time").load()
@@ -305,6 +307,9 @@ def main():
             plot_climatology(name, m, era5, waccm, a.outdir, extra=extra)
     if a.panel:
         plot_climatology_panel(models, era5, waccm, a.outdir)
+    # metrics for EVERY run (until Phase 9 this loop reused the last model of the climatology loop,
+    # so with several --run arguments only the last one got a row)
+    for name, m in models.items():
         for refname, ref, mc in (("ERA5", era5, None), ("WACCM6", waccm, "month")):
             if ref is None: continue
             for seas in ("DJF", "JJA", "annual"):

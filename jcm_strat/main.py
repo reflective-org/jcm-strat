@@ -17,7 +17,11 @@ top-level config keys are honoured before the model is built:
     700 hPa reset edge — slowed the whole stratospheric clock from 1.00 to 0.44 day/day over
     one year (docs/outputs/03_tracers/output.md, KEY_DECISIONS #19).
 
-Both are logged in the run header so any log is self-describing. Implemented as a wrapper
+``level_table`` (``null`` or ``strat``, default null)
+    ``strat`` serves the Phase 9 L95-derived vertical tables (``jcm_strat/levels.py``) for
+    ``grid.layers`` 47 and 63, with hyperdiffusion order profiles mapped from L95's.
+
+All are logged in the run header so any log is self-describing. Implemented as a wrapper
 around the dycore method because ``sl_options`` from the runner carries only
 ``off_centering``; upstreaming a per-tracer flag is part of issue #13.
 """
@@ -31,6 +35,8 @@ from omegaconf import DictConfig, OmegaConf
 
 import jcm.main as _jcm_main
 from jcm.dycore.dinosaur import dycore as _dycore
+
+from jcm_strat import levels
 
 _ORIG_FIX = _dycore.DinosaurDycore._fix_nodal_tracer_mass
 _ORIG_INIT = _dycore.DinosaurDycore.__init__
@@ -92,6 +98,9 @@ def main(cfg: DictConfig) -> None:
     install_mass_fixer_policy(enabled, exclude)
     di = cfg.get("sl_departure_iterations", None)
     install_sl_options({"departure_iterations": int(di) if di is not None else None})
+    # ``level_table: strat`` (Phase 9): serve the L95-derived strat47/strat63 hybrid tables and
+    # their hyperdiffusion profiles for grid.layers 47/63 (jcm_strat/levels.py)
+    levels.install(cfg.get("level_table", None))
     # hand the already-composed config to jcm's task function (hydra's decorated main accepts
     # a pass-through config and then does not re-parse the command line)
     _jcm_main.main(cfg_passthrough=cfg)
