@@ -1,7 +1,8 @@
 # Phase 11 — tracer lid and revised production tracers: two 5-year review runs (1990–1994)
 
-Status: **running** (`scripts/phase11_run5.sh`, tmux `strat_p11_run5`, log `runs/p11_run5.log`). Started
-2026-09-15 (Pacific). Results, figures and the A-vs-B decision are appended below when the chains finish.
+Status: **both 5-year chains complete** (2026-09-15 14:31 → 17:09 PDT, GPUs 0 and 1 in parallel, 31 min per
+year each; `runs/p11a_5yr`, `runs/p11b_5yr`, ~650 GB each). Diagnostics below (2026-09-16). Awaiting Susanne's
+choice of A or B for the extension to 2019; recommendation: **A**.
 
 ## Why
 
@@ -62,9 +63,69 @@ the chain continues from the 1994 checkpoint; KEY_DECISIONS #38 — never the ot
 
 | check | expectation | result |
 |---|---|---|
-| lid | age above 1 hPa within 0.1 yr of WACCM + offset after the first days; no latitude-flat plateau below the lid | |
-| age of air vs CLaMS (`p11?_5yr_aoa_*.png`) | bounded after 5 yr; 55 hPa tropics and 50–70° closer to CLaMS 1.3 / 4.1 yr than Phase 10's 2.2 / 3.8 at the same age of the run | |
-| pulses | box twins injected exactly (first-frame RMSE ~0 where resolved); A: global mass constant to the fixer's roundoff; B: mass falls only through the lid | |
-| sources / sai | A: linear growth = emission; B: growth minus lid removal | |
-| n2o / cfc11 | in [0, 1]; stationary within ~2 yr; isopleths higher than Phase 10's (`p11?_5yr_steady_clocks.png`) | |
-| throughput | ~25–35 min per year per chain with two chains sharing the CPU output path | |
+| lid | age above 1 hPa within 0.1 yr of WACCM + offset after the first days; no latitude-flat plateau below the lid | **pass / partly**: 4.72 yr above the lid at day 5 (target 4.4 + 0.3); the oldest air anywhere is 5.4 yr (Phase 10: 23). But the age is nearly flat in latitude from the lid down to ~20 hPa: the upper stratosphere is filled from the lid, not ventilated (see Results) |
+| age of air vs CLaMS (`p11?_5yr_aoa_*.png`) | bounded after 5 yr; 55 hPa tropics and 50–70° closer to CLaMS 1.3 / 4.1 yr than Phase 10's 2.2 / 3.8 at the same age of the run | **bounded**; 55 hPa: 2.7 / 4.5 yr (extratropics right, tropics 1.3 yr too old and still creeping: 2.31 → 2.52 → 2.67 at the last three year ends); 12 hPa: 4.5 / 5.1 vs CLaMS 3.7 / 4.6 |
+| pulses | box twins injected exactly (first-frame RMSE ~0 where resolved); A: global mass constant to the fixer's roundoff; B: mass falls only through the lid | **pass**: box RMSE 0.017–0.032 (Gaussian 0.003–0.014; the interpolation of a step); no negative cells; A: mass constant to < 2e-3; B: only the 3 hPa pulse loses mass (14–15 %), the 10 hPa one 1 % |
+| sources / sai | A: linear growth = emission; B: growth minus lid removal | **pass**: A mass = emission × t (residence 4.9–5.0 yr = elapsed time); B: src_3 (5 hPa) −4 %, src_1 (20 hPa) −1 %, sai −0.4 %, the rest identical; sai burden −1.5 % / −1.9 % of the analytic line (threshold 2 %) |
+| n2o / cfc11 | in [0, 1]; stationary within ~2 yr; isopleths higher than Phase 10's (`p11?_5yr_steady_clocks.png`) | **in range, stationary — but NOT higher**: burden 0.967 → 0.858 (n2o), 0.940 → 0.809 (cfc11) in 5 yr, the Phase 10 30-year values; isopleths as in Phase 10 |
+| throughput | ~25–35 min per year per chain with two chains sharing the CPU output path | **pass**: 4,180 d/hr stepping (7 ms/step), 750 d/hr end-to-end, 31 min per year, on both GPUs at once |
+
+## Results (`docs/outputs/11_lid_tracers/`, 2026-09-16)
+
+Diagnostics: `scripts/phase11_diag.sh` (aoa_vs_clams, pulse_diagnostics and tracer_budget at stride 20 = every
+5 days, pulse_evolution panels/vertical/mass) and `scripts/ab_diff.py` (A vs B). The stride-4 default of
+pulse_diagnostics walked the 654 GB archive for 4 h without finishing and was stopped.
+
+**The lid does what it was asked to do, no more.** The clocks are bounded (`p11a_5yr_aoa_triptych.png`,
+`p11a_5yr_steady_clocks.png` bottom row): the oldest air is 5.4 yr, the tropical pipe is young up to ~20 hPa,
+the extratropical lower stratosphere reads 4.5 yr at 55 hPa against CLaMS 4.1. Above ~20 hPa the age is 4.5–5 yr
+with almost no latitude structure — the value the lid prescribes at 1 hPa, propagated downward. The model's own
+deep branch still does not ventilate the upper stratosphere; the lid has replaced an unbounded reservoir by a
+bounded one at WACCM's mesospheric age. Year-end sampling of run A:
+
+| end of | 55 hPa tropics | 55 hPa 50–70° | 12 hPa tropics | 12 hPa 50–70° | 3 hPa tropics | max |
+|---|---|---|---|---|---|---|
+| 1990 | 0.91 | 1.75 | 1.70 | 3.11 | 3.72 | 4.92 |
+| 1992 | 2.31 | 3.84 | 3.89 | 4.67 | 4.63 | 4.98 |
+| 1994 | 2.67 | 4.49 | 4.52 | 5.08 | 4.94 | 5.41 |
+
+The tropical 55 hPa age is still creeping up (increments 0.21, 0.15 yr in the last two years) and will settle
+somewhat above 3 yr; the tropics–extratropics contrast is 1.9 yr against CLaMS's 2.8. The Phase 10 5-year
+number (2.2) was younger only because a 5-year clock cannot exceed 5 yr and the top was still empty of age.
+
+**N2O and CFC-11 did not move** (`p11a_5yr_steady_clocks.png`, top row; `p11a_5yr_tracer_mass.png`): the
+burdens fall to 0.858 / 0.809 within two years and stay there, exactly the Phase 10 values after 30 years, and
+the isopleths sit where they sat. So the Phase 10 reading that *recirculated mesospheric air* depletes N2O was
+incomplete: with the mesosphere pinned to WACCM's (near-zero) state the depletion is unchanged. It is produced
+inside the stratosphere: air between 5 and 30 hPa is 4.5–5 yr old where WACCM has 3–4, and with WACCM's loss
+frequencies that extra residence is extra photolysis. Same root cause (no deep-branch ventilation), different
+path.
+
+**The revised injections behave** (`p11a_5yr_pulse_burdens.png`, `p11a_5yr_<tracer>_evolution.png`,
+`_vertical.png`): the box twins are injected to 0.02–0.03 RMSE (the semi-Lagrangian interpolation of a step),
+never go negative, and their peaks decay like the Gaussians' (`p11a_5yr_pulse_metrics.md`); the mass of every
+pulse is constant to < 2e-3 over five years in A; the sources grow linearly with residence time = elapsed time.
+
+**A versus B** (`p11a_5yr_vs_p11b_5yr_burden_ratio.png`, `_zonal.png`): the meteorology is identical (the
+tracers are passive), so the difference is the lid sink alone. It removes 14–15 % of the 3 hPa pulse
+(`pulse_4`, `pulse_4_box`) within the first half year and then nothing more, 4 % of the 5 hPa source
+(`src_3`, 2.6 % of its box twin) as a steady leak, 1 % of the 10 hPa pulse and the 20 hPa source, 0.4 % of
+`sai`; the eight lower injections and n2o/cfc11/clocks are unchanged to < 1e-3. Spatially the B − A difference
+is confined to above ~3 hPa and to the plumes' upper edges. **Recommendation: extend A.** The injected mass is
+then conserved exactly, which the budget confirms and which is the advection scheme's own audit; B buys only a
+slow leak from the two highest injections into a layer holding 0.1 % of the atmosphere.
+
+Figures: `p11{a,b}_5yr_aoa_{triptych,profiles}.png`, `_steady_clocks.png`, `_pulse_burdens.png`,
+`_pulse_evolution.png`, `_tracer_budget.png`, `_tracer_zonal.png`, `_omega.png`, `_<tracer>_evolution.png` and
+`_<tracer>_vertical.png` for all 18 injected tracers, `_tracers_vertical.png`, `_tracer_mass.png`/`.md`,
+`p11a_5yr_vs_p11b_5yr_{burden_ratio,zonal}.png`; numbers in `p11{a,b}_5yr_pulse_metrics.md`.
+
+## Open questions
+
+- The upper stratosphere (20–1 hPa) is filled from the lid: the model's deep branch does not reach it. The lid
+  value (WACCM's 4.4 yr) is therefore what the stratosphere above 20 hPa will read in the 30-year run, and the
+  N2O/CFC-11 depletion will persist. Only a dynamical fix (mesospheric drag; DEFERRED) changes that.
+- Whether 1 hPa is the right lid height: the age is flat from the lid to ~3 hPa, so a lid at 3 hPa would give
+  the same stratosphere below it and pin less; not tested (keep-it-simple).
+- The tropical 55 hPa age converges slowly (~0.15 yr per year after five years); the 30-year extension will
+  show the equilibrium.

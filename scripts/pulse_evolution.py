@@ -122,7 +122,7 @@ def daystr(day, t0):
 
 def draw_pair(axm, axz, q, klev, lat, lon, p_nom, s, title, norm=None, vmax=None):
     """map at the injection level and zonal mean of one field; returns the two mappables."""
-    lat0, lon0, p0, _ = s
+    lat0, lon0, p0 = s[:3]
     if norm is None:
         m1 = axm.pcolormesh(lon, lat, q[klev].T, vmin=0, vmax=vmax if vmax else max(q[klev].max(), 1e-6), cmap=CMAP, shading="auto")
     else:
@@ -226,9 +226,8 @@ def mass_series(index, days, tracers, nlev, nproc=16):
 
 
 def source_rate(name, term, lat, lon, p_nom, nsp0):
-    """Emitted mass per day of a continuous source: the blob A G times the term's rate (1 / 90 d)."""
-    kind_term = type("T", (), {"pulses": term.sources, "sigma_h": term.sigma_h, "sigma_z": term.sigma_z})
-    G = analytic_target(name, lat, lon, p_nom * nsp0.mean(), kind_term)
+    """Emitted mass per day of a continuous source: the shape S times the term's rate (1 / 90 d)."""
+    G = analytic_target(name, lat, lon, p_nom * nsp0.mean(), term)          # analytic_target knows pulses from sources and box from Gaussian
     wgt = layer_dp(p_nom.size, nsp0) * gauss_weights(lat)[None, None, :] * EARTH_AREA_OVER_G / lon.size
     return float((G * wgt).sum()) * float(term.source_rate) * 86400.0
 
