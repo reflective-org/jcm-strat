@@ -66,7 +66,8 @@ def build(out_pdf):
          P("Nudging the tropical stratospheric wind towards ERA5 on the Phase 6 configuration (Polvani-Kushner stratosphere, "
            "ERA5-nudged troposphere, four passive tracers, T63L95, 12 minute step). Two versions: the nudging window reaching up to "
            "4 hPa, run for 2005 and for the 2005 to 2009 chain, and then the same runs with the window top raised to 1 hPa; then a "
-           "sensitivity test of the relaxation time (5 instead of 10 days) over the same five years. "
+           "sweep of the relaxation time (10, 5, 2, 1 days) over the same five years, after which 1 day became the default, and a "
+           "mean-preserving interpolation of the monthly target. "
            f"Record as of {today}, branch phase8-qbo-nudging.", SUB)]
 
     # ------------------------------------------------------------------ 1
@@ -99,15 +100,16 @@ def build(out_pdf):
                  ["u, v (Rayleigh friction)", "boundary layer, sigma above 0.7", "zero", "1 d at the surface, weakening linearly to none at sigma 0.7", "-"],
                  ["zonal-mean u only", "tropics: full weight within 15 deg of the equator, cos-squared taper to zero at 25 deg; pressure 90 hPa up to the window top "
                   "(4 hPa in the first version, 1 hPa in the second), full weight from 40 hPa to about 9 hPa (2.2 hPa in the second version), log-linear tapers",
-                  "ERA5 monthly-mean zonal-mean zonal wind (CDS pressure-level product, 25 levels 1000 to 1 hPa, 2005 to 2009)", "10 d",
-                  "monthly means, interpolated between month centres"],
+                  "ERA5 monthly-mean zonal-mean zonal wind (CDS pressure-level product, 25 levels 1000 to 1 hPa, 2005 to 2009)", "10 d in the first version; 1 d since section 7",
+                  "monthly means, interpolated between month centres (mean-preserving nodes since section 8)"],
                  ["u, v to zero; T to its zonal mean and to 250 K (sponge)", "the top 10 model levels, 0.01 to 0.15 hPa (above about 65 km)",
                   "zero wind; zonal-mean T and 250 K", "1.5 h at the top level, doubling with each level downward (32 d at the tenth)", "-"]],
                 [2.6 * cm, 4.3 * cm, 4.9 * cm, 2.9 * cm, 2.3 * cm], hl=[5]),
           Spacer(1, 4),
           P("In altitude (7 km scale height): 150 hPa is about 13 km, 90 hPa 17 km, 40 hPa 22.5 km, 9 hPa 33 km, 4 hPa 39 km, 2.2 hPa 43 km, "
-            "1 hPa 48 km. The model lid is 0.01 hPa, about 80 km. The QBO nudging so far has been the slowest data-driven relaxation in the "
-            "model (10 days against 6 hours in the troposphere) and the one with the coarsest target (monthly against 6-hourly).", CAP)]
+            "1 hPa 48 km. The model lid is 0.01 hPa, about 80 km. In its first version the QBO nudging was the slowest data-driven relaxation in the "
+            "model (10 days against 6 hours in the troposphere) and the one with the coarsest target (monthly against 6-hourly); sections 7 "
+            "and 8 change the first and keep the second on purpose.", CAP)]
 
     # ------------------------------------------------------------------ 3
     s += [P("3. The recipe, and why each choice", H1),
@@ -234,7 +236,7 @@ def build(out_pdf):
     s += RESULTS_1HPA
 
     # ------------------------------------------------------------------ 7
-    s += [PageBreak(), P("7. A shorter relaxation time: tau 5 days", H1),
+    s += [PageBreak(), P("7. A shorter relaxation time: the tau sweep, 10 to 1 days", H1),
           P("Raising the window top left the QBO layer exactly as it was, so the 80 percent amplitude is the relaxation, not the "
             "geometry. Two springs act on the tropical zonal-mean wind: the nudging, pulling toward ERA5 with time constant tau, and the "
             "model's own dynamics, pulling toward the model's own easterly state (tropical upwelling lifting slow-spinning air, and the "
@@ -276,14 +278,58 @@ def build(out_pdf):
           fig("tau5/5yr/p8c_5yr_aoa_profiles.png",
               "Figure 18. Age of air at tau 5 days (blue) against tau 10 days (orange dashed): identical to a hundredth of a year.", maxh=7 * cm),
           P("Halving tau closed about a quarter of the remaining amplitude gap at every level, as the two-spring estimate predicts, and "
-            "nothing else in the model moved. The remaining gap is again tau: 2 days would give about 95 percent, 6 hours all of it. This "
-            "commit records the test and keeps 10 days as the default; which tau becomes the default is a decision to take with the transport "
-            "question in view (DEFERRED.md, Found in Phase 8).")]
-    s += [PageBreak(), P("8. Reading and what comes next", H1), *READING]
+            "nothing else in the model moved. The sweep was then completed with 2 days (runs p8d_*) and 1 day (p8e_*), same protocol."),
+          P("The whole sweep", H2),
+          table([["tau", "std 10 / 20 / 30 / 50 hPa [m/s]", "percent of ERA5 at 20 hPa (two-spring prediction)", "RMS vs ERA5, 10-70 hPa", "RMS, 1-7 hPa", "SAO 1 / 2 / 3 hPa", "u RMSE 100-1 hPa"],
+                 ["10 d", "13.7 / 14.1 / 12.4 / 7.8", "81 (80)", "4.0", "12.5", "9.5 / 15.8 / 13.8", "4.9 m/s"],
+                 ["5 d", "14.6 / 15.1 / 13.2 / 8.5", "86 (89)", "3.1", "10.9", "12.2 / 17.3 / 13.9", "4.8"],
+                 ["2 d", "15.4 / 15.8 / 13.9 / 9.0", "90 (95)", "2.5", "8.9", "14.9 / 18.1 / 13.7", "4.6"],
+                 ["1 d", "15.7 / 16.1 / 14.2 / 9.3", "92 (98)", "2.3", "7.7", "17.2 / 18.2 / 13.7", "4.4"],
+                 ["ERA5", "17.5 / 17.5 / 15.2 / 10.7", "100", "-", "-", "30.7 / 20.7 / 15.6", "-"]],
+                [1.3 * cm, 3.6 * cm, 3.1 * cm, 2.4 * cm, 1.9 * cm, 2.9 * cm, 1.8 * cm], hl=[4]),
+          Spacer(1, 4),
+          P("Unchanged across the sweep: T RMSE 100-1 hPa 6.3 to 6.2 K; jets 31 / 64 to 30 / 64 m/s; Brewer-Dobson 70 hPa 7.7 to 8.2 x 10^9 kg/s; age of air "
+            "at 20 km 2.16 to 2.13 yr in the tropics, contrast 1.64 to 1.65; tracer conservation and throughput identical. Time-mean wind change "
+            "against tau 10 days: 0.7 / 1.4 / 1.8 m/s inside the window, at most 0.5 outside it, 0.0 in the troposphere. Vortex reversals: a "
+            "February 2006 reversal (ERA5 warming 11 February) appears at 5, 2 and 1 days and never at 10; the 2009 date wanders and the March 2008 "
+            "reversal is missing at 1 day. Plausibly a Holton-Tan-type re-timing of wave events, but three chains cannot separate it from "
+            "internal variability.", CAP),
+          fig("tau1/5yr/qbo_time_height_before_after.png",
+              "Figure 19. Equatorial wind 2005 to 2009 at tau 10 days (top), tau 1 day (middle) and ERA5 (bottom). At 1 day the westerly phases "
+              "have ERA5's width and strength to within a few m/s, the onsets at 5 to 10 hPa are in place, and the semiannual oscillation at 1 to "
+              "3 hPa is distinct.", maxh=12 * cm),
+          fig("tau1/5yr/qbo_profiles.png",
+              "Figure 20. Left: the time-mean equatorial wind at tau 1 day (orange) lies on ERA5 (green) from 40 hPa to 1.5 hPa. Middle: the QBO "
+              "amplitude at 90 to 93 percent of ERA5 at every level. Right: the change against tau 10 days stays inside the window.", maxh=7 * cm),
+          fig("tau1/5yr/strat/vortex_series.png",
+              "Figure 21. Polar-vortex wind at 10 hPa at tau 10 (blue) and 1 day (orange). The February 2006 reversal, and otherwise two curves "
+              "on top of each other.", maxh=8 * cm),
+          P("Reading the sweep", H2),
+          P("The amplitude follows the two-spring law down to 2 days and then flattens: 80, 86, 90, 92 percent against the predicted 80, 89, 95, "
+            "98. From 2 to 1 day the gain is 2 percent, so the last 8 percent is not the relaxation any more but the target itself. Above the QBO "
+            "layer the gain does not flatten (12.5 to 7.7 m/s), because the semiannual signal is fast enough for tau to still matter. Nothing "
+            "outside the window moves at any tau, and the global stratospheric wind error improves monotonically, all of it in the tropics."),
+          P("Decision (KEY_DECISIONS 27): tau 1 day is the default. It is the value at which the relaxation stops being the limit; the model "
+            "still sets its own temperature, since the thermal-wind adjustment takes about a day and the wind therefore does not run ahead of "
+            "it as it would at 6 hours; and it sits in the range specified-dynamics models use (SD-WACCM: 50 hours). The daily-versus-monthly "
+            "target question is settled the other way: the term already interpolates the monthly means to every 12-minute step, a daily target "
+            "would impose sub-monthly changes that are not QBO, and what the target needs is the right shape, which is section 8.")]
+    s += [PageBreak(), P("8. The target's shape: mean-preserving interpolation", H1),
+          P("The target is ERA5's monthly-mean zonal wind, and the amplitude is scored against those same monthly means. The term "
+            "interpolates linearly between month-centre values. A straight line between the centres of two neighbouring months cuts the "
+            "corner of every peak, so the interpolant's own monthly means are smaller than the values it was drawn through: for a sinusoid "
+            "of period P months by the factor (6 + 2 cos(2 pi / P)) / 8, which is 0.6 percent for the QBO's 28-month period and 12.5 percent "
+            "for the 6-month semiannual oscillation. The AMIP boundary-condition method (Taylor et al. 2000) fixes this by solving for "
+            "month-centre node values whose piecewise-linear interpolant reproduces the monthly means exactly; with equal months that is the "
+            "tridiagonal system (v[k-1] + 6 v[k] + v[k+1]) / 8 = m[k], ends clamped. Implemented as qbo.mean_preserving (default on, "
+            "mean_preserving_nodes in qbo_nudging.py, unit-tested to 1e-3 m/s); runs p8f_2005 to p8f_2009 at tau 1 day against the tau 1 day "
+            "chain with plain interpolation, p8e_5yr. The cadence stays monthly; only the shape changes.")]
+    s += INTERP_RESULTS()
+    s += [PageBreak(), P("9. Reading and what comes next", H1), *READING]
 
-    s += [P("9. Where things are", H2),
-          P("Runs under runs/p8_* (window top 4 hPa), runs/p8b_* (1 hPa) and runs/p8c_* (1 hPa, tau 5 days); record docs/outputs/08_qbo/output.md with the figures beside "
-            "it (5yr/, 1yr/, 1hpa_top/, tau5/); the term jcm_strat/qbo_nudging.py with tests/test_qbo_nudging.py; configuration "
+    s += [P("10. Where things are", H2),
+          P("Runs under runs/p8_* (window top 4 hPa), runs/p8b_* (1 hPa), runs/p8c_*, p8d_*, p8e_* (1 hPa, tau 5 / 2 / 1 days) and runs/p8f_* (tau 1 day, "
+            "mean-preserving target); record docs/outputs/08_qbo/output.md with the figures beside it (5yr/, 1yr/, 1hpa_top/, tau5/, tau2/, tau1/, interp/); the term jcm_strat/qbo_nudging.py with tests/test_qbo_nudging.py; configuration "
             "jcm_strat/config/physics/strat_pk_qbo.yaml and experiment p8_qbo; the comparison script scripts/qbo_compare.py; the ERA5 "
             "target fetch scripts/fetch_era5_strat_ref.py (cache/era5_ref/). Decisions 23, 24 and 26 in KEY_DECISIONS.md; open items: "
             "issue 44 (cheaper zonal mean), issue 6 (close on merge).")]
@@ -295,6 +341,58 @@ def build(out_pdf):
         c.saveState(); c.setFont("Helvetica", 8); c.setFillColor(colors.HexColor("#666666"))
         c.drawRightString(A4[0] - 2 * cm, 1.1 * cm, f"jcm-strat Phase 8  |  page {d.page}"); c.restoreState()
     doc.build(s, onFirstPage=footer, onLaterPages=footer); print("wrote", out_pdf)
+
+
+def _md_table_rows(path):
+    """Rows of the first markdown table in a metrics file, as lists of cell strings (header first)."""
+    rows = []
+    for line in open(path):
+        if line.startswith("|") and not line.startswith("|---"):
+            rows.append([c.strip() for c in line.strip().strip("|").split("|")])
+    return rows
+
+
+def INTERP_RESULTS():
+    """Section 8 results, read from the mean-preserving run's metrics if they exist (the chain runs after this
+    file was written), otherwise a pending note. Regenerate the PDF once docs/outputs/08_qbo/interp/5yr/ is there."""
+    base = os.path.join(D, "interp", "5yr")
+    qm = os.path.join(base, "qbo_metrics.md")
+    if not os.path.exists(qm):
+        return [P("Results pending: the p8f chain and its analysis run unattended after this build; rerun "
+                  "scripts/make_phase8_report.py when docs/outputs/08_qbo/interp/5yr/ exists.", CAP)]
+    rows = _md_table_rows(qm)
+    out = [P("Results, 2005 to 2009", H2),
+           table([["2005-2009"] + rows[0][1:]] + [[r[0]] + r[1:] for r in rows[1:]],
+                 [4.0 * cm, 4.2 * cm, 2.6 * cm, 3.4 * cm, 2.8 * cm], hl=[2])]
+    sm = os.path.join(base, "strat", "strat_metrics.md")
+    if os.path.exists(sm):
+        srows = [r for r in _md_table_rows(sm) if len(r) > 2 and r[2] == "annual" and r[1] == "ERA5"]
+        if srows:
+            out.append(P("Stratospheric climatology vs ERA5, 100-1 hPa, annual: " + "; ".join(
+                f"{r[0]}: T RMSE {r[3]} K, u RMSE {r[4]} m/s, jets {r[5]} / {r[6]}" for r in srows) + ".", CAP))
+    out += [fig("interp/5yr/qbo_time_height_before_after.png",
+                "Figure 22. Equatorial wind 2005 to 2009: tau 1 day with plain interpolation (top), with mean-preserving nodes (middle), ERA5 (bottom).",
+                maxh=12 * cm),
+            fig("interp/5yr/qbo_profiles.png",
+                "Figure 23. Time-mean equatorial wind, QBO amplitude and the change in the time-mean zonal-mean wind, mean-preserving minus plain.",
+                maxh=7 * cm),
+            fig("interp/5yr/strat/vortex_series.png", "Figure 24. Polar-vortex wind at 10 hPa, both versions.", maxh=8 * cm),
+            fig("interp/5yr/p8f_5yr_aoa_profiles.png", "Figure 25. Age of air, mean-preserving (blue) against plain interpolation (orange dashed).", maxh=7 * cm),
+            P("Reading", H2),
+            P("Exactly the filter prediction. The QBO amplitude gains 0.6 percent (16.1 to 16.2 m/s at 20 hPa, 92 to 93 percent of ERA5) "
+              "and the semiannual oscillation gains 12 to 14 percent: at 2 and 3 hPa it now matches ERA5 to 0.1 m/s (20.7 / 15.5 against "
+              "20.7 / 15.6); at 1 hPa it stays at 19 against 31 because the nudging weight is zero there by construction. The error above "
+              "the QBO layer falls from 7.7 to 7.1 m/s, inside it from 2.3 to 2.2. The remaining 7 percent of QBO amplitude is the model, "
+              "not the target: the model's own easterly pull over one day, plus what the 5-day output means and the monthly scoring smooth "
+              "away. Nothing else moved: the time-mean wind changes by 0.1 m/s inside the window and 0.3 outside, climatology, jets, "
+              "Brewer-Dobson flux, age of air (2.13 years in the tropics at 20 km in both) and tracers are identical."),
+            P("The vortex reversals shuffled again: the February 2006 event that appeared at tau 5, 2 and 1 days with the linear target is "
+              "absent here and the March 2008 one is back. Two chains that differ only by a 0.6 percent change of the tropical target giving "
+              "different reversal dates settles the question left open in section 7: the reversal timing is internal variability of the "
+              "wave events, not a response to the nudging."),
+            P("Decision (KEY_DECISIONS 27): the mean-preserving target is the default, together with tau 1 day and the 1 hPa window top. "
+              "The linear-target chains p8b to p8e stay on disk as before-states. This is the QBO configuration Phases 9 and 10 inherit.")]
+    return out
 
 
 # Filled in from the 1 hPa runs' metric tables (docs/outputs/08_qbo/1hpa_top/).
@@ -355,16 +453,18 @@ READING = bullets([
     "extratropics 1.56 to 1.63 (CLaMS 2.79). A five-year mean averages over two QBO cycles; the QBO's value for aerosol is in phase-dependent "
     "statements (residence time in the easterly against the westerly phase, subtropical leakage), which the model can now make. The remaining "
     "0.9 year tropical excess is the Phase 4 diagnosis unchanged (issue 25).",
-    "<b>The window top was not what limits the westerly phases; tau is.</b> Raising the top to 1 hPa left the QBO layer exactly as it was. "
-    "Halving tau to 5 days raised the amplitude from 80 to 86 percent of ERA5 at every level and moved nothing else, exactly as the two-spring "
-    "estimate (model restoring time about 40 days) predicts. At 2 days the estimate gives 95 percent, at 6 hours, the tropospheric value, the "
-    "tropical zonal-mean wind is prescribed rather than guided. The thermal-wind temperature anomalies are then forced against the 15-day "
-    "Polvani-Kushner relaxation, which drives the QBO's secondary circulation, the part the tracers feel; no artefact appeared at 5 days. The "
-    "monthly target is the right one for the QBO; a daily target (CDS; the fetch script already does it for 10 hPa) only matters once tau is "
-    "below about 2 days, to smooth the month-centre interpolation.",
-    "<b>Decisions.</b> The 1 hPa top is the default from now on (KEY_DECISIONS 26); the 4 hPa chain stays on disk as the before-state. Tau "
-    "stays at 10 days in this commit; the 5-day chain is recorded as a sensitivity test, and which tau becomes the default (5 days, 2 days or "
-    "6 hours) is open in DEFERRED.md.",
+    "<b>The window top was not what limits the westerly phases; tau was, and then the target's shape.</b> Raising the top to 1 hPa left "
+    "the QBO layer exactly as it was. The tau sweep 10, 5, 2, 1 days gave 80, 86, 90, 92 percent of ERA5's amplitude with nothing else "
+    "moving, following the two-spring estimate (model restoring time about 40 days) down to 2 days and flattening below, where the "
+    "linear interpolation cutting the peaks of the monthly target becomes the limit. Above the QBO layer the gain continued to 1 day and "
+    "the semiannual oscillation at 2 hPa reached ERA5. No artefact appeared at the window edges from the stiff wind spring against the "
+    "15-day Polvani-Kushner relaxation; the age of air moved by 0.03 years over the whole sweep.",
+    "<b>Cadence versus shape.</b> The term already interpolates the monthly target to every 12-minute step, so a daily target would not "
+    "change the cadence the model sees; it would only add sub-monthly zonal-mean wind changes that are not QBO. What the target needed "
+    "was the right shape, mean-preserving nodes, which is a property of how the monthly means are interpolated, not of their cadence.",
+    "<b>Decisions.</b> Window top 1 hPa (KEY_DECISIONS 26) and tau 1 day with the mean-preserving target (KEY_DECISIONS 27) are the "
+    "defaults. The 4 hPa chain and the tau 10, 5, 2 day chains stay on disk as before-states. Open: whether the February 2006 vortex "
+    "reversal that appears at every short tau is a Holton-Tan-type response (DEFERRED.md).",
     "<b>Cost.</b> The zonal-mean reduction adds about 1 ms to a 7 ms step, minus 13 percent stepping throughput, the same for both window tops; "
     "a cheaper reduction on the dycore grid is issue 44. A five-year chain takes 70 to 80 minutes on one GPU.",
 ])

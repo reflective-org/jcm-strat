@@ -26,8 +26,19 @@ What is nudged, towards what:
   up out of the nudged layer met nothing there (no SAO forcing). Raising the top to 1 hPa removed
   that bias and nudged in ERA5's semiannual oscillation at 2-3 hPa; inside the QBO layer nothing
   changed (docs/outputs/08_qbo, 1hpa_top/).
-* How fast: tau = 10 days (WACCM's choice), slow enough not to fight the resolved waves step by
-  step, fast enough to hold the observed phase.
+* How fast: tau = 1 day. The first Phase 8 runs used WACCM's 10 days and reached 80 percent of
+  ERA5's QBO amplitude; a sweep over 2005-2009 (10 / 5 / 2 / 1 d -> 80 / 86 / 90 / 92 percent,
+  nothing else in the model moving) showed the deficit is this relaxation working against the
+  model's own easterly tendency (a restoring time of ~40 d), not the window. At 1 day the gain per
+  halving had flattened to ~2 percent, so the rest is the target's shape (below). KEY_DECISIONS #27.
+* Target shape: ``mean_preserving=True`` adjusts the month-centre values so that the piecewise-
+  linear interpolation reproduces ERA5's monthly means exactly (the AMIP mid-month "bcs" method,
+  Taylor et al. 2000): with equal months the mean over month k of the interpolant is
+  (v[k-1] + 6 v[k] + v[k+1]) / 8, so the node values v solve that tridiagonal system with the
+  monthly means m on the right-hand side (ends clamped: v[-1] = v[0]). Plain linear interpolation
+  through the means cuts every peak: for a sinusoid of period P months the interpolant's monthly means
+  are (6 + 2 cos(2 pi/P))/8 of the nodes, so the means understate the nodes by 0.6 percent for the
+  QBO (P ~ 28) and 12.5 percent for the SAO (P = 6); the correction is the inverse.
 
 The term runs on the column-vectorized physics path like the other jcm_strat terms. The zonal mean
 is a segment-sum over the columns of each latitude row; the term reads the fraction of year from
@@ -59,6 +70,29 @@ P0_PA = 101325.0
 DAY = 86400.0
 
 
+def mean_preserving_nodes(monthly_means: np.ndarray) -> np.ndarray:
+    """Month-centre node values whose piecewise-linear interpolant has the given monthly means.
+
+    ``monthly_means`` has time first, (nmonths, ...). With equal-length months (the term's time
+    coordinate is a uniform 1/12 year per month) the mean of the interpolant over month k is
+    (v[k-1] + 6 v[k] + v[k+1]) / 8; the ends are clamped (v[-1] = v[0], v[n] = v[n-1]), matching
+    the clamping of the interpolation itself. Solves the tridiagonal system exactly.
+    """
+    m = np.asarray(monthly_means, dtype=np.float64)
+    n = m.shape[0]
+    if n < 2:
+        return m.copy()
+    A = np.zeros((n, n))
+    idx = np.arange(n)
+    A[idx, idx] = 6.0
+    A[idx[1:], idx[1:] - 1] = 1.0
+    A[idx[:-1], idx[:-1] + 1] = 1.0
+    A[0, 0] += 1.0; A[-1, -1] += 1.0                       # clamped ends
+    A /= 8.0
+    v = np.linalg.solve(A, m.reshape(n, -1))
+    return v.reshape(m.shape)
+
+
 class QboNudging(PhysicsTerm):
     name: ClassVar[str] = "qbo_nudging"
     category: ClassVar[str] = "nudging_qbo"
@@ -69,21 +103,25 @@ class QboNudging(PhysicsTerm):
         self,
         era5_glob: str = "cache/era5_ref/era5_zm_monthly_*.nc",
         year: int = 2005,
-        tau_days: float = 10.0,
+        tau_days: float = 1.0,
         lat_full_deg: float = 15.0,
         lat_zero_deg: float = 25.0,
         p_bot_hpa: float = 90.0,
         p_top_hpa: float = 1.0,
         taper_decades: float = 0.35,
         use_calendar: bool = True,
+        mean_preserving: bool = True,
     ) -> None:
         self.use_calendar = bool(use_calendar)   # False: fixed target (first month); only for tests
+        self.mean_preserving = bool(mean_preserving)
         files = sorted(glob.glob(era5_glob), key=lambda f: int(xr.open_dataset(f, decode_times=False).attrs.get("year", 0)))
         if not files:
             raise FileNotFoundError(f"QboNudging: no ERA5 zonal-mean files match {era5_glob}")
         dss = [xr.open_dataset(f, decode_times=False) for f in files]
         self.years = [int(d.attrs["year"]) for d in dss]
         self._u_raw = np.concatenate([d.uzm.values for d in dss], axis=0).astype(np.float64)   # (nmonths, 25, 721)
+        if self.mean_preserving:
+            self._u_raw = mean_preserving_nodes(self._u_raw)
         self._p_raw = dss[0].level.values.astype(np.float64)                                     # hPa, ascending
         self._lat_raw = dss[0].lat.values.astype(np.float64)                                     # deg, ascending
         self.year = int(year); self.year0 = self.years[0]; self.nmonths = self._u_raw.shape[0]
