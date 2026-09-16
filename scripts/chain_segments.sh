@@ -37,7 +37,11 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 source "$REPO/scripts/env.sh"
 EXPERIMENT="${EXPERIMENT:-p9_res}"; PREFIX="${PREFIX:?PREFIX is required}"
 SCHEME="${SCHEME:-year}"; YEARS="${YEARS:-2005-2009}"; GPU="${GPU:-0}"; SAVE_INTERVAL="${SAVE_INTERVAL:-5}"
-EXTRA="${EXTRA:-}"; EXTRA_PER_SEG="${EXTRA_PER_SEG-physics.terms.held_suarez.qbo.year={year}}"   # '-' not ':-': empty = none
+EXTRA="${EXTRA:-}"
+# default per-segment override; a variable, because inside ${var-word} bash ends the word at the FIRST '}', so a
+# literal {year} in the word leaves a stray '}' behind (Phase 12: an empty EXTRA_PER_SEG became the override '}')
+_default_per_seg='physics.terms.held_suarez.qbo.year={year}'
+EXTRA_PER_SEG="${EXTRA_PER_SEG-$_default_per_seg}"        # '-' not ':-': set-but-empty = no per-segment override
 COMPACT="${COMPACT:-1}"
 if [ -z "${FIRST_SEG_EXTRA+x}" ]; then      # unset: the production experiments inject their WACCM initial state on segment 1
   case "$EXPERIMENT" in p10_*|p11*|p12*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
