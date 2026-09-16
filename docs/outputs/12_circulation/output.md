@@ -50,7 +50,8 @@ Why the two tests are not combined: one change per run, so each effect is attrib
 Found while running: in `chain_segments.sh` the default `${EXTRA_PER_SEG-physics...qbo.year={year}}` ends, for bash,
 at the *first* `}` — so with `EXTRA_PER_SEG=""` (the QBO-off chain) the per-segment override became a literal `}` and
 Hydra refused segment 1 (`p12noqbo_19900101`, 15:05 PDT). Fixed in 1abb96b (default in a variable); the noqbo chain is
-rerun by `scripts/phase12_finish.sh` on GPU 1 after the control, which the first pipeline started in its place.
+rerun by `scripts/phase12_finish.sh` on GPU 3 in parallel with the control (which the first pipeline started in its place
+on GPU 1) and strat81 (GPU 2).
 
 Found while setting up: the `p10_prod` experiment merges `physics.terms.held_suarez.qbo.tau_days: 1.0` on top of
 whichever physics group is chosen, so a physics group *without* a `qbo` mapping still receives one (a class without
@@ -62,7 +63,7 @@ that argument would fail at instantiation). Caught by `tests/test_phase12.py`; h
 | run | experiment | GPU | years | notes |
 |---|---|---|---|---|
 | `p12noqbo_smoke5`, `p12l81_smoke5` | 5 days from 1990-01-01 | 1 / 2 | — | GPU smoke; log must show `QBO nudging OFF` / 81 levels, no pulses in the output, `aoa500` present |
-| `p12noqbo_1990..1994` → `p12noqbo_5yr` | `p12_noqbo` | 1 (after ctl) | 1990–1994 | QBO nudging off, strat63; first attempt failed on the `}` override, rerun by `phase12_finish.sh` |
+| `p12noqbo_1990..1994` → `p12noqbo_5yr` | `p12_noqbo` | 3 | 1990–1994 | QBO nudging off, strat63; first attempt (GPU 1, 15:03 PDT) failed on the `}` override; rerun by `phase12_finish.sh` from 16:10 PDT on GPU 3, which Susanne released for it ("if GPU3 is available you can use that") |
 | `p12l81_1990..1994` → `p12l81_5yr` | `p12_l81` | 2 | 1990–1994 | QBO on, strat81 (own ERA5 windows, 26 GB/yr) |
 | `p12ctl_1990..1994` → `p12ctl_5yr` | `p12_ctl` | 1 | 1990–1994 | control = Phase 11 A + aoa500; the "before" (started 15:05 PDT) |
 | `p12noqbo_cpusmoke` | `p12_noqbo`, 5 d on the CPU | — | — | instantiation check while the GPUs were unavailable (2026-09-16) |

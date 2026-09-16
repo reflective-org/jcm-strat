@@ -1,26 +1,29 @@
 #!/usr/bin/env bash
 # Phase 12, second half (tmux strat_p12_finish, log runs/p12_run.log): the first pipeline run (scripts/phase12_run.sh,
 # 2026-09-16 14:45 PDT) lost the noqbo chain to a bash quirk in chain_segments.sh (an empty EXTRA_PER_SEG became the
-# hydra override '}', fixed in 1abb96b) and, by design, skips the diagnostics when a chain fails. This script waits for
-# that pipeline to end (ctl on GPU 1 and l81 on GPU 2 finished), runs the noqbo chain on GPU 1, then the diagnostics.
+# hydra override '}', fixed in 1abb96b) and, by design, skips the diagnostics when a chain fails. This script runs the
+# noqbo chain at once on GPU_A (GPU 3: Susanne, 2026-09-16 16:00 PDT, "if GPU3 is available you can use that"), waits
+# for that pipeline to end (ctl on GPU 1 and l81 on GPU 2 finished), then runs the diagnostics.
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 # shellcheck disable=SC1091
 source "$REPO/scripts/env.sh"
-YEARS="${YEARS:-1990-1994}"; GPU_A="${GPU_A:-1}"
+YEARS="${YEARS:-1990-1994}"; GPU_A="${GPU_A:-3}"
 P11A="${P11A:-/data/JCM_stripped/jcm-strat-phase11/runs/p11a_5yr}"
 OUT="$REPO/docs/outputs/12_circulation"; LOG="$REPO/runs/p12_run.log"
 step() { echo "[p12-finish] $(date -Is) $*" | tee -a "$LOG"; }
 y0="${YEARS%-*}"; y1="${YEARS#*-}"
-step "start, commit $(git rev-parse --short HEAD); waiting for tmux strat_p12_run to end"
+step "start, commit $(git rev-parse --short HEAD); launching chain noqbo on GPU $GPU_A"
+nvidia-smi -i "$GPU_A" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q . && { step "FAIL: GPU $GPU_A busy"; exit 1; }
+EXTRA_PER_SEG="" EXPERIMENT=p12_noqbo PREFIX=p12noqbo SCHEME=calendar YEARS="$YEARS" AGG=p12noqbo_5yr SAVE_INTERVAL=0.25 GPU="$GPU_A" \
+  bash "$REPO/scripts/chain_segments.sh" > "$REPO/runs/p12noqbo_chain_stdout.log" 2>&1 & pn=$!
+step "waiting for tmux strat_p12_run (ctl, l81) to end"
 while tmux has-session -t strat_p12_run 2>/dev/null; do sleep 300; done
 for pre in p12ctl p12l81; do
   grep -q "chain finished" "$REPO/runs/${pre}_chain.log" 2>/dev/null || { step "FAIL: chain $pre did not finish (runs/${pre}_chain.log)"; exit 1; }
 done
-step "ctl and l81 chains finished; launching chain noqbo (GPU $GPU_A)"
-while nvidia-smi -i "$GPU_A" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; do sleep 60; done
-EXTRA_PER_SEG="" EXPERIMENT=p12_noqbo PREFIX=p12noqbo SCHEME=calendar YEARS="$YEARS" AGG=p12noqbo_5yr SAVE_INTERVAL=0.25 GPU="$GPU_A" \
-  bash "$REPO/scripts/chain_segments.sh" > "$REPO/runs/p12noqbo_chain_stdout.log" 2>&1; ra=$?
+step "ctl and l81 chains finished; waiting for noqbo"
+wait $pn; ra=$?
 step "chain noqbo exit=$ra"; [ $ra -eq 0 ] || { step "FAIL: chain noqbo (runs/p12noqbo_chain.log)"; exit 1; }
 
 export JAX_PLATFORMS=cpu
