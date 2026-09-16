@@ -42,9 +42,14 @@ def window(start: dt.date, days: int) -> tuple[str, str]:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--scheme", default="year", choices=sorted(segments.SCHEMES) + ["smoke"],
-                    help="segment scheme (jcm_strat.segments); 'smoke' = one 5-day window at the start of the first year")
+    ap.add_argument("--scheme", default="year", choices=sorted(segments.SCHEMES) + ["smoke", "calendar"],
+                    help="segment scheme (jcm_strat.segments); 'smoke' = one 5-day window at the start of the first year; "
+                         "'calendar' = true 365/366-day years (Phase 10, needs --save-interval dividing one day)")
     ap.add_argument("--years", default="2005-2009")
+    ap.add_argument("--save-interval", type=float, default=segments.SAVE_INTERVAL_DAYS,
+                    help="the experiment's run.save_interval in days (only the 'calendar' scheme checks it)")
+    ap.add_argument("--days", type=int, default=None,
+                    help="instead of a scheme: ONE window of this many days from 1 January of the first year (smoke tests)")
     ap.add_argument("--dry-run", action="store_true", help="print file names and sizes only")
     ap.add_argument("--no-init", action="store_true", help="skip the initial-state slice")
     ap.add_argument("overrides", nargs="*", help="hydra overrides (after --)")
@@ -59,7 +64,9 @@ def main(argv=None) -> int:
     nlev = int(coords.vertical.a_centers.size)
     freq = str(cfg.nudging.get("freq", "6h"))
     per_day = {"6h": 4, "12h": 2, "1d": 1}[freq]
-    segs = segments.segments(a.scheme, segments.parse_years(a.years))
+    years = segments.parse_years(a.years)
+    segs = ([(dt.date(years[0], 1, 1), a.days, years[0])] if a.days
+            else segments.segments(a.scheme, years, a.save_interval))
     print(f"grid {nlon}x{nlat} L{nlev} T{cfg.grid.spectral_truncation}, nudging {freq}, "
           f"{len(segs)} segments ({a.scheme}), cache {era5.cache_dir()}")
     total = 0.0
