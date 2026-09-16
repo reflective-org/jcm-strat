@@ -1,9 +1,10 @@
 # Phase 12 — circulation tests: QBO nudging off, and the full L95 troposphere (1990–1994)
 
-Status: **set up 2026-09-16 (14:00–15:00 PDT); chains not yet started** — the host lost its `/dev/nvidia*` device nodes
-in the 09:30 PDT reboot, so the pipeline (`scripts/phase12_run.sh`, tmux `strat_p12_run`) waits until
-`sudo bash scripts/restore_nvidia_dev.sh` has been run. The strat81 ERA5 windows are being prefetched
-(tmux `preproc_p12_l81_prefetch`). Results section to be filled by the pipeline's diagnostics.
+Status: **set up 2026-09-16 (14:00–15:00 PDT); pipeline running** (`scripts/phase12_run.sh`, tmux `strat_p12_run`,
+log `runs/p12_run.log`). The host had lost its `/dev/nvidia*` device nodes in the 09:30 PDT reboot (the Phase 11
+extension chain launched at 14:00 PDT ran on the CPU and was stopped); they were recreated at 14:44 PDT and the
+pipeline passed its GPU check. It waits for the strat81 ERA5 windows (tmux `preproc_p12_l81_prefetch`), then runs
+pytest, the 5-day GPU smokes, the three chains and the diagnostics. Results section to be filled from them.
 
 ## Why
 

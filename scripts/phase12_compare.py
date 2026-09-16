@@ -109,7 +109,7 @@ def main():
         waccm = wstar_by_season(wv, wvth, wth, "month")
 
     ncol = 4 if waccm else 3
-    fig, axes = plt.subplots(3, ncol, figsize=(4.6 * ncol, 11), sharex=True, sharey=True)
+    fig, axes = plt.subplots(3, ncol, figsize=(4.8 * ncol + 1.5, 11), sharex=True, sharey=True, layout="constrained")
     for i, seas in enumerate(SEASONS):
         pb, lat, _, wb = fields["before"][4][seas]; pa, lata, _, wa = fields["after"][4][seas]
         wa_on_b = on_levels(wa, pa, pb)
@@ -121,10 +121,10 @@ def main():
             plot_w_panel(axes[i, 3], latw, pw, ww, W_LEVELS, f"{seas}  WACCM6 histSST {a.waccm_years}")
         axes[i, 0].set_ylabel("pressure [hPa]")
     for ax in axes[-1]: ax.set_xlabel("latitude")
-    fig.colorbar(cf, ax=axes[:, [0, 1] + ([3] if waccm else [])], shrink=0.6, label="w* [mm/s]")
-    fig.colorbar(cfd, ax=axes[:, 2], shrink=0.6, label="difference [mm/s]")
+    fig.colorbar(cf, ax=list(axes[:, -1]), shrink=0.8, pad=0.02, label="w* [mm/s]")
+    fig.colorbar(cfd, ax=list(axes[:, 2]), shrink=0.8, pad=0.02, label="after - before [mm/s]")
     fig.suptitle(f"{title}: TEM residual vertical velocity w* (upward positive)")
-    f = os.path.join(a.out, f"{a.tag}_wstar.png"); fig.savefig(f, dpi=120, bbox_inches="tight"); plt.close(fig); print("wrote", f)
+    f = os.path.join(a.out, f"{a.tag}_wstar.png"); fig.savefig(f, dpi=120); plt.close(fig); print("wrote", f)
 
     # tropical profiles + annual cycle
     fig, axes = plt.subplots(1, 3, figsize=(16, 5))
@@ -139,7 +139,8 @@ def main():
     if waccm:
         p, lat, _, w = waccm["annual"]
         ax.plot([circ.tropical_wstar(p, w, lat, ph) for ph in p / 100.0], p / 100.0, "k--", label=f"w* WACCM6 {a.waccm_years}")
-    ax.axvline(0, color="grey", lw=0.5); ax.set_yscale("log"); ax.set_ylim(300, 1); ax.set_xlim(-0.2, 1.2)
+    ax.axvline(0, color="grey", lw=0.5); ax.set_yscale("log"); ax.set_ylim(300, 1)
+    lo, hi = ax.get_xlim(); ax.set_xlim(max(lo, -3.0), min(hi, 3.0))          # noise in the eddy term can be large; keep the plot readable
     ax.set_xlabel("mm/s"); ax.set_ylabel("pressure [hPa]"); ax.set_title("tropical (15S-15N) w*, annual mean"); ax.grid(alpha=.3); ax.legend(fontsize=7)
     for ax, ph in zip(axes[1:], (70.0, 30.0)):
         for name, col in (("before", "C0"), ("after", "C3")):
@@ -180,7 +181,7 @@ def main():
         print(f"[age] {clock}", flush=True)
         pb, latb, ab, dayb = aoa.model_age(a.before, a.last_saves, clock); pa, lata, aa, daya = aoa.model_age(a.after, a.last_saves, clock)
         aa_on_b = on_levels(aa, pa, pb)
-        fig, axes = plt.subplots(1, 4, figsize=(21, 5), sharey=True)
+        fig, axes = plt.subplots(1, 4, figsize=(23, 5.2), sharey=True, layout="constrained")
         for ax, (p, lat, age, ttl) in zip(axes[:2], ((pb, latb, ab, f"before: {nb}  [{clock}] ends day {dayb}"), (pa, lata, aa, f"after: {na}  [{clock}] ends day {daya}"))):
             cf = ax.contourf(lat, p, age, levels=levels, cmap="viridis", extend="max"); ax.contour(lat, p, age, levels=levels[::4], colors="w", linewidths=0.5)
             ax.set_yscale("log"); ax.set_ylim(300, 1); ax.set_title(ttl, fontsize=9); ax.set_xlabel("latitude")
@@ -190,9 +191,9 @@ def main():
         axes[3].contourf(latc, pc, ac, levels=levels, cmap="viridis", extend="max"); axes[3].contour(latc, pc, ac, levels=levels[::4], colors="w", linewidths=0.5)
         axes[3].set_yscale("log"); axes[3].set_ylim(300, 1); axes[3].set_title(f"CLaMS v3.1 / ERA5 {a.clams_years}\n(surface clock; for orientation)", fontsize=9); axes[3].set_xlabel("latitude")
         axes[0].set_ylabel("pressure [hPa]")
-        fig.colorbar(cf, ax=axes[[0, 1, 3]], shrink=0.85, label="mean age [yr]"); fig.colorbar(cfd, ax=axes[2], shrink=0.85, label="[yr]")
+        fig.colorbar(cf, ax=[axes[3]], shrink=0.9, pad=0.02, label="mean age [yr]"); fig.colorbar(cfd, ax=[axes[2]], shrink=0.9, pad=0.02, label="after - before [yr]")
         fig.suptitle(f"{title}: age of air, clock {clock} ({'reset in the lowest two layers' if clock == 'aoa_sfc' else 'reset below ' + clock[3:] + ' hPa' if clock[3:].isdigit() else clock})")
-        f = os.path.join(a.out, f"{a.tag}_age_{clock}.png"); fig.savefig(f, dpi=120, bbox_inches="tight"); plt.close(fig); print("wrote", f)
+        f = os.path.join(a.out, f"{a.tag}_age_{clock}.png"); fig.savefig(f, dpi=120); plt.close(fig); print("wrote", f)
         for ph, lab in ((55.0, "55 hPa"), (12.0, "12 hPa")):
             kb = int(np.argmin(np.abs(pb - ph))); ka = int(np.argmin(np.abs(pa - ph))); kc = int(np.argmin(np.abs(pc - ph)))
             for lo, hi, reg in ((0, 10, "tropics 10S-10N"), (50, 70, "50-70 deg")):
