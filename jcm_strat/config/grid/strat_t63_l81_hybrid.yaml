@@ -1,0 +1,8 @@
+# T63 / 81 hybrid levels — the Phase 12 "strat81" table (jcm_strat/levels.py): strat63 with every
+# L95 tropospheric layer put back. The 47 L95 levels between 1.08 and 159 hPa and the 26 below
+# 159 hPa are kept exactly; only the 22 mesospheric levels above 1 hPa are thinned to 8 (as in
+# strat63). Needs the top-level key ``level_table: strat`` (set by the p12_l81 experiment).
+vertical: hybrid
+layers: 81
+spectral_truncation: 63
+spmd_mesh: null

@@ -15,7 +15,7 @@ from jcm.physics.composable_physics import ComposablePhysics
 from jcm.physics.diagnostics.omega import OmegaDiagnostic
 from jcm.physics.held_suarez.utils import get_held_suarez_coords
 
-from jcm_strat.advection_tracers import CLOCKS, DAY, DEFAULT_PULSES, DEFAULT_SOURCES, STEADY, ProductionTracers, site_of
+from jcm_strat.advection_tracers import CLOCKS, DAY, DEFAULT_PULSES, DEFAULT_SOURCES, STEADY, ProductionTracers, ProductionTracersAoa500, site_of
 from jcm_strat.held_suarez_columns import HeldSuarezColumns
 
 DT = 600.0
@@ -210,3 +210,34 @@ def test_short_run_six_hourly_snapshots():
     # the lid pulls the top layer's clock towards WACCM's age within the day (tau 1 d): well above one day of ageing
     top = ds["aoa"].isel(time=-1).values[np.argmin(np.asarray(ds.level))] if float(ds.level[0]) > float(ds.level[-1]) else ds["aoa"].isel(time=-1).values[0]
     assert top.mean() > 100.0
+
+
+def test_aoa500_subclass_adds_one_clock_and_changes_nothing_else():
+    """Phase 12: ProductionTracersAoa500 declares the Phase 11 set plus aoa500 (reset below 500 hPa, WACCM age +
+    offset above the lid); the parent class and its tracer set are untouched."""
+    assert ProductionTracers.CLOCKS == CLOCKS and "aoa500" not in [t.name for t in ProductionTracers.required_tracers()]
+    names = [t.name for t in ProductionTracersAoa500.required_tracers()]
+    assert names[:4] == list(CLOCKS) + ["aoa500"] and len(names) == len(ProductionTracers.required_tracers()) + 1
+    assert "aoa500" in ProductionTracersAoa500.output_attrs and "pulse_1_box" in ProductionTracersAoa500.output_attrs
+    coords = get_held_suarez_coords()
+    physics = ComposablePhysics(terms=[HeldSuarezColumns(), ProductionTracersAoa500(first_segment=False), OmegaDiagnostic()],
+                                checkpoint_terms=False, vectorize_columns=True)
+    model = Model(coords=coords, time_step=DT / 60, physics=physics, start_date=jdt.to_datetime("2005-01-01"), calendar="gregorian")
+    state = model.dycore.to_physics_state(model._prepare_initial_dycore_state())
+    term = [t for t in model.physics.terms if isinstance(t, ProductionTracersAoa500)][0]
+    nlev = state.temperature.shape[0]
+    cols = state.replace(**{f: getattr(state, f).reshape(nlev, -1) for f in ("u_wind", "v_wind", "temperature", "specific_humidity")},
+                         normalized_surface_pressure=state.normalized_surface_pressure.reshape(-1),
+                         tracers={k: v.reshape(nlev, -1) for k, v in state.tracers.items()})
+    assert "aoa500" in cols.tracers
+    p = np.asarray(term._pressure(cols.normalized_surface_pressure))
+    lid = p < 100.0
+    d = _tend(term, cols, _forcing(45.0 / 365.0))
+    assert np.allclose(d["aoa500"][(p <= 500e2) & ~lid], 1.0 / DAY) and np.all(d["aoa500"][p > 500e2] <= 0.0)
+    assert np.allclose(d["aoa"][(p <= 700e2) & ~lid], 1.0 / DAY) and np.all(d["aoa"][p > 700e2] <= 0.0)   # parent clocks as before
+    # between 500 and 700 hPa the two clocks differ: aoa runs, aoa500 is reset
+    band = (p > 500e2) & (p <= 700e2)
+    assert band.any() and np.allclose(d["aoa"][band], 1.0 / DAY) and np.all(d["aoa500"][band] <= 0.0)
+    # above the lid aoa500 relaxes to WACCM's age + the tropospheric offset, like aoa and aoa_sfc
+    if lid.any():
+        assert np.allclose(d["aoa500"][lid], d["aoa"][lid]) and not np.allclose(d["aoa500"][lid], d["aoa150"][lid])

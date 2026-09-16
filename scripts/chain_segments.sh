@@ -21,7 +21,8 @@
 #   GPU            default 0 (project rule: 0, then 1, then 2)
 #   EXTRA          constant hydra overrides for every segment (grid=..., run.time_step=...)
 #   EXTRA_PER_SEG  per-segment overrides, {year} replaced by the segment's calendar year
-#                  (default: the QBO target year, as chain_years.sh passes it)
+#                  (default: the QBO target year, as chain_years.sh passes it; set it to the EMPTY string
+#                  for an experiment without the QBO term, e.g. p12_noqbo - unset means the default)
 #   FIRST_SEG_EXTRA overrides for the FIRST segment only; unset = for p10_* experiments the flag that
 #                  makes the production tracers inject their WACCM initial state, empty otherwise
 #   COMPACT        1 (default) rewrites each finished segment's chunk files compressed, in the
@@ -36,10 +37,10 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 source "$REPO/scripts/env.sh"
 EXPERIMENT="${EXPERIMENT:-p9_res}"; PREFIX="${PREFIX:?PREFIX is required}"
 SCHEME="${SCHEME:-year}"; YEARS="${YEARS:-2005-2009}"; GPU="${GPU:-0}"; SAVE_INTERVAL="${SAVE_INTERVAL:-5}"
-EXTRA="${EXTRA:-}"; EXTRA_PER_SEG="${EXTRA_PER_SEG:-physics.terms.held_suarez.qbo.year={year}}"
+EXTRA="${EXTRA:-}"; EXTRA_PER_SEG="${EXTRA_PER_SEG-physics.terms.held_suarez.qbo.year={year}}"   # '-' not ':-': empty = none
 COMPACT="${COMPACT:-1}"
 if [ -z "${FIRST_SEG_EXTRA+x}" ]; then      # unset: the production experiments inject their WACCM initial state on segment 1
-  case "$EXPERIMENT" in p10_*|p11*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
+  case "$EXPERIMENT" in p10_*|p11*|p12*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
 fi
 export CUDA_VISIBLE_DEVICES="$GPU"
 LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"

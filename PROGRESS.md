@@ -66,6 +66,7 @@ One H100, T63L95. Stepping excludes JIT compile and output writing; end-to-end i
 | Phase 9: same at T119L95, the 1° grid (dt 6) | 6 min | 557 / 403 | 39 min / 54 min | 1.6 s |
 | Phase 10 | production tracer set, 6-h instantaneous output, QBO tau 1 d | strat63 | 12 | 4,760 (e2e 860) | 6 | p10_2005-2009 review chain (`p10rev_5yr`); 1990-2019 chain `p10_30yr` running | 2026-09-11 |
 | Phase 11 | tracer lid above 1 hPa (WACCM targets), 24 tracers, no surface sink; A no sink / B lid sink | strat63 | 12 | 4,180 (e2e 750) | 7 | `p11a_5yr`, `p11b_5yr` 1990-1994; extension to 2019 pending | 2026-09-16 |
+| Phase 12 | circulation tests vs a control: QBO nudging off (`p12_noqbo`), full L95 troposphere (`p12_l81`, strat81); clock `aoa500`; injection tracers not written | strat63 / strat81 | 12 | (pending) | (pending) | `p12ctl_5yr`, `p12noqbo_5yr`, `p12l81_5yr` 1990-1994; pipeline `scripts/phase12_run.sh` waiting for the GPU device nodes | 2026-09-16 |
 
 (e2e = end-to-end incl. compile and output writing.) Reference from upstream (A100-40GB, `docs/source/design/dinosaur_sl_jam_configuration.md` in
 JCM): T63L47 full science 115 days/hr at dt=15 min; T63L95 full science 52 days/hr.

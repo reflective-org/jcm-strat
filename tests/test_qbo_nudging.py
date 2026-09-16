@@ -85,6 +85,22 @@ def test_combined_term_equals_pk_plus_qbo():
     assert np.allclose(outs[0][1], outs[1][1], rtol=1e-6, atol=1e-12)
 
 
+def test_null_qbo_is_plain_polvani_kushner():
+    """Phase 12 (p12_noqbo): PolvaniKushnerQbo(qbo=None) is PolvaniKushnerColumns - no nudging anywhere."""
+    coords = get_held_suarez_coords()
+    outs = []
+    for physics in (ComposablePhysics(terms=[PolvaniKushnerQbo(qbo=None)], checkpoint_terms=False, vectorize_columns=True),
+                    ComposablePhysics(terms=[PolvaniKushnerColumns()], checkpoint_terms=False, vectorize_columns=True)):
+        model = Model(coords=coords, time_step=10, physics=physics)
+        state = model.dycore.to_physics_state(model._prepare_initial_dycore_state())
+        tend, _ = compute_physics_step_gridpoint(state, forcing=None, terrain=None,
+                                                 physics_state_carry=model._build_initial_physics_carry(),
+                                                 physics=model.physics, time_step=10 * 60)
+        outs.append((np.asarray(tend.u_wind), np.asarray(tend.temperature)))
+    assert np.array_equal(outs[0][0], outs[1][0]) and np.array_equal(outs[0][1], outs[1][1])
+    assert physics.terms[0].qbo is None if hasattr(physics.terms[0], "qbo") else True
+
+
 def test_mean_preserving_nodes_reproduce_monthly_means():
     """The piecewise-linear interpolant through the adjusted nodes has the prescribed monthly means,
     and it overshoots the means at the peaks of a sinusoid (which plain interpolation cuts)."""

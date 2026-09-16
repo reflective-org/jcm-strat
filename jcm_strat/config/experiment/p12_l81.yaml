@@ -1,0 +1,13 @@
+# @package _global_
+# Phase 12 experiment 2: p12_ctl (QBO nudging ON) on the strat81 grid - strat63 with all 26 L95 tropospheric
+# layers put back (jcm_strat/levels.py, grid/strat_t63_l81_hybrid.yaml): 8 mesosphere + 47 stratosphere + 26
+# troposphere, every level an L95 level. The stratosphere and mesosphere are strat63's, so the remapped sponge
+# of p9_l63 (4 levels, enspodi 6.73; levels.sponge_for(81) gives the same numbers) is inherited unchanged.
+# Purpose: does the thinned troposphere of strat63 (8 layers below 159 hPa, where the ERA5 nudging and the wave
+# forcing act) weaken the residual circulation? w* and age of air before (strat63) and after (this run).
+# Needs its own ERA5 nudging windows (the target is interpolated to model levels; coordinate hash in the file
+# name): JAX_PLATFORMS=cpu python -m jcm_strat.prefetch_era5 --scheme calendar --years 1990-1994 --save-interval 0.25 -- +experiment=p12_l81
+#   EXPERIMENT=p12_l81 PREFIX=p12l81 SCHEME=calendar YEARS=1990-1994 AGG=p12l81_5yr SAVE_INTERVAL=0.25 GPU=2 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p12_ctl
+  - override /grid: strat_t63_l81_hybrid

@@ -1,0 +1,41 @@
+# Phase 12 physics, QBO nudging OFF: strat_pk_qbo_prod12 with ``qbo: null`` in the relaxation term
+# (PolvaniKushnerQbo then IS PolvaniKushnerColumns, jcm_strat/qbo_nudging.py) - same troposphere (Held-Suarez)
+# and stratosphere (PK02 with the seasonal winter hemisphere), no QBO wind nudging anywhere. The class stays
+# PolvaniKushnerQbo rather than PolvaniKushnerColumns because the p10_prod experiment merges
+# ``held_suarez.qbo.tau_days: 1.0`` on top of every physics group; a class without a ``qbo`` argument would
+# be handed that key and fail, and p12_noqbo.yaml sets the whole mapping back to null after that merge. Susanne
+# (2026-09-16): "turn off the QBO nudging completely and look at w* before and after". The tropical
+# stratospheric zonal wind is then the model's own (Phases 6-7: a weak, non-oscillating easterly regime,
+# docs/outputs/06_stratosphere), which is the point of the test: how much of the residual circulation is
+# forced by the nudged QBO winds. Tracers as strat_pk_qbo_prod12 (clocks incl. aoa500, lid, no sinks).
+# chain_segments.sh must be run with EXTRA_PER_SEG="" (no qbo.year to set).
+vectorize_columns: true
+checkpoint_terms: true
+
+terms:
+  held_suarez:
+    _target_: jcm_strat.qbo_nudging.PolvaniKushnerQbo
+    gamma_k_per_km: 4.0
+    p_tropopause_hpa: 100.0
+    phi0_deg: 50.0
+    delta_phi_deg: 10.0
+    epsilon_k: 10.0
+    season_offset: 0.5
+    p_vortex_top_hpa: 3.0
+    tau_strat_days: 15.0
+    qbo: null                   # OFF (p12_noqbo.yaml repeats this after the p10_prod merge)
+  production_tracers:
+    _target_: jcm_strat.advection_tracers.ProductionTracersAoa500
+    aoa500_reset_pressure_hpa: 500.0   # Phase 12: fourth clock, reset below 500 hPa
+    injection: once             # pulses injected once at the start of the run
+    first_segment: false        # chain_segments.sh sets true on segment 1: inject the pulses and the WACCM N2O/CFC-11 state
+    pulse_sigma_deg: 12.0       # Gaussian sigma = box cap radius
+    pulse_sigma_decades: 0.25   # Gaussian sigma = box half-thickness in log10 p
+    source_timescale_days: 90.0
+    surface_sink: false         # Phase 10 had absorption in the lowest two layers
+    lid_p_hpa: 1.0              # tracer lid: relax above this pressure
+    lid_tau_days: 1.0
+    lid_clock_offset_days: 110.0   # ~0.3 yr: surface clocks (aoa, aoa_sfc) read WACCM's entry age plus the tropospheric transit
+    lid_sink_injections: false  # A: pulses / sources / sai have no sink anywhere; B (p11b_prod) sets true
+  omega_diagnostic:
+    _target_: jcm.physics.diagnostics.omega.OmegaDiagnostic
