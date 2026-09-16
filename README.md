@@ -61,6 +61,7 @@ It skips steps whose outputs exist, so after an interruption just start it again
 | [DEFERRED.md](DEFERRED.md) | What is consciously not done yet, with issue links |
 | [FEATURES.md](FEATURES.md) | What works today |
 | `docs/outputs/<NN_phase>/output.md` | Per-phase record: exact commands, numbers, plots, decisions |
+| [docs/PHYSICS_EXPLAINER.md](docs/PHYSICS_EXPLAINER.md) | Held-Suarez, Polvani-Kushner and full physics explained in simple words, with what each cost us |
 | `docs/background/` | The handover document this work started from |
 
 ## Headline table
