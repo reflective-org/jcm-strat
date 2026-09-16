@@ -153,3 +153,9 @@ sees no GPU. Check before any launch: `python -c "import jax; print(jax.devices(
 Susanne chose A and asked for 15 more years: `PREFIX=p11a YEARS=1990-2009 AGG=p11a_20yr` (tmux `strat_p11a_20yr`,
 GPU 0; the chain skips 1990–1994 and continues from the 1994 checkpoint). First launch 14:01 PDT ran on the CPU
 (see above), was stopped and its partial 1995 segment removed; relaunch pending the device nodes.
+
+Relaunched 2026-09-16 15:47 PDT after Susanne recreated the device nodes (an earlier relaunch had a line break inside
+the tmux command and left an idle shell). The 1995 segment stepped its first chunk in 24.8 s, as before. **The node's
+GPUs are now NVIDIA H200 (141 GB), not the H100 80 GB the 1990–1994 segments ran on** — the reboots of 2026-09-14
+and 09-16 were a hardware change. Same code, same driver container; the checkpoint restart is exact, but the two
+halves of the chain ran on different silicon (roundoff-level differences only; the tracers are passive).
