@@ -7,8 +7,11 @@
 # with the clocks" - is the age of air too old in JCM's own physics too?
 # Differences to p12_ctl, on purpose: the physics package above 150 hPa and the grid (L95, JCM's own table: the
 # ECHAM parameterisations are tuned per level table, strat63 is untested with them). Everything the tracers and
-# the nudging do is identical. Nudging target 6-hourly (the Phase 6 reference had to sample 12-hourly on an
-# 80 GB card; the H200s have 141 GB - if segment 1 fails at the first step with an OOM, set nudging.freq=12h).
+# the nudging do is identical. Nudging target 12-HOURLY, as the Phase 6 reference: the 6-hourly one-year target
+# (31 GB resident) + RRTMGP ran out of GPU memory on the 141 GB H200 too - not at the first step but at the second
+# 10-day chunk (RESOURCE_EXHAUSTED allocating 267 MiB, runs/p12echam_19900101 of 2026-09-18 11:58 PDT). JCM
+# interpolates between the 12-hourly samples; the deviation is confined to sub-daily tropospheric variability
+# (KEY_DECISIONS #25). Chunks of 5 days so fewer output frames sit on the GPU.
 # Output: ONLY the fields the diagnostics need (output_keep) - the full package writes ~130 diagnostics.
 #   EXTRA_PER_SEG="physics.terms.qbo_nudging.year={year}" EXPERIMENT=p12_echam PREFIX=p12echam SCHEME=calendar \
 #     YEARS=1990-1994 AGG=p12echam_5yr SAVE_INTERVAL=0.25 GPU=0 bash scripts/chain_segments.sh
@@ -19,12 +22,12 @@ defaults:
 run:
   save_interval: 0.25
   output_averages: false
-  chunk_days: 10
+  chunk_days: 5
   total_time: 365
   checkpoint_path: checkpoint.ckpt
 
 nudging:
-  freq: 6h
+  freq: 12h
 
 calendar: gregorian
 level_table: null

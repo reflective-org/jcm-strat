@@ -4,7 +4,8 @@
 # dynamics + clocks only), 1990-1994 as one chain on GPU 0, then the before/after diagnostics against the Phase 12
 # control (p12ctl_5yr). Susanne, 2026-09-18: "Do the full physics 5 year run with the clocks".
 # Steps: wait for the T63L95 ERA5 windows (tmux preproc_p12_l95_prefetch) -> pytest -> 5-day GPU smoke -> chain
-# (~2.6 h per year: the full package stepped 140 d/hr in Phase 6) -> phase12_compare (tag echam), aoa_vs_clams,
+# (~2.6 h per year: the full package stepped 140 d/hr in Phase 6; 12-hourly nudging target like that reference, the
+# 6-hourly one OOMed at chunk 2 on the H200) -> phase12_compare (tag echam), aoa_vs_clams,
 # throughput rows.
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
@@ -21,12 +22,12 @@ gpu_busy "$GPU" && { step "FAIL: GPU $GPU busy"; exit 1; }
 
 # ---- inputs
 win() { local y=$1 n; n=$(( ( $(date -d "$((y+1))-01-01" +%s) - $(date -d "$y-01-01" +%s) ) / 86400 ))
-  echo "$REPO/cache/era5/wb2_192x96_l95_c39313fe_$(date -d "$y-01-01 - 1 day" +%F)_$(date -d "$y-01-01 + $((n+2)) days" +%F)_6h_u-v-T.nc"; }
+  echo "$REPO/cache/era5/wb2_192x96_l95_c39313fe_$(date -d "$y-01-01 - 1 day" +%F)_$(date -d "$y-01-01 + $((n+2)) days" +%F)_12h_u-v-T.nc"; }
 n=0
 while :; do
   missing=0; for y in $(seq "$y0" "$y1"); do [ -s "$(win "$y")" ] || missing=1; done
-  [ -s "$REPO/cache/era5/wb2_192x96_l95_c39313fe_${y0}-01-01_${y0}-01-01_6h_u-v-T-q-z.nc" ] || missing=1
-  [ -s "$REPO/cache/era5/wb2_192x96_l95_c39313fe_$((y0-1))-12-31_${y0}-01-08_6h_u-v-T.nc" ] || missing=1
+  [ -s "$REPO/cache/era5/wb2_192x96_l95_c39313fe_${y0}-01-01_${y0}-01-01_6h_u-v-T-q-z.nc" ] || missing=1    # the initial state is a 6h slice
+  [ -s "$REPO/cache/era5/wb2_192x96_l95_c39313fe_$((y0-1))-12-31_${y0}-01-08_12h_u-v-T.nc" ] || missing=1
   [ $missing -eq 0 ] && break
   if ! tmux has-session -t preproc_p12_l95_prefetch 2>/dev/null; then
     step "windows missing and the prefetch session is gone - running the prefetch here"
