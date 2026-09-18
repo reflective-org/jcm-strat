@@ -1,10 +1,11 @@
 # Phase 12 — circulation tests: QBO nudging off, and the full L95 troposphere (1990–1994)
 
-Status: **set up 2026-09-16 (14:00–15:00 PDT); pipeline running** (`scripts/phase12_run.sh`, tmux `strat_p12_run`,
-log `runs/p12_run.log`). The host had lost its `/dev/nvidia*` device nodes in the 09:30 PDT reboot (the Phase 11
-extension chain launched at 14:00 PDT ran on the CPU and was stopped); they were recreated at 14:44 PDT and the
-pipeline passed its GPU check. It waits for the strat81 ERA5 windows (tmux `preproc_p12_l81_prefetch`), then runs
-pytest, the 5-day GPU smokes, the three chains and the diagnostics. Results section to be filled from them.
+Status: **complete** (2026-09-16: setup 14:00–15:00 PDT; chains 15:05–18:35 PDT on GPUs 1, 2 and 3; diagnostics done
+20:31 PDT; record 2026-09-18). Runs `p12ctl_5yr`, `p12noqbo_5yr`, `p12l81_5yr` (1990–1994); figures and metrics
+tables below. Headline: **neither change closes the age-of-air gap.** Switching the QBO nudging off *weakens* the
+lower-branch upwelling and makes the tropical lower stratosphere 0.3 yr older; the full L95 troposphere doubles the
+deep-branch upwelling at 10 hPa (towards WACCM6) but leaves the stratospheric age (500 hPa clock) unchanged while adding
+0.4 yr of tropospheric transit to the surface clock.
 
 ## Why
 
@@ -81,17 +82,77 @@ python scripts/phase12_compare.py --before runs/p12ctl_5yr --after runs/p12l81_5
 
 | check | expectation | result |
 |---|---|---|
-| control reproduces Phase 11 A | `ctl_vs_p11a_wstar.png`: w* difference at roundoff; `aoa_sfc` identical | |
-| smokes | `QBO nudging OFF` in the noqbo log; 81 levels in the l81 output; `aoa500` = 0 where p > 500 hPa, otherwise = `aoa` where both run | |
-| w*, QBO off (`noqbo_wstar*.png`, `noqbo_metrics.md`) | tropical w* and upward mass flux at 100/70/30/10 hPa before vs after vs WACCM6; is the deep branch (10 hPa and above) stronger without the wind relaxation? | |
-| w*, strat81 (`l81_wstar*.png`, `l81_metrics.md`) | same, strat63 vs strat81 | |
-| age of air (`*_age_aoa_sfc.png`, `*_age_aoa500.png`, `*_age_profiles.png`) | 55 hPa tropics (ctl ≈ 2.7 yr after 5 yr, CLaMS 1.3) and the tropics–extratropics contrast; does either change move the upper stratosphere (20–1 hPa) off the lid value? | |
-| throughput | noqbo ≈ ctl ≈ Phase 11 minus the output saving; strat81 ≈ 1.3× slower | |
+| control reproduces Phase 11 A | `ctl_vs_p11a_wstar.png`: w* difference at roundoff; `aoa_sfc` identical | **pass**: up-flux within 0.1 × 10⁹ kg/s, tropical w* within 0.005 mm/s, age within 0.01 yr (the 5-yr-mean noise floor of a chaotic run, `ctl_vs_p11a_metrics.md`) |
+| smokes | `QBO nudging OFF` in the noqbo log; 81 levels in the l81 output; `aoa500` = 0 where p > 500 hPa, otherwise = `aoa` where both run | **pass**: header line present; 63 / 81 levels; 13 output variables, no pulses; at day 5 `aoa500` reads 0.3 d against 3.7 d for `aoa` in the 500–700 hPa band (the reset is applied after the transport step, so it is not exactly 0) |
+| w*, QBO off (`noqbo_wstar*.png`, `noqbo_metrics.md`) | tropical w* and upward mass flux at 100/70/30/10 hPa before vs after vs WACCM6; is the deep branch (10 hPa and above) stronger without the wind relaxation? | **no**: annual tropical w* 70 / 50 / 30 / 10 hPa 0.33 / 0.26 / 0.09 / 0.13 → 0.25 / 0.16 / 0.06 / 0.18 mm/s (WACCM6 0.21 / 0.20 / 0.26 / 0.47); up-flux 70 hPa 8.3 → 7.6, 10 hPa 1.26 → 1.26 × 10⁹ kg/s. The nudging adds ~0.1 mm/s of lower-branch upwelling (its secondary circulation); the deep branch does not depend on it |
+| w*, strat81 (`l81_wstar*.png`, `l81_metrics.md`) | same, strat63 vs strat81 | **deep branch doubled, lower branch weaker**: 70 / 50 / 30 / 10 hPa 0.33 / 0.26 / 0.09 / 0.13 → 0.26 / 0.17 / 0.02 / 0.31 mm/s; DJF 10 hPa 0.41 → 0.59 (WACCM6 0.64); up-flux 10 hPa 1.26 → 1.34 (WACCM6 1.37), 70 hPa 8.3 → 7.7 (WACCM6 6.1). The 30 hPa minimum (~0) remains |
+| age of air (`*_age_aoa_sfc.png`, `*_age_aoa500.png`, `*_age_profiles.png`) | 55 hPa tropics (ctl ≈ 2.7 yr after 5 yr, CLaMS 1.3) and the tropics–extratropics contrast; does either change move the upper stratosphere (20–1 hPa) off the lid value? | **no**: 55 hPa tropics, surface clock 2.74 → 3.00 (QBO off) / 3.07 (strat81); 500 hPa clock 2.39 → 2.67 / 2.29. 12 hPa within ±0.2 yr of the control everywhere; 20–1 hPa stays at the lid value (4.5–5.2 yr) in all three runs |
+| throughput | noqbo ≈ ctl ≈ Phase 11 minus the output saving; strat81 ≈ 1.3× slower | ctl 4,440 d/hr stepping (7 ms/step), noqbo 4,990 (the QBO term is ~11 % of a step), strat81 3,590 (8 ms/step); end-to-end 800–880 d/hr = **27–30 min/yr for all three** — output-bound, so the extra 18 levels cost nothing end-to-end and dropping the 19 injection tracers saved little (`docs/outputs/throughput.csv`) |
 
-## Results
+## Results (`docs/outputs/12_circulation/`, 2026-09-16)
 
-(pending)
+Diagnostics: `scripts/phase12_compare.py` for each pair (TEM covariances from every 4th 6-hourly frame = daily, whole run
+and DJF / JJA; age = zonal mean of the last 60 days of 1994), `scripts/aoa_vs_clams.py --var aoa_sfc|aoa500` for each run.
+References: WACCM6 histSST 1996–2014 daily TEM tape (w* by the same formula), CLaMS v3.1 / ERA5 2005–2009 (surface clock).
+
+**The control reproduces Phase 11 A** (`ctl_vs_p11a_*`): every circulation and age number agrees to the noise floor
+of a 5-year mean of a chaotic run (up-flux ±0.1 × 10⁹ kg/s, w* ±0.005 mm/s, age ±0.01 yr). Differences below that
+in the two experiments are not differences.
+
+**Where the control stands** (`*_wstar.png` left column, `*_wstar_tropics.png`): the model's tropical upwelling is
+*stronger* than WACCM6's in the lower branch (annual w* 0.33 vs 0.21 mm/s at 70 hPa; up-flux 8.3 vs 6.1 × 10⁹ kg/s)
+and *weaker* above 50 hPa — at 30 hPa it nearly vanishes (0.09 vs 0.26) before recovering to 0.13 at 10 hPa (WACCM6
+0.47). The extratropical downwelling is diffuse and weak. The zonal-mean w* field is patchy: vertically alternating
+cells 10–20° wide in the tropics, present in the Eulerian [w] as well, so a feature of the flow and not of the TEM
+eddy term. WACCM6's smooth, broad pipe is not what the dry, ERA5-nudged troposphere plus Polvani–Kushner
+stratosphere produces.
+
+**QBO nudging off** (`noqbo_*`): the difference is confined to |lat| < 30° and 100–5 hPa and has the tilted dipole
+structure of the QBO's secondary meridional circulation (`noqbo_wstar.png`, DJF / JJA difference panels). Without the
+nudging the lower-branch upwelling *falls*: 0.33 → 0.25 mm/s at 70 hPa, 0.26 → 0.16 at 50 hPa (annual; the same in
+both seasons), up-flux 8.3 → 7.6 × 10⁹ kg/s at 70 hPa; at 10 hPa nothing changes (1.26 → 1.26; w* +0.05). The
+imposed ERA5 shear zones therefore *add* ~0.1 mm/s of upwelling in the lower stratosphere (their secondary
+circulation, as theory says) and do nothing to the deep branch. Consistently, the tropical lower stratosphere gets
+*older*: 55 hPa tropics 2.74 → 3.00 yr (surface clock), 2.39 → 2.67 (500 hPa clock), the extratropics +0.16–0.18;
+12 hPa unchanged (−0.06). The QBO nudging is not what makes the stratosphere too old; it slightly helps.
+The QBO-off run's own equatorial wind is the model's weak easterly regime of Phases 6–7 (smoke: −16 m/s at 20 hPa).
+
+**Full L95 troposphere** (`l81_*`): the deep branch strengthens markedly — tropical w* at 10 hPa 0.13 → 0.31 mm/s
+annual, 0.41 → 0.59 in DJF (WACCM6 0.47 / 0.64), up-flux 10 hPa 1.26 → 1.34 (WACCM6 1.37) — and the polar
+downwelling above 10 hPa deepens (`l81_wstar.png`, difference panels: more downward flow poleward of 60° in the upper
+stratosphere, more upward in the tropics above 10 hPa). But the lower branch weakens like in the QBO-off run (70 hPa
+0.33 → 0.26, 50 hPa 0.26 → 0.17) and the 30 hPa minimum gets worse (0.09 → 0.02): the model's ascent now stalls
+between 50 and 20 hPa and resumes above. The age of air splits by clock: the **surface clock** gets older (55 hPa
+tropics 2.74 → 3.07 yr, extratropics +0.19, 12 hPa tropics +0.18) while the **500 hPa clock is unchanged or slightly
+younger** (2.39 → 2.29 at 55 hPa tropics, ±0.02 elsewhere). The gap between the two clocks — the surface → 500 hPa
+transit — grows from 0.35 to 0.78 yr: with 26 instead of 8 tropospheric layers the resolved vertical transport of the
+dry model (no convection, no boundary-layer mixing; Phase 10 found a ~75 d tropospheric removal time) is slower. That
+transit is model artefact, not stratospheric transport, and it inflates every surface-clock comparison with CLaMS
+(whose surface → tropopause transit is weeks). The 500 hPa clock is the fairer one to compare, and it says: the
+strat81 stratosphere is as old as strat63's.
+
+**Reading.** Both suspects are cleared. The lower branch is already stronger than WACCM6's, and the age excess
+(2.3–2.4 yr vs CLaMS 1.3 at 55 hPa with the 500 hPa clock; 4.4 vs 3.7 at 12 hPa) sits with (i) the near-zero ascent
+between 50 and 20 hPa, which neither change repairs, (ii) the lid-filled upper stratosphere (20–1 hPa at 4.5–5 yr in
+all three runs), and (iii) the tropospheric transit of the surface clock. The 50–20 hPa stall and the weak deep branch
+point at the wave driving of the middle and upper stratosphere (planetary waves that the dry, ERA5-nudged troposphere
+sends up; no gravity-wave drag) rather than at the tropospheric grid or the QBO term; the strat81 result shows the
+deep branch does respond to how the troposphere is resolved, so the wave source is part of it.
+
+Figures: `noqbo_wstar.png`, `noqbo_wstar_tropics.png`, `noqbo_age_aoa_sfc.png`, `noqbo_age_aoa500.png`,
+`noqbo_age_profiles.png`, `noqbo_metrics.md`; the same six with prefix `l81_`; `ctl_vs_p11a_{wstar,wstar_tropics,
+age_aoa_sfc,age_aoa,age_profiles}.png` + `_metrics.md`; `p12{ctl,noqbo,l81}_5yr_{aoa_sfc,aoa500}_aoa_{triptych,profiles}.png`.
 
 ## Open questions
 
-(pending)
+- Why does the tropical ascent stall between 50 and 20 hPa in every configuration (w* ≈ 0 at 30 hPa against WACCM6's
+  0.26 mm/s)? Candidates: the Polvani–Kushner equilibrium temperature (no radiative heating of the tropical middle
+  stratosphere), the absence of gravity-wave drag, the planetary-wave flux out of the nudged troposphere. A wave-flux
+  (EP-flux divergence) diagnostic on these archives would separate them — not run (keep-it-simple).
+- Should the reference clock for CLaMS comparisons become `aoa500` (or `aoa150`) rather than the surface clock, given
+  the 0.35–0.8 yr tropospheric transit of the dry model? Susanne's call; the numbers for both are in the tables.
+- strat81 costs nothing end-to-end at 6-hourly output (output-bound) and improves the deep branch: keep it for the
+  production grid? It changes the strat63 decision of Phase 9 (KEY_DECISIONS #31), which was made on age of air at
+  5 yr — an artefact-dominated metric, as Phase 11 showed.
+- The QBO-off run has no QBO at all (weak steady easterlies); a free QBO would need the gravity-wave forcing the
+  dry model lacks. Nudging stays on (KEY_DECISIONS #27 stands).
