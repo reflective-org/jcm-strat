@@ -11,7 +11,7 @@ from jcm_strat.prefetch_era5 import compose_run_config
 
 @pytest.fixture(scope="module")
 def cfgs():
-    return {e: compose_run_config([f"+experiment={e}"]) for e in ("p11a_prod", "p12_ctl", "p12_noqbo", "p12_l81")}
+    return {e: compose_run_config([f"+experiment={e}"]) for e in ("p11a_prod", "p12_ctl", "p12_noqbo", "p12_l81", "p12_echam")}
 
 
 def test_ctl_is_p11a_plus_aoa500_and_trimmed_output(cfgs):
@@ -46,3 +46,24 @@ def test_l81_changes_only_the_grid(cfgs):
     assert l81.physics == ctl.physics and l81.nudging == ctl.nudging
     assert l81.run.sponge.levels == ctl.run.sponge.levels == 4 and l81.run.sponge.enspodi == ctl.run.sponge.enspodi
     assert l81.run.time_step == ctl.run.time_step == 12
+
+
+def test_echam_is_the_full_package_plus_the_phase12_terms(cfgs):
+    ctl, ec = cfgs["p12_ctl"], cfgs["p12_echam"]
+    terms = list(ec.physics.terms)
+    assert terms[:12] == ["moist_air_state", "echam_boundary_conditions", "macv2_sp_aerosol", "simple_chemistry", "sundqvist_cloud_fraction",
+                          "rrtmgp_radiation", "tte_tke_vertical_diffusion", "echam_surface", "tiedtke_convection", "echam_1m_microphysics",
+                          "hines_gwd", "lott_miller_sso"]
+    assert terms[12:] == ["qbo_nudging", "production_tracers", "omega_diagnostic"]
+    assert "held_suarez" not in ec.physics.terms
+    q = ec.physics.terms.qbo_nudging; cq = ctl.physics.terms.held_suarez.qbo
+    assert q._target_ == "jcm_strat.qbo_nudging.QboNudging"
+    for k in ("tau_days", "mean_preserving", "lat_full_deg", "lat_zero_deg", "p_bot_hpa", "p_top_hpa", "era5_glob"):
+        assert q[k] == cq[k]
+    assert ec.physics.terms.production_tracers == ctl.physics.terms.production_tracers
+    assert ec.grid.layers == 95 and ec.level_table is None
+    assert ec.nudging.min_pressure_hpa == 150.0 and ec.nudging.tau_hours == 6.0 and ec.nudging.freq == "6h"
+    assert ec.run.save_interval == 0.25 and ec.run.chunk_days == 10 and ec.calendar == "gregorian" and ec.run.time_step == 12
+    assert set(ec.sl_mass_fixer_exclude) == set(ctl.sl_mass_fixer_exclude)
+    assert set(ec.output_keep) >= {"u_wind", "v_wind", "temperature", "omega", "aoa_sfc", "aoa500", "n2o", "cfc11"}
+    assert ec.forcing.kind == "from_file" and ec.init.kind == "era5"

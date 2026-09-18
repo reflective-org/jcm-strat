@@ -1,0 +1,37 @@
+# @package _global_
+# Phase 12, run 4: JCM's FULL ECHAM physics with the clocks - the Phase 6 reference configuration (ref_echam_sd:
+# T63L95, ERA5 initial state, u/v/T nudged to ERA5 below 150 hPa with tau 6 h, JCM's own radiation, convection,
+# clouds, diffusion, surface and gravity-wave drag above) with the Phase 12 tracer set, QBO nudging and omega
+# (physics/echam_prod12.yaml) and the Phase 10-12 output conventions: 6-hourly instantaneous, 10-day chunks,
+# Gregorian calendar, one calendar year per chained segment. Susanne, 2026-09-18: "Do the full physics 5 year run
+# with the clocks" - is the age of air too old in JCM's own physics too?
+# Differences to p12_ctl, on purpose: the physics package above 150 hPa and the grid (L95, JCM's own table: the
+# ECHAM parameterisations are tuned per level table, strat63 is untested with them). Everything the tracers and
+# the nudging do is identical. Nudging target 6-hourly (the Phase 6 reference had to sample 12-hourly on an
+# 80 GB card; the H200s have 141 GB - if segment 1 fails at the first step with an OOM, set nudging.freq=12h).
+# Output: ONLY the fields the diagnostics need (output_keep) - the full package writes ~130 diagnostics.
+#   EXTRA_PER_SEG="physics.terms.qbo_nudging.year={year}" EXPERIMENT=p12_echam PREFIX=p12echam SCHEME=calendar \
+#     YEARS=1990-1994 AGG=p12echam_5yr SAVE_INTERVAL=0.25 GPU=0 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/ref_echam_sd
+  - override /physics: echam_prod12
+
+run:
+  save_interval: 0.25
+  output_averages: false
+  chunk_days: 10
+  total_time: 365
+  checkpoint_path: checkpoint.ckpt
+
+nudging:
+  freq: 6h
+
+calendar: gregorian
+level_table: null
+
+# clocks and steady tracers impose a value, not a mass (KEY_DECISIONS #19, #34)
+sl_mass_fixer: true
+sl_mass_fixer_exclude: [aoa, aoa150, aoa_sfc, aoa500, n2o, cfc11]
+# whitelist: the dynamics, omega, the clocks and the steady tracers; every other diagnostic and injection tracer is dropped
+output_keep: [u_wind, v_wind, temperature, specific_humidity, normalized_surface_pressure, geopotential, omega,
+              aoa, aoa150, aoa_sfc, aoa500, n2o, cfc11]
