@@ -68,12 +68,14 @@ that argument would fail at instantiation). Caught by `tests/test_phase12.py`; h
 | `p12l81_1990..1994` → `p12l81_5yr` | `p12_l81` | 2 | 1990–1994 | QBO on, strat81 (own ERA5 windows, 26 GB/yr) |
 | `p12ctl_1990..1994` → `p12ctl_5yr` | `p12_ctl` | 1 | 1990–1994 | control = Phase 11 A + aoa500; the "before" (started 15:05 PDT) |
 | `p12noqbo_cpusmoke` | `p12_noqbo`, 5 d on the CPU | — | — | instantiation check while the GPUs were unavailable (2026-09-16) |
+| `p12echam_smoke5`, `p12echam_1990..1994` → `p12echam_5yr` | `p12_echam` | 0 | 1990–1994 | **run 4 (2026-09-18, Susanne: "Do the full physics 5 year run with the clocks")**: JCM's full ECHAM physics (RRTMGP, Tiedtke, Sundqvist/1M clouds, TTE/TKE, ECHAM surface, Hines + Lott–Miller GWD) on T63L95 with the same ERA5 nudging, the same QBO nudging as a separate term, the Phase 12 tracers and omega; only the dynamics, omega and clocks written (`output_keep`). Pipeline `scripts/phase12_echam.sh`, tmux `strat_p12_echam`, ~2.6 h/yr expected |
 
 Commands (all from `scripts/phase12_run.sh`):
 ```
 EXTRA_PER_SEG="" EXPERIMENT=p12_noqbo PREFIX=p12noqbo SCHEME=calendar YEARS=1990-1994 AGG=p12noqbo_5yr SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
 EXPERIMENT=p12_l81   PREFIX=p12l81   SCHEME=calendar YEARS=1990-1994 AGG=p12l81_5yr   SAVE_INTERVAL=0.25 GPU=2 bash scripts/chain_segments.sh
 EXPERIMENT=p12_ctl   PREFIX=p12ctl   SCHEME=calendar YEARS=1990-1994 AGG=p12ctl_5yr   SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
+EXTRA_PER_SEG="physics.terms.qbo_nudging.year={year}" EXPERIMENT=p12_echam PREFIX=p12echam SCHEME=calendar YEARS=1990-1994 AGG=p12echam_5yr SAVE_INTERVAL=0.25 GPU=0 bash scripts/chain_segments.sh
 python scripts/phase12_compare.py --before runs/p12ctl_5yr --after runs/p12noqbo_5yr --tag noqbo --out docs/outputs/12_circulation
 python scripts/phase12_compare.py --before runs/p12ctl_5yr --after runs/p12l81_5yr   --tag l81   --out docs/outputs/12_circulation
 ```

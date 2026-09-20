@@ -62,8 +62,9 @@ def test_echam_is_the_full_package_plus_the_phase12_terms(cfgs):
         assert q[k] == cq[k]
     assert ec.physics.terms.production_tracers == ctl.physics.terms.production_tracers
     assert ec.grid.layers == 95 and ec.level_table is None
-    assert ec.nudging.min_pressure_hpa == 150.0 and ec.nudging.tau_hours == 6.0 and ec.nudging.freq == "6h"
-    assert ec.run.save_interval == 0.25 and ec.run.chunk_days == 10 and ec.calendar == "gregorian" and ec.run.time_step == 12
+    # 12-hourly target and 5-day chunks: the 6-hourly one OOMed beside RRTMGP at chunk 2 (2026-09-18), as in Phase 6
+    assert ec.nudging.min_pressure_hpa == 150.0 and ec.nudging.tau_hours == 6.0 and ec.nudging.freq == "12h"
+    assert ec.run.save_interval == 0.25 and ec.run.chunk_days == 5 and ec.calendar == "gregorian" and ec.run.time_step == 12
     assert set(ec.sl_mass_fixer_exclude) == set(ctl.sl_mass_fixer_exclude)
     assert set(ec.output_keep) >= {"u_wind", "v_wind", "temperature", "omega", "aoa_sfc", "aoa500", "n2o", "cfc11"}
     assert ec.forcing.kind == "from_file" and ec.init.kind == "era5"
