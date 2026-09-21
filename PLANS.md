@@ -417,9 +417,16 @@ so each can also be run alone if the combined run needs separating:
     lower stratosphere, days near the stratopause). New relaxation term subclassing `HeldSuarezColumns` like
     `PolvaniKushnerColumns` does, so the Held-Suarez boundary-layer friction stays. T_e and tau: from the paper's data if
     available, otherwise reconstructed from the paper (open: ask Susanne for a pointer).
-(b) **Gravity-wave drag**: JCM's `HinesGwd` term (`jcm.physics.gravity_waves.hines`) added to the dry physics list as it is
-    in `physics/echam.yaml`; check what it needs from the state (it ran inside the full package; the dry model has no
-    moisture physics). If it cannot run dry, a Rayleigh drag profile in the upper stratosphere/mesosphere is the fallback.
+(b) **Gravity-wave drag, both schemes** (Susanne, 2026-09-21): JCM's `HinesGwd` (non-orographic, prescribed launch
+    spectrum) AND `LottMillerSso` (orographic: sub-grid mountain waves from the T63 terrain file's orostd/orosig/orogam/
+    orothe/oropic/oroval fields, which the dry runs already load) added to the dry physics list as they are in
+    `physics/echam.yaml`. Rationale: the resolved planetary-wave source is ERA5's by construction (nudging < 150 hPa,
+    real T63 orography), so the idealized-topography route of Gerber-Polvani / Linz et al. is not needed; what the dry
+    model lacks is the SUB-GRID orographic and the non-orographic wave drag above 150 hPa, where the winds are free and the
+    schemes deposit their momentum (the nudging suppresses only Lott-Miller's low-level blocking part, which we do not
+    need). In CMIP-class models the orographic part is a third to a half of the NH-winter gravity-wave drag. Check what
+    each term needs from the state (both ran inside the full package; the dry model has no moisture physics). If a
+    scheme cannot run dry, a Rayleigh drag profile in the upper stratosphere/mesosphere is the fallback.
 
 **Unchanged from the Phase 12 control** (`p12_ctl`): ERA5 nudging of u, v, T below 150 hPa (tau 6 h, lowest 2 levels
 free), QBO nudging as its own `QboNudging` term (tau 1 d, 90-1 hPa, mean-preserving), strat63 grid and sponge, Phase 12
@@ -437,7 +444,7 @@ the knobs, a prescribed Rayleigh drag profile in the upper stratosphere/mesosphe
 also the fallback if Hines cannot run without the moisture physics).
 
 **Runs, two at once (GPU 0 and 1):**
-* `p13_gwd` - **drag only**: Phase 12 control + `HinesGwd`. Isolates the wave-drag effect.
+* `p13_gwd` - **drag only**: Phase 12 control + `HinesGwd` + `LottMillerSso`. Isolates the wave-drag effect.
 * `p13_jucker_gwd` - **(c) both**: drag + the Jucker et al. relaxation. The relaxation-only effect is the difference
   between the two runs; `p13_jucker` alone is run only if that difference needs its own check.
 Each ~30 min/yr on strat63, 5 years ~2.5 h. Smoke 5 days each, then the chains, then `scripts/phase12_compare.py`
@@ -450,7 +457,8 @@ model), with `aoa500` and `aoa_sfc` shown alongside.
 55 hPa within 0.3 yr (1.19; control 1.39, i.e. do not make it worse); polar-cap `aoa150` at 55 hPa not below WACCM6's
 3.7 yr (the full-physics failure); polar-night jets no weaker than the control's (u(60N, 10 hPa) DJF, u(60S) JJA vs
 ERA5); age above 20 hPa no longer flat at the lid value; cost <= 1.3x the control. If `p13_gwd` overshoots like the full
-physics, one retune of the Hines source strength before falling back to the Rayleigh profile.
+physics, one retune of the Hines source strength (and/or the Lott-Miller gwd constant) before falling back to the Rayleigh
+profile; if the retune needs to know which scheme overshoots, one extra run with Lott-Miller only.
 
 **Troposphere (separate, small).** The dry troposphere mixes tracers 10x too slowly (no convection / boundary-layer
 turbulence; Phase 12 addendum). Not part of the two runs above. Options, if the surface clock itself must be right:
