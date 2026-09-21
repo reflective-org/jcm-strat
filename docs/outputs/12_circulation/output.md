@@ -176,6 +176,51 @@ Figures: `noqbo_wstar.png`, `noqbo_wstar_tropics.png`, `noqbo_age_aoa_sfc.png`, 
 `noqbo_age_profiles.png`, `noqbo_metrics.md`; the same six with prefixes `l81_` and `echam_`; `ctl_vs_p11a_{wstar,wstar_tropics,
 age_aoa_sfc,age_aoa,age_profiles}.png` + `_metrics.md`; `p12{ctl,noqbo,l81,echam}_5yr_{aoa_sfc,aoa500}_aoa_{triptych,profiles}.png`.
 
+## Addendum 2026-09-21: the clocks disentangled — most of the dry model's age excess is tropospheric
+
+Susanne asked whether the polar troposphere is too old. It is, and so is the whole dry troposphere. Polar cap (60–90°) /
+tropics (0–15°) age at the end of 1994, last 60 days:
+
+| run | clock | 500 hPa | 300 hPa | 200 hPa | 150 hPa | 100 hPa |
+|---|---|---|---|---|---|---|
+| dry control | surface | 1.16 / 0.89 | 2.58 / 1.25 | 3.36 / 1.34 | 3.73 / 1.42 | 4.37 / 2.08 |
+| dry control | 500 hPa | 0.61 / 0.39 | 2.15 / 0.80 | 3.03 / 0.90 | 3.45 / 0.98 | 4.16 / 1.68 |
+| strat81 | surface | 1.18 / 1.40 | 2.23 / 1.65 | 3.28 / 1.71 | 3.92 / 1.83 | 4.56 / 2.45 |
+| strat81 | 500 hPa | 0.11 / 0.03 | 1.18 / 0.56 | 2.48 / 0.66 | 3.29 / 0.82 | 4.11 / 1.58 |
+| full ECHAM | surface | 0.60 / 0.39 | 0.81 / 0.38 | 1.07 / 0.39 | 1.31 / 0.41 | 2.03 / 0.48 |
+| full ECHAM | 500 hPa | 0.10 / 0.00 | 0.46 / 0.04 | 0.78 / 0.06 | 1.05 / 0.08 | 1.83 / 0.16 |
+| CLaMS (surface clock) | | 0.23 / 0.05 | 0.56 / 0.04 | 1.21 / 0.06 | 1.70 / 0.10 | 2.79 / 0.23 |
+
+In the dry model air takes ~1.7 yr from 500 hPa to 100 hPa in the tropics (CLaMS: weeks; full ECHAM 0.16 yr) and the
+polar upper troposphere is 2–3 yr old (CLaMS 0.6–1.2). The dry troposphere has no convection and no boundary-layer
+turbulence: its only vertical mixing is the resolved (ERA5-nudged, T63) motion plus the numerical diffusion of the
+semi-Lagrangian interpolation — which is why strat81, with finer layers and *less* numerical vertical diffusion, is
+older still at 300 hPa in the tropics (1.65 vs 1.25) although its 500 hPa clock is reset over the same region.
+
+The entry-age clock `aoa150` (zero below 150 hPa, carried since Phase 10) removes the troposphere. Tropics (0–15°) /
+polar cap (60–90°):
+
+| run | 100 hPa | 70 hPa | 55 hPa | 30 hPa | 12 hPa |
+|---|---|---|---|---|---|
+| dry control | 0.46 / 2.91 | 0.91 / 3.51 | 1.39 / 3.86 | 2.55 / 4.27 | 3.80 / 4.62 |
+| strat81 | 0.49 / 2.91 | 0.93 / 3.55 | 1.40 / 3.90 | 2.57 / 4.31 | 3.83 / 4.63 |
+| full ECHAM | 0.08 / 1.65 | 0.34 / 2.21 | 0.99 / 2.73 | 2.33 / 3.64 | 3.34 / 4.25 |
+| WACCM6 REF-D1 entry age (2005–2009) | 0.03 / 2.15 | 0.48 / 3.01 | 1.19 / 3.71 | 2.10 / 4.16 | 2.90 / 4.32 |
+
+**Reading.** Measured from the tropopause, the dry model's lower stratosphere is close to WACCM6 — 55 hPa 1.39 vs 1.19
+in the tropics, 3.86 vs 3.71 over the poles — and only the upper stratosphere is too old (12 hPa 3.80 vs 2.90; the
+deep-branch deficit of the w* analysis). The 1.4 yr excess of the surface clock at 55 hPa (2.74 vs CLaMS 1.33) is
+therefore mostly the dry troposphere's transit, not the Brewer–Dobson circulation. The full physics, by the same clock, is
+**too young** throughout (55 hPa 0.99 / 2.73; 12 hPa 3.34 / 4.25), consistent with its too-strong circulation. Every
+surface-clock statement about the stratosphere in Phases 4–12 carries this tropospheric offset; the age-of-air criterion
+should use `aoa150` against WACCM6's entry age (and `aoa500` as a second view), which Decision 22 anticipated.
+
+Causes of the old dry troposphere and possible fixes, for Phase 13 or a decision: (i) no sub-grid vertical mixing —
+add a dry convective adjustment / vertical tracer diffusion in the troposphere, or JCM's TTE/TKE diffusion term if it
+runs without moisture physics; (ii) the surface clock's reset region is only the lowest two layers (a few tens of metres
+on L95) — a reset below the boundary-layer top would be closer to CLaMS's boundary condition; (iii) analysis-side, and
+free: judge the stratosphere by the entry-age clock, which is what the transport emulator needs anyway.
+
 ## Open questions
 
 - Why does the tropical ascent stall between 50 and 20 hPa in every configuration (w* ≈ 0 at 30 hPa against WACCM6's
