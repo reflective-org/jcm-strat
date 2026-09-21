@@ -97,7 +97,11 @@ def main() -> None:
     ap.add_argument("--last-saves", type=int, default=12,
                     help="model saves (5-day means) to average: 12 = the last 60 days (Phases 4-8), 73 = the last year")
     ap.add_argument("--var", default="aoa", help="clock variable: aoa (700 hPa reset), aoa150, aoa_sfc, aoa500 (Phase 12)")
+    ap.add_argument("--mark-levels", default=None, help="comma-separated pressures (hPa) drawn as dashed lines on the triptych, e.g. 500,55,30; "
+                                                       "the file gets the suffix _levels")
+    ap.add_argument("--pmax", type=float, default=300.0, help="bottom of the pressure axis in hPa (default 300; use 1000 to see the troposphere)")
     a = ap.parse_args()
+    marks = [float(v) for v in a.mark_levels.split(",")] if a.mark_levels else []
     y0, y1 = (int(s) for s in a.years.split("-")); years = list(range(y0, y1 + 1))
     run = os.path.basename(a.rundir.rstrip("/")); os.makedirs(a.outdir, exist_ok=True)
     if a.var != "aoa":
@@ -127,11 +131,14 @@ def main() -> None:
     for ax, (p, lat, age, title, _, _) in zip(axes, sources):
         cf = ax.contourf(lat, p, age, levels=levels, cmap="viridis", extend="max")
         ax.contour(lat, p, age, levels=levels[::4], colors="w", linewidths=0.5)
-        ax.set_yscale("log"); ax.set_ylim(300, 1); ax.set_title(title, fontsize=8); ax.set_xlabel("latitude")
+        ax.set_yscale("log"); ax.set_ylim(a.pmax, 1); ax.set_title(title, fontsize=8); ax.set_xlabel("latitude")
+        for lv in marks:
+            ax.axhline(lv, color="w", ls="--", lw=0.9)
+            ax.text(lat.max() - 2, lv, f"{lv:g} hPa", color="w", fontsize=7, ha="right", va="bottom")
     axes[0].set_ylabel("pressure (hPa)")
     fig.colorbar(cf, ax=axes, label="mean age (yr)", shrink=0.9)
     fig.suptitle(f"{a.label or 'Phase 4'}: age of air, zonal mean")
-    f1 = os.path.join(a.outdir, f"{run}_aoa_triptych.png"); fig.savefig(f1, dpi=130, bbox_inches="tight"); print("wrote", f1)
+    f1 = os.path.join(a.outdir, f"{run}_aoa_triptych{'_levels' if marks else ''}.png"); fig.savefig(f1, dpi=130, bbox_inches="tight"); print("wrote", f1)
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
     rows = []
