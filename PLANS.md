@@ -408,7 +408,7 @@ near-zero tropical ascent between 50 and 20 hPa and a weak deep branch, i.e. mis
 (downward control) and a relaxation whose single 15-day time scale and fixed equilibrium profile misplace the winds that
 filter the waves. The full physics costs 11× (3.1-3.4 h/yr) and over-drives the shallow branch instead.
 
-**Susanne's choice (2026-09-21): option (c), both changes together**, after a few more questions. The two components,
+**Susanne's choice (2026-09-21): option (c), both changes together, plus a drag-only run alongside it.** The two components,
 so each can also be run alone if the combined run needs separating:
 
 (a) **Jucker et al. (2013, J. Atmos. Sci., "Maintenance of the stratospheric structure in an idealized GCM") relaxation**
@@ -426,14 +426,36 @@ free), QBO nudging as its own `QboNudging` term (tau 1 d, 90-1 hPa, mean-preserv
 tracer term (4 clocks incl. aoa500, n2o/cfc11, injections not written), 6-hourly output, Gregorian calendar, one
 calendar year per segment, 1990-1994.
 
-**Runs.** `p13_jucker_gwd` (c) first; (a) `p13_jucker` and (b) `p13_gwd` only if (c) needs separating. Each ~30 min/yr
-on strat63, 5 years ≈ 2.5 h on one GPU (GPU 0 first). Smoke 5 days, then the chain, then `scripts/phase12_compare.py`
-against `p12ctl_5yr` (tags jucker_gwd, ...) and against `p12echam_5yr`.
+**Why the drag stays in (Susanne, 2026-09-21).** By downward control the ascent through 30 hPa is set by the wave drag
+above 30 hPa - in reality mostly gravity waves breaking between 30 and 80 km. The dry model has no drag there but the
+sponge in the top four levels, so the 50-20 hPa stall and the 12 hPa entry age (3.80 vs WACCM6 2.90 yr) have no forcing
+to fix them; a better relaxation changes the winds the waves propagate through but cannot supply momentum where no waves
+break. Caveat from Phase 12 run 4: the Hines scheme at its ECHAM defaults over-drives the full-physics circulation
+(70 hPa upwelling 3x WACCM6, no Arctic vortex, polar 55 hPa entry age 2.7 vs 3.7 yr). So the drag goes in as a
+**tunable experiment with acceptance criteria**, not as a fixed component; the source strength (and launch level) are
+the knobs, a prescribed Rayleigh drag profile in the upper stratosphere/mesosphere is the fallback (one tunable number,
+also the fallback if Hines cannot run without the moisture physics).
 
-**Acceptance.** Tropical w* at 30 and 10 hPa within a factor 1.5 of WACCM6 (0.26 / 0.47 mm/s; control 0.09 / 0.13); no
-50-20 hPa stall; 55 hPa tropical age with the 500 hPa clock within 0.5 yr of CLaMS (1.33; control 2.39); age above 20 hPa
-no longer flat at the lid value; polar-night jets no worse than the control (u(60N,10hPa) DJF, u(60S) JJA vs ERA5);
-cost ≤ 1.3× the control.
+**Runs, two at once (GPU 0 and 1):**
+* `p13_gwd` - **drag only**: Phase 12 control + `HinesGwd`. Isolates the wave-drag effect.
+* `p13_jucker_gwd` - **(c) both**: drag + the Jucker et al. relaxation. The relaxation-only effect is the difference
+  between the two runs; `p13_jucker` alone is run only if that difference needs its own check.
+Each ~30 min/yr on strat63, 5 years ~2.5 h. Smoke 5 days each, then the chains, then `scripts/phase12_compare.py`
+against `p12ctl_5yr` (tags gwd, jucker_gwd) and against `p12echam_5yr`; age of air judged by the ENTRY-AGE clock
+`aoa150` against WACCM6 REF-D1 (Phase 12 addendum: the surface clock carries a 1-2 yr tropospheric transit in the dry
+model), with `aoa500` and `aoa_sfc` shown alongside.
+
+**Acceptance (entry-age clock).** Tropical w* at 30 and 10 hPa within a factor 1.5 of WACCM6 (0.26 / 0.47 mm/s; control
+0.09 / 0.13); no 50-20 hPa stall; tropical `aoa150` at 12 hPa within 0.4 yr of WACCM6 (2.90; control 3.80) and at
+55 hPa within 0.3 yr (1.19; control 1.39, i.e. do not make it worse); polar-cap `aoa150` at 55 hPa not below WACCM6's
+3.7 yr (the full-physics failure); polar-night jets no weaker than the control's (u(60N, 10 hPa) DJF, u(60S) JJA vs
+ERA5); age above 20 hPa no longer flat at the lid value; cost <= 1.3x the control. If `p13_gwd` overshoots like the full
+physics, one retune of the Hines source strength before falling back to the Rayleigh profile.
+
+**Troposphere (separate, small).** The dry troposphere mixes tracers 10x too slowly (no convection / boundary-layer
+turbulence; Phase 12 addendum). Not part of the two runs above. Options, if the surface clock itself must be right:
+reset the surface clock through the boundary layer (p > 850 hPa) instead of the lowest two layers; a dry convective
+adjustment or a prescribed vertical tracer diffusion in the troposphere. Otherwise judge the stratosphere by `aoa150`.
 
 **Record.** `docs/outputs/13_relaxation_gwd/output.md`, KEY_DECISIONS row for the relaxation choice, PDF as for Phase 12.
 Branch `phase13-relaxation-gwd` off `phase12-circulation`.
