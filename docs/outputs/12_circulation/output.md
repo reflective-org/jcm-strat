@@ -1,8 +1,12 @@
 # Phase 12 — circulation tests: QBO nudging off, and the full L95 troposphere (1990–1994)
 
-Status: **complete** (2026-09-16: setup 14:00–15:00 PDT; chains 15:05–18:35 PDT on GPUs 1, 2 and 3; diagnostics done
-20:31 PDT; record 2026-09-18). Runs `p12ctl_5yr`, `p12noqbo_5yr`, `p12l81_5yr` (1990–1994); figures and metrics
-tables below. Headline: **neither change closes the age-of-air gap.** Switching the QBO nudging off *weakens* the
+Status: **complete** (runs 1–3: 2026-09-16, chains 15:05–18:35 PDT on GPUs 1, 2 and 3, diagnostics 20:31 PDT; run 4,
+full physics: 2026-09-20 14:27 PDT → 2026-09-21 02:25 PDT on GPU 0, diagnostics 02:59 PDT). Runs `p12ctl_5yr`,
+`p12noqbo_5yr`, `p12l81_5yr`, `p12echam_5yr` (1990–1994); figures and metrics tables below. Headline: **neither dry-model
+change closes the age-of-air gap, but JCM's full physics does** — with radiation, convection and gravity-wave drag the
+tropical age of air lies on CLaMS (1.33 vs 1.33 yr at 55 hPa, 3.64 vs 3.68 at 12 hPa), so the old age is a property of
+the dry Polvani–Kushner configuration, not of the dycore or the tracer scheme. The full-physics run over-does the shallow
+branch instead (100 hPa upwelling 3.7× WACCM6; extratropical lower stratosphere 1.4 yr too young). Switching the QBO nudging off *weakens* the
 lower-branch upwelling and makes the tropical lower stratosphere 0.3 yr older; the full L95 troposphere doubles the
 deep-branch upwelling at 10 hPa (towards WACCM6) but leaves the stratospheric age (500 hPa clock) unchanged while adding
 0.4 yr of tropospheric transit to the surface clock.
@@ -68,7 +72,7 @@ that argument would fail at instantiation). Caught by `tests/test_phase12.py`; h
 | `p12l81_1990..1994` → `p12l81_5yr` | `p12_l81` | 2 | 1990–1994 | QBO on, strat81 (own ERA5 windows, 26 GB/yr) |
 | `p12ctl_1990..1994` → `p12ctl_5yr` | `p12_ctl` | 1 | 1990–1994 | control = Phase 11 A + aoa500; the "before" (started 15:05 PDT) |
 | `p12noqbo_cpusmoke` | `p12_noqbo`, 5 d on the CPU | — | — | instantiation check while the GPUs were unavailable (2026-09-16) |
-| `p12echam_smoke5`, `p12echam_1990..1994` → `p12echam_5yr` | `p12_echam` | 0 | 1990–1994 | **run 4 (2026-09-18, Susanne: "Do the full physics 5 year run with the clocks")**: JCM's full ECHAM physics (RRTMGP, Tiedtke, Sundqvist/1M clouds, TTE/TKE, ECHAM surface, Hines + Lott–Miller GWD) on T63L95 with the same ERA5 nudging, the same QBO nudging as a separate term, the Phase 12 tracers and omega; only the dynamics, omega and clocks written (`output_keep`). Pipeline `scripts/phase12_echam.sh`, tmux `strat_p12_echam`, ~2.6 h/yr expected |
+| `p12echam_smoke5`, `p12echam_1990..1994` → `p12echam_5yr` | `p12_echam` | 0 | 1990–1994 | **run 4 (2026-09-18, Susanne: "Do the full physics 5 year run with the clocks")**: JCM's full ECHAM physics (RRTMGP, Tiedtke, Sundqvist/1M clouds, TTE/TKE, ECHAM surface, Hines + Lott–Miller GWD) on T63L95 with the same ERA5 nudging, the same QBO nudging as a separate term, the Phase 12 tracers and omega; only the dynamics, omega and clocks written (`output_keep`). Pipeline `scripts/phase12_echam.sh`. First attempt (6-hourly target, 10-day chunks) OOMed at chunk 2 on 2026-09-18; the relaunch with the 12-hourly target died at its pytest gate on a stale assertion of mine and was only noticed two days later; final run 2026-09-20 14:27 → 2026-09-21 02:25 PDT, 3.1–3.4 h/yr |
 
 Commands (all from `scripts/phase12_run.sh`):
 ```
@@ -89,7 +93,8 @@ python scripts/phase12_compare.py --before runs/p12ctl_5yr --after runs/p12l81_5
 | w*, QBO off (`noqbo_wstar*.png`, `noqbo_metrics.md`) | tropical w* and upward mass flux at 100/70/30/10 hPa before vs after vs WACCM6; is the deep branch (10 hPa and above) stronger without the wind relaxation? | **no**: annual tropical w* 70 / 50 / 30 / 10 hPa 0.33 / 0.26 / 0.09 / 0.13 → 0.25 / 0.16 / 0.06 / 0.18 mm/s (WACCM6 0.21 / 0.20 / 0.26 / 0.47); up-flux 70 hPa 8.3 → 7.6, 10 hPa 1.26 → 1.26 × 10⁹ kg/s. The nudging adds ~0.1 mm/s of lower-branch upwelling (its secondary circulation); the deep branch does not depend on it |
 | w*, strat81 (`l81_wstar*.png`, `l81_metrics.md`) | same, strat63 vs strat81 | **deep branch doubled, lower branch weaker**: 70 / 50 / 30 / 10 hPa 0.33 / 0.26 / 0.09 / 0.13 → 0.26 / 0.17 / 0.02 / 0.31 mm/s; DJF 10 hPa 0.41 → 0.59 (WACCM6 0.64); up-flux 10 hPa 1.26 → 1.34 (WACCM6 1.37), 70 hPa 8.3 → 7.7 (WACCM6 6.1). The 30 hPa minimum (~0) remains |
 | age of air (`*_age_aoa_sfc.png`, `*_age_aoa500.png`, `*_age_profiles.png`) | 55 hPa tropics (ctl ≈ 2.7 yr after 5 yr, CLaMS 1.3) and the tropics–extratropics contrast; does either change move the upper stratosphere (20–1 hPa) off the lid value? | **no**: 55 hPa tropics, surface clock 2.74 → 3.00 (QBO off) / 3.07 (strat81); 500 hPa clock 2.39 → 2.67 / 2.29. 12 hPa within ±0.2 yr of the control everywhere; 20–1 hPa stays at the lid value (4.5–5.2 yr) in all three runs |
-| throughput | noqbo ≈ ctl ≈ Phase 11 minus the output saving; strat81 ≈ 1.3× slower | ctl 4,440 d/hr stepping (7 ms/step), noqbo 4,990 (the QBO term is ~11 % of a step), strat81 3,590 (8 ms/step); end-to-end 800–880 d/hr = **27–30 min/yr for all three** — output-bound, so the extra 18 levels cost nothing end-to-end and dropping the 19 injection tracers saved little (`docs/outputs/throughput.csv`) |
+| full physics (`echam_*`, run 4) | does the age excess survive JCM's own physics (RRTMGP, Tiedtke, Hines/SSO)? | **no**: 55 hPa tropics 1.33 (surface clock) / 1.07 yr (500 hPa clock) vs CLaMS 1.33, 12 hPa tropics 3.64 / 3.51 vs 3.68; the tropical profile lies on CLaMS from 100 to 5 hPa. Extratropics at 55 hPa **too young** (2.73 vs 4.12; WACCM6 entry age 3.40): tropics–extratropics contrast 1.4 vs 2.8 yr. w*: 100 hPa 1.46 mm/s (WACCM6 0.40), 70 hPa 0.60 (0.21), 50 hPa 0.20 (0.20), 30 hPa 0.28 (0.26), 10 hPa 0.87 (0.47); up-flux 70 hPa 11.3 vs 6.1, 10 hPa 2.74 vs 1.37 × 10⁹ kg/s |
+| throughput | noqbo ≈ ctl ≈ Phase 11 minus the output saving; strat81 ≈ 1.3× slower | ctl 4,440 d/hr stepping (7 ms/step), noqbo 4,990 (the QBO term is ~11 % of a step), strat81 3,590 (8 ms/step); end-to-end 800–880 d/hr = **27–30 min/yr for all three** — output-bound, so the extra 18 levels cost nothing end-to-end and dropping the 19 injection tracers saved little. Full physics: 146–166 d/hr stepping (181–206 ms/step), 106–118 d/hr end-to-end = **3.1–3.4 h/yr**, 16 h for the chain (segment 1992 took 3.1 h with chunks slowed to 320 s for part of the year; cause not identified) (`docs/outputs/throughput.csv`) |
 
 ## Results (`docs/outputs/12_circulation/`, 2026-09-16)
 
@@ -133,17 +138,43 @@ transit is model artefact, not stratospheric transport, and it inflates every su
 (whose surface → tropopause transit is weeks). The 500 hPa clock is the fairer one to compare, and it says: the
 strat81 stratosphere is as old as strat63's.
 
-**Reading.** Both suspects are cleared. The lower branch is already stronger than WACCM6's, and the age excess
+**Run 4 — JCM's full ECHAM physics** (`echam_*`, 2026-09-21; T63L95, the same ERA5 and QBO nudging, RRTMGP with the
+prescribed ozone climatology, Tiedtke convection, Hines and Lott–Miller gravity-wave drag; 12-hourly nudging target
+because the 6-hourly one ran out of GPU memory beside RRTMGP at the second chunk, as the Phase 6 reference did).
+**The age of air is not too old.** The tropical profile lies on CLaMS from the tropopause to 5 hPa
+(`echam_age_profiles.png`, right column): 55 hPa tropics 1.33 yr with the surface clock against CLaMS 1.33, 12 hPa
+3.64 against 3.68; with the 500 hPa clock 1.07 / 3.51. The 20–1 hPa layer, flat at the lid value in every dry run,
+now has latitude structure and the 12 hPa age is right. The surface → 500 hPa transit is 0.26 yr (the dry model's
+0.35–0.78): convection does the tropospheric mixing the dry model lacks. What is wrong has flipped sign: the
+extratropical lower stratosphere is **too young** — 55 hPa at 50–70° 2.73 yr against CLaMS 4.12 (WACCM6 entry age
+3.40), so the tropics–extratropics contrast is 1.4 yr against CLaMS's 2.8 — and the circulation is **too strong**,
+above all its shallow branch: tropical w* 1.46 mm/s at 100 hPa (WACCM6 0.40), 0.60 at 70 hPa (0.21), up-flux
+28.7 × 10⁹ kg/s at 100 hPa (10.9) and 11.3 at 70 hPa (6.1); at 50 and 30 hPa it matches WACCM6 (0.20 / 0.28 vs 0.20 /
+0.26), at 10 hPa it is twice WACCM6 (0.87 vs 0.47). The extratropical downwelling is correspondingly stronger and
+deeper than the control's (`echam_wstar.png`, difference column: purple everywhere poleward of 30°). The 100 hPa
+numbers sit at the top of the nudged layer and inside the convective outflow, so part of that excess is convection
+rather than the residual circulation, but 70 hPa is above both and still 3× WACCM6. This is the same model whose
+Phase 6 reference year had no Arctic vortex and a half-strength Antarctic one (issue #35): an over-driven
+Brewer–Dobson circulation and a weak vortex are two faces of too much wave forcing (or too little wave filtering)
+of the extratropical stratosphere. It also carries the Phase 6 finding that the full physics has the better
+temperature and the worse winds.
+
+**Reading.** Both dry-model suspects are cleared, and the full-physics run locates the problem. The lower branch is already stronger than WACCM6's, and the age excess
 (2.3–2.4 yr vs CLaMS 1.3 at 55 hPa with the 500 hPa clock; 4.4 vs 3.7 at 12 hPa) sits with (i) the near-zero ascent
 between 50 and 20 hPa, which neither change repairs, (ii) the lid-filled upper stratosphere (20–1 hPa at 4.5–5 yr in
 all three runs), and (iii) the tropospheric transit of the surface clock. The 50–20 hPa stall and the weak deep branch
 point at the wave driving of the middle and upper stratosphere (planetary waves that the dry, ERA5-nudged troposphere
 sends up; no gravity-wave drag) rather than at the tropospheric grid or the QBO term; the strat81 result shows the
-deep branch does respond to how the troposphere is resolved, so the wave source is part of it.
+deep branch does respond to how the troposphere is resolved, so the wave source is part of it. Run 4 confirms this
+from the other side: with radiative heating, convection and gravity-wave drag the tropical ascent has no 50–20 hPa
+stall and the tropical age is CLaMS's. The dry model is missing (i) the radiative heating that the tropical ascent
+balances (Polvani–Kushner relaxation to a fixed profile is not the same forcing), (ii) gravity-wave drag, and (iii)
+tropospheric convection (its surface clock carries a 0.35–0.8 yr transit that the full physics reduces to 0.26). Which
+of the three matters most for the stratospheric age is not separated here.
 
 Figures: `noqbo_wstar.png`, `noqbo_wstar_tropics.png`, `noqbo_age_aoa_sfc.png`, `noqbo_age_aoa500.png`,
-`noqbo_age_profiles.png`, `noqbo_metrics.md`; the same six with prefix `l81_`; `ctl_vs_p11a_{wstar,wstar_tropics,
-age_aoa_sfc,age_aoa,age_profiles}.png` + `_metrics.md`; `p12{ctl,noqbo,l81}_5yr_{aoa_sfc,aoa500}_aoa_{triptych,profiles}.png`.
+`noqbo_age_profiles.png`, `noqbo_metrics.md`; the same six with prefixes `l81_` and `echam_`; `ctl_vs_p11a_{wstar,wstar_tropics,
+age_aoa_sfc,age_aoa,age_profiles}.png` + `_metrics.md`; `p12{ctl,noqbo,l81,echam}_5yr_{aoa_sfc,aoa500}_aoa_{triptych,profiles}.png`.
 
 ## Open questions
 
@@ -158,3 +189,13 @@ age_aoa_sfc,age_aoa,age_profiles}.png` + `_metrics.md`; `p12{ctl,noqbo,l81}_5yr_
   5 yr — an artefact-dominated metric, as Phase 11 showed.
 - The QBO-off run has no QBO at all (weak steady easterlies); a free QBO would need the gravity-wave forcing the
   dry model lacks. Nudging stays on (KEY_DECISIONS #27 stands).
+- Full physics: the shallow branch is 3× too strong and the extratropical lower stratosphere 1.4 yr too young, with
+  the weak vortices of issue #35. Candidates: the Hines gravity-wave drag settings (the deep-branch excess at 10 hPa
+  and the missing vortex both point at it), convective overshoot into the nudged layer, the 150 hPa nudging cutoff
+  interacting with convection. Not run.
+- Which physics component closes the dry model's age gap? The order of tests, cheapest first: (a) dry model + Hines
+  GWD (issue: DEFERRED "mesospheric drag"), (b) dry model + RRTMGP with the prescribed ozone (issue #2, the Phase 5
+  RRTMGP item), (c) both. Each is a 5-year chain at ~30 min/yr. Alternatively accept the full physics as the transport
+  baseline at 3.3 h/yr (11× the dry model): 30 years would be ~4 days on one GPU.
+- The 155 GB of 6-hourly T63L95 ERA5 windows for 1990–1994 in `cache/era5` are unused (the run needed 12-hourly);
+  delete or keep for a later run.
