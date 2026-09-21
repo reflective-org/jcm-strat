@@ -398,3 +398,42 @@ the phase's `docs/outputs/<NN_phase>/output.md` is updated before the PR is open
 2. Minimum acceptable Δz in the 18–30 km aerosol layer, needed before issue 4 starts.
 3. What counts as "realistic enough": one agreed number on age of air and one on vortex
    strength, before PR 5's run so the result is decided, not argued.
+
+# Phase 13 (planned, 2026-09-21) — radiative relaxation and gravity-wave drag for the dry model
+
+**Why.** Phase 12 (`docs/outputs/12_circulation/`) showed that the too-old stratospheric age of air belongs to the dry
+Polvani-Kushner configuration: JCM's full physics puts the tropical age on CLaMS (1.33 yr at 55 hPa) under the same ERA5
+and QBO nudging, while no dry-model change (QBO off, full L95 troposphere) moved it. The dry model's deficit is the
+near-zero tropical ascent between 50 and 20 hPa and a weak deep branch, i.e. missing wave drag above ~20 hPa
+(downward control) and a relaxation whose single 15-day time scale and fixed equilibrium profile misplace the winds that
+filter the waves. The full physics costs 11× (3.1-3.4 h/yr) and over-drives the shallow branch instead.
+
+**Susanne's choice (2026-09-21): option (c), both changes together**, after a few more questions. The two components,
+so each can also be run alone if the combined run needs separating:
+
+(a) **Jucker et al. (2013, J. Atmos. Sci., "Maintenance of the stratospheric structure in an idealized GCM") relaxation**
+    in place of the Held-Suarez + Polvani-Kushner *thermal relaxation*: equilibrium temperature T_e(lat, p, season) from a
+    radiative calculation with seasonal insolation and ozone, and a height-dependent relaxation time tau(p) (weeks in the
+    lower stratosphere, days near the stratopause). New relaxation term subclassing `HeldSuarezColumns` like
+    `PolvaniKushnerColumns` does, so the Held-Suarez boundary-layer friction stays. T_e and tau: from the paper's data if
+    available, otherwise reconstructed from the paper (open: ask Susanne for a pointer).
+(b) **Gravity-wave drag**: JCM's `HinesGwd` term (`jcm.physics.gravity_waves.hines`) added to the dry physics list as it is
+    in `physics/echam.yaml`; check what it needs from the state (it ran inside the full package; the dry model has no
+    moisture physics). If it cannot run dry, a Rayleigh drag profile in the upper stratosphere/mesosphere is the fallback.
+
+**Unchanged from the Phase 12 control** (`p12_ctl`): ERA5 nudging of u, v, T below 150 hPa (tau 6 h, lowest 2 levels
+free), QBO nudging as its own `QboNudging` term (tau 1 d, 90-1 hPa, mean-preserving), strat63 grid and sponge, Phase 12
+tracer term (4 clocks incl. aoa500, n2o/cfc11, injections not written), 6-hourly output, Gregorian calendar, one
+calendar year per segment, 1990-1994.
+
+**Runs.** `p13_jucker_gwd` (c) first; (a) `p13_jucker` and (b) `p13_gwd` only if (c) needs separating. Each ~30 min/yr
+on strat63, 5 years ≈ 2.5 h on one GPU (GPU 0 first). Smoke 5 days, then the chain, then `scripts/phase12_compare.py`
+against `p12ctl_5yr` (tags jucker_gwd, ...) and against `p12echam_5yr`.
+
+**Acceptance.** Tropical w* at 30 and 10 hPa within a factor 1.5 of WACCM6 (0.26 / 0.47 mm/s; control 0.09 / 0.13); no
+50-20 hPa stall; 55 hPa tropical age with the 500 hPa clock within 0.5 yr of CLaMS (1.33; control 2.39); age above 20 hPa
+no longer flat at the lid value; polar-night jets no worse than the control (u(60N,10hPa) DJF, u(60S) JJA vs ERA5);
+cost ≤ 1.3× the control.
+
+**Record.** `docs/outputs/13_relaxation_gwd/output.md`, KEY_DECISIONS row for the relaxation choice, PDF as for Phase 12.
+Branch `phase13-relaxation-gwd` off `phase12-circulation`.
