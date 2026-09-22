@@ -221,6 +221,29 @@ runs without moisture physics; (ii) the surface clock's reset region is only the
 on L95) — a reset below the boundary-layer top would be closer to CLaMS's boundary condition; (iii) analysis-side, and
 free: judge the stratosphere by the entry-age clock, which is what the transport emulator needs anyway.
 
+### Addendum 2026-09-22: the mesosphere in the Phase 12 runs (Susanne: "is the mesosphere still not ventilated?")
+
+The clocks cannot answer above the 1 hPa lid (they are relaxed to WACCM there), so the dynamics were used: the TEM
+residual vertical velocity w* from daily frames of the 1994 segment of each run, and the latitude structure of the
+entry-age clock just below the lid. Tropics 15S–15N / NH cap 60–90° / SH cap 60–90°, mm/s, upward positive:
+
+| run | 10 hPa | 5 hPa | 2 hPa | 1 hPa | 0.5 hPa | 0.3 hPa | `aoa150` latitude std at 3 / 1.5 hPa [yr] |
+|---|---|---|---|---|---|---|---|
+| dry control | +0.11 / −1.00 / −0.79 | +0.57 / −0.90 / −0.72 | +0.50 / −0.26 / −0.25 | **−0.39** / −0.53 / −0.96 | **−0.74** / +0.02 / −0.68 | **−0.36** / −0.15 / −1.11 | 0.07 / 0.07 |
+| strat81 | +0.28 / −0.93 / −0.67 | +0.78 / −1.01 / −0.59 | +0.35 / −0.49 / −0.08 | **−0.75** / −0.71 / −0.74 | **−0.98** / −0.07 / −0.51 | **−0.12** / −0.23 / −1.06 | 0.07 / 0.06 |
+| full ECHAM | +0.88 / −1.55 / −1.23 | +0.96 / −1.71 / −1.22 | +0.60 / −0.42 / −1.76 | +0.96 / −1.29 / −3.19 | +1.31 / −2.82 / −5.27 | +1.92 / −4.22 / −7.04 | 0.20 / 0.15 |
+
+(The Eulerian zonal-mean [w] gives the same tropical picture: −0.5 to −1.2 mm/s at 1–0.5 hPa in both dry runs, +1.0 to
++1.7 in the full physics.) In both dry runs the tropical ascent weakens above 5 hPa, vanishes near 2 hPa and is
+**downward from ~1.5 hPa to the sponge**, with only weak descent over the poles: there is no mesospheric Brewer–Dobson
+cell, and what circulation exists at the top is a weak reversed one. With the 1 hPa tracer lid this downward tropical
+motion carries lid-valued (WACCM-age) air into the upper stratosphere, which is why the age between 20 and 1 hPa is flat
+in latitude (std 0.07 yr) in every dry run. strat81 changes nothing above 2 hPa. The full physics has the expected
+structure: tropical ascent strengthening upward to ~2 mm/s at 0.3 hPa and polar descent of 3–7 mm/s, i.e. a
+mesospheric cell driven by its gravity-wave drag (Hines + Lott–Miller) — too strong, like the rest of its circulation.
+This is the wave-drag deficit of the Phase 13 plan seen directly at the top: without drag above the stratopause the
+sponge and the Polvani–Kushner relaxation are the only forcings there, and they do not produce a poleward flow.
+
 ## Open questions
 
 - Why does the tropical ascent stall between 50 and 20 hPa in every configuration (w* ≈ 0 at 30 hPa against WACCM6's
