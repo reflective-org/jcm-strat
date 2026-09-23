@@ -1,4 +1,4 @@
-"""strat47 / strat63 / strat81: subsets of L95 with the stratosphere intact, consistent diffusion orders and sponge (CPU)."""
+"""strat47 / strat63 / strat77 / strat81: subsets of L95 with the stratosphere intact, consistent diffusion orders and sponge (CPU)."""
 import os
 
 os.environ.setdefault("JAX_PLATFORMS", "cpu")
@@ -38,6 +38,19 @@ def test_strat81_is_strat63_with_the_full_l95_troposphere():
     assert levels.sponge_for(81) == levels.sponge_for(63)                # the p9_l63 sponge carries over
 
 
+def test_strat77_is_strat63_with_the_full_l95_mesosphere():
+    """Phase 13: every L95 level above 1.08 hPa is back; stratosphere and troposphere are strat63's; L95's sponge."""
+    p77, p63 = levels.pressures_hpa(77), levels.pressures_hpa(63)
+    assert np.allclose(p77[p77 >= 1.0], p63[p63 >= 1.0])                # identical from 1.08 hPa down (47 + 8 layers)
+    assert np.allclose(p77[p77 <= 1.1], L95[L95 <= 1.1])                # the whole L95 mesosphere above it
+    assert np.sum(p77 < 1.0) == 22 and np.sum(p77 > 160.0) == 8
+    lev, ensp = levels.sponge_for(77)
+    assert (lev, ensp) == (10, 2.0)                                       # L95's own sponge, not the remapped one
+    assert np.isclose(p77[lev], L95[10])                                  # same bottom interface (0.165 hPa)
+    # the free mesosphere (1.08 hPa up to the sponge bottom) has 12 layers instead of strat63's 4
+    assert np.sum((p77 < 1.1) & (p77 > p77[lev])) == 12 and np.sum((p63 < 1.1) & (p63 > p63[4])) == 4
+
+
 def test_strat47_keeps_the_lower_stratosphere_at_l95_spacing():
     p = levels.pressures_hpa(47)
     lower = L95[(L95 >= 29.0) & (L95 <= 160.0)]          # 30 .. 159 hPa
@@ -62,7 +75,7 @@ def test_orders_have_one_entry_per_level_and_grade_downward(n, trunc):
 def test_sponge_matches_the_experiment_yamls():
     import yaml
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    for n, name in ((63, "p9_l63"), (47, "p9_l47")):
+    for n, name in ((63, "p9_l63"), (47, "p9_l47"), (77, "p13_gwd_l77")):
         cfg = yaml.safe_load(open(os.path.join(here, "jcm_strat", "config", "experiment", f"{name}.yaml")))
         lev, ensp = levels.sponge_for(n)
         assert cfg["run"]["sponge"]["levels"] == lev

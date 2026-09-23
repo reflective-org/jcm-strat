@@ -467,3 +467,24 @@ adjustment or a prescribed vertical tracer diffusion in the troposphere. Otherwi
 
 **Record.** `docs/outputs/13_relaxation_gwd/output.md`, KEY_DECISIONS row for the relaxation choice, PDF as for Phase 12.
 Branch `phase13-relaxation-gwd` off `phase12-circulation`.
+
+**Update 2026-09-23 (Susanne): what actually runs first.** Three runs, all 1990-1994, 6-hourly, in `scripts/phase13_run.sh`
+(tmux `strat_p13_run`), branch `phase13-gwd`, record `docs/outputs/13_gwd/`:
+
+* `p13_gwd` (GPU 1) - **drag only**, as above: `p12_ctl` + `HinesGwdLaunch` (JCM's Hines with the launch level given as a
+  pressure, 634 hPa = the L95 default level; JCM's fixed "10 levels above the surface" would be 126 hPa on the 8-layer
+  tropospheres of strat63/77) + `LottMillerSso` at JCM defaults, `MoistAirColumnState` prepended because the drag terms
+  read its pressure/height/density diagnostics. **The clocks keep the 1 hPa lid** (Susanne: "for tracers, keep the
+  relaxation of the clocks to WACCM above 1"); the mesosphere is judged by w* (`scripts/mesosphere_wstar.py`, the table
+  of the Phase 12 addendum), not by the clocks.
+* `p13_gwd_l77` (GPU 2) - the same on **strat77** = strat63 with all 22 L95 mesospheric layers (12 free layers of ~1.5 km
+  between 1.08 hPa and L95's own 10-level sponge, instead of 4 of ~3 km): does resolving where the waves break change the
+  mesospheric cell and the deep branch? Own ERA5 windows (hash 9fc7126b, ~25 GB/yr).
+* `p13_l81_n400` (GPU 3) - Phase 12's strat81 run (no drag) with the **ERA5 nudging cut off at 400 hPa** instead of 150
+  (`nudging.min_pressure_hpa`): the upper troposphere, the tropopause region and the wave fluxes into the stratosphere
+  become the model's own. Reuses the strat81 windows (the cutoff is a run-time mask).
+
+The Jucker et al. relaxation (a) is postponed, not dropped: the mesosphere result of 2026-09-22 made the drag the first
+question. Comparisons: gwd vs `p12ctl_5yr`, gwd_l77 vs gwd and vs ctl, l81_n400 vs `p12l81_5yr`, gwd vs `p12echam_5yr`;
+acceptance as above (entry-age clock `aoa150`), plus for the mesosphere: tropical w* UPWARD at 1-0.3 hPa and polar
+descent in the 1994 segment (the dry runs have -0.4 to -1 mm/s there, full ECHAM +1 to +2 / -3 to -7).

@@ -1,0 +1,18 @@
+# @package _global_
+# Phase 13 run 2: p13_gwd (drag on) on the strat77 grid = strat63 with all 22 L95 MESOSPHERIC layers put back
+# (jcm_strat/levels.py, grid/strat_t63_l77_hybrid.yaml): 22 mesosphere + 47 stratosphere + 8 troposphere, every
+# level an L95 level; L95's own 10-level sponge (levels.sponge_for(77) = (10, 2.0)), whose bottom (0.165 hPa) is
+# within one L95 interface of strat63's remapped sponge (0.198 hPa), so the free mesosphere spans the same
+# 1.08-0.17 hPa in 12 layers of ~1.5 km instead of 4 of ~3 km.
+# Purpose: with the drag in, does resolving where the waves break change the mesospheric cell and the deep
+# branch? One change against p13_gwd. Needs its own ERA5 nudging windows (coordinate hash in the file name):
+#   JAX_PLATFORMS=cpu python -m jcm_strat.prefetch_era5 --scheme calendar --years 1990-1994 --save-interval 0.25 -- +experiment=p13_gwd_l77
+#   EXPERIMENT=p13_gwd_l77 PREFIX=p13gwdl77 SCHEME=calendar YEARS=1990-1994 AGG=p13gwdl77_5yr SAVE_INTERVAL=0.25 GPU=2 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p13_gwd
+  - override /grid: strat_t63_l77_hybrid
+
+run:
+  sponge:
+    levels: 10
+    enspodi: 2.0
