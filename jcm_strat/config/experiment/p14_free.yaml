@@ -1,0 +1,24 @@
+# @package _global_
+# Phase 14: JCM's FULL ECHAM physics FREE-RUNNING - no ERA5 nudging of the troposphere, no QBO nudging - with the Phase 12
+# clocks, 10 years (1990-1999 as ten chained calendar-year segments; the years are labels for the tracer bookkeeping and
+# the initial state, the model sees present-day climatological boundary conditions, forcing_pd.nc, every year).
+# Susanne, 2026-09-22: "Can you create a new phase that runs JCM full physics with no nudging? Can you run it for 10 years?
+# Look at the same plots as in phase 12."
+# = p12_echam (T63L95, JCM level table, ERA5 initial state 1990-01-01, 6-hourly instantaneous output of the dynamics,
+# omega and clocks only, 5-day chunks, Gregorian calendar) with two things removed:
+#   * nudging: none - jcm.runners appends no NudgingTerm and attaches no ERA5 target (the group is overridden AND
+#     enabled repeated in the body, because ref_echam_sd's nudging keys - tau_hours, min_pressure_hpa, freq - merge onto
+#     any group and would otherwise look like a live configuration in the log);
+#   * physics/echam_free14: echam_prod12 without the qbo_nudging term.
+# Nothing sits GPU-resident besides the model, so the 12-hourly target and 5-day chunks of p12_echam are no longer
+# needed for memory; the chunk length is kept so the archives of the two runs are written the same way.
+# The 'before' for every Phase 12 diagnostic is p12echam_5yr (same package, nudged); the dry control p12ctl_5yr is shown too.
+#   EXTRA_PER_SEG="" FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" EXPERIMENT=p14_free \
+#     PREFIX=p14free SCHEME=calendar YEARS=1990-1999 AGG=p14free_10yr SAVE_INTERVAL=0.25 GPU=0 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p12_echam
+  - override /physics: echam_free14
+  - override /nudging: none
+
+nudging:
+  enabled: false

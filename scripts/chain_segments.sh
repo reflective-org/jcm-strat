@@ -44,7 +44,7 @@ _default_per_seg='physics.terms.held_suarez.qbo.year={year}'
 EXTRA_PER_SEG="${EXTRA_PER_SEG-$_default_per_seg}"        # '-' not ':-': set-but-empty = no per-segment override
 COMPACT="${COMPACT:-1}"
 if [ -z "${FIRST_SEG_EXTRA+x}" ]; then      # unset: the production experiments inject their WACCM initial state on segment 1
-  case "$EXPERIMENT" in p10_*|p11*|p12*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
+  case "$EXPERIMENT" in p10_*|p1[1-9]*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
 fi
 export CUDA_VISIBLE_DEVICES="$GPU"
 LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"
