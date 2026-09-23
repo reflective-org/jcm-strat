@@ -48,8 +48,8 @@ done
 # strat77: the 5-day smoke window (+ initial state) now, the five calendar years in their own tmux session
 JAX_PLATFORMS=cpu python -m jcm_strat.prefetch_era5 --days 5 --years "$y0" -- +experiment=p13_gwd_l77 > "$REPO/runs/p13_prefetch_l77_smoke.log" 2>&1 \
   || { step "FAIL: strat77 smoke window (runs/p13_prefetch_l77_smoke.log)"; exit 1; }
-l77_missing() { local m=0; for y in $(seq "$y0" "$y1"); do [ -s "$(win $L77 "$y")" ] || m=1; done; return $m; }
-if ! l77_missing; then step "strat77 windows already present"
+l77_missing() { local y; for y in $(seq "$y0" "$y1"); do [ -s "$(win $L77 "$y")" ] || return 0; done; return 1; }   # true (0) while any window is missing
+if ! l77_missing; then step "strat77 5-year windows already present"
 elif ! tmux has-session -t preproc_p13_l77_prefetch 2>/dev/null; then
   tmux new-session -d -s preproc_p13_l77_prefetch "cd '$REPO' && source scripts/env.sh && JAX_PLATFORMS=cpu python -m jcm_strat.prefetch_era5 --scheme calendar --years '$YEARS' --save-interval 0.25 -- +experiment=p13_gwd_l77 >> '$REPO/runs/p13_prefetch_l77.log' 2>&1"
   step "strat77 5-year windows: prefetch launched (tmux preproc_p13_l77_prefetch, runs/p13_prefetch_l77.log, ~6 min/yr)"
