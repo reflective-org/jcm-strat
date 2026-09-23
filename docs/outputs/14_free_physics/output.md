@@ -36,7 +36,7 @@ labels for the tracer bookkeeping — the free model sees no year-specific forci
 | run | experiment | GPU | years | notes |
 |---|---|---|---|---|
 | `p14free_smoke5` | `p14_free`, 5 days from 1990-01-01 | 0 | — | GPU smoke; config echo must show `nudging: enabled: false` and no `qbo_nudging`; 95 levels, 13 output variables |
-| `p14free_1990..1999` → `p14free_10yr` | `p14_free` | 0 | 1990–1999 | the run; `p14free_5yr` = the same first five segments linked as their own aggregate (same spin-up as the 5-yr references) |
+| `p14free_1990..1999` → `p14free_10yr` | `p14_free` | 0 | 1990–1999 | the run, one chain; `p14free_5yr` = the first five segments linked as their own aggregate (same spin-up as the 5-yr references). Susanne, 2026-09-23: report the 5-year run first, as in the earlier phases, then the extension to 10 — the chain already is that (segment 1995 restarts from 1994's checkpoint), so `scripts/phase14_5yr_diag.sh` (tmux `strat_p14_5yr`) runs the 5-yr diagnostics on the CPU as soon as segment 1994 lands while the GPU continues |
 
 Commands (all from `scripts/phase14_run.sh`):
 ```
@@ -60,9 +60,13 @@ python scripts/aoa_vs_clams.py runs/p14free_10yr docs/outputs/14_free_physics --
 | tropical winds | does the free package produce a QBO at T63L95 (the nudged run had ERA5's)? monthly tropical w* series `free10_wstar_tropics.png`; a zonal-wind check is a follow-up if needed | — |
 | throughput | nudged full physics 146–166 d/hr stepping, 106–118 e2e (3.1–3.4 h/yr) | — |
 
-## Results
+## Results, 5 years (1990–1994)
 
-_pending — the chain runs ~30 h from 2026-09-22 21:00 PDT._
+_pending — segment 1994 lands ~13:10 PDT 2026-09-23; diagnostics tags `free5`, `free5_vs_ctl`, `p14free_5yr_*`._
+
+## Results, 10 years (1990–1999)
+
+_pending — the chain runs at 3.2 h/yr (154 sim d/hr, the same as the nudged run) → ends ~05:00 PDT 2026-09-24._
 
 ## Open questions
 
