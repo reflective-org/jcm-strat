@@ -1,4 +1,4 @@
-"""Phase 13: gravity-wave drag on the dry column path, the strat77 table and the 400 hPa nudging cutoff (CPU)."""
+"""Phase 13: gravity-wave drag on the dry column path, the same on native L95, and the 400 hPa nudging cutoff (CPU)."""
 import os
 
 os.environ.setdefault("JAX_PLATFORMS", "cpu")
@@ -12,7 +12,7 @@ from jcm_strat.prefetch_era5 import compose_run_config
 
 @pytest.fixture(scope="module")
 def cfgs():
-    return {e: compose_run_config([f"+experiment={e}"]) for e in ("p12_ctl", "p12_l81", "p13_gwd", "p13_gwd_l77", "p13_l81_n400")}
+    return {e: compose_run_config([f"+experiment={e}"]) for e in ("p12_ctl", "p12_l81", "p13_gwd", "p13_gwd_l95", "p13_l81_n400")}
 
 
 def test_gwd_is_the_control_plus_the_drag_terms_only(cfgs):
@@ -38,12 +38,13 @@ def test_gwd_terms_compose_in_a_valid_order(cfgs):
     assert [t.name for t in cp.terms][:4] == ["moist_air_column_state", "held_suarez", "hines_gwd", "lott_miller_sso"]
 
 
-def test_gwd_l77_is_gwd_on_strat77_with_the_l95_sponge(cfgs):
-    g, l77 = cfgs["p13_gwd"], cfgs["p13_gwd_l77"]
-    assert l77.grid.layers == 77 and l77.level_table == "strat"
-    assert (l77.run.sponge.levels, l77.run.sponge.enspodi) == levels.sponge_for(77) == (10, 2.0)
-    assert l77.physics == g.physics and l77.nudging == g.nudging
-    rest = {k: v for k, v in l77.run.items() if k != "sponge"}
+def test_gwd_l95_is_gwd_on_the_native_l95_grid_with_its_own_sponge(cfgs):
+    g, l95 = cfgs["p13_gwd"], cfgs["p13_gwd_l95"]
+    assert l95.grid.layers == 95 and l95.grid.spectral_truncation == 63 and l95.level_table is None
+    assert (l95.run.sponge.levels, l95.run.sponge.enspodi) == (10, 2.0)          # L95's own sponge, not strat63's remapped one
+    assert (g.run.sponge.levels, g.run.sponge.enspodi) == (4, 6.73)
+    assert l95.physics == g.physics and l95.nudging == g.nudging
+    rest = {k: v for k, v in l95.run.items() if k != "sponge"}
     assert rest == {k: v for k, v in g.run.items() if k != "sponge"}
 
 
@@ -55,15 +56,15 @@ def test_l81_n400_is_p12_l81_with_the_cutoff_at_400(cfgs):
     assert "hines_gwd" not in n4.physics.terms                          # no drag in run 3
 
 
-@pytest.mark.parametrize("n, level, p_hpa", [(95, 10, 634), (81, 10, 634), (63, 3, 589), (77, 3, 589)])
+@pytest.mark.parametrize("n, level, p_hpa", [(95, 10, 634), (81, 10, 634), (63, 3, 589)])
 def test_launch_level_resolves_to_the_same_pressure_on_every_table(n, level, p_hpa):
     from jcm.physics.echam import echam_levels as el
     levels.install("strat")
     lev, p = gwd.launch_level_for(el.get_echam_levels(n), 634.0)
     assert lev == level and round(p) == p_hpa
-    # 10 levels above the surface - JCM's fixed default - would be the stratosphere on the 8-layer tropospheres
+    # 10 levels above the surface - JCM's fixed default - would be the stratosphere on strat63's 8-layer troposphere
     p_full = 0.5 * (levels.pressures_hpa(n)[:-1] + levels.pressures_hpa(n)[1:])
-    assert (p_full[n - 10 - 1] < 160) == (n in (63, 77))
+    assert (p_full[n - 10 - 1] < 160) == (n == 63)
 
 
 def test_hines_launch_term_drags_a_stratospheric_jet_from_the_resolved_level():

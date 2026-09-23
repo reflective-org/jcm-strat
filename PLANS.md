@@ -477,14 +477,17 @@ Branch `phase13-relaxation-gwd` off `phase12-circulation`.
   read its pressure/height/density diagnostics. **The clocks keep the 1 hPa lid** (Susanne: "for tracers, keep the
   relaxation of the clocks to WACCM above 1"); the mesosphere is judged by w* (`scripts/mesosphere_wstar.py`, the table
   of the Phase 12 addendum), not by the clocks.
-* `p13_gwd_l77` (GPU 2) - the same on **strat77** = strat63 with all 22 L95 mesospheric layers (12 free layers of ~1.5 km
-  between 1.08 hPa and L95's own 10-level sponge, instead of 4 of ~3 km): does resolving where the waves break change the
-  mesospheric cell and the deep branch? Own ERA5 windows (hash 9fc7126b, ~25 GB/yr).
+* `p13_gwd_l95` (GPU 2) - the same on **JCM's native T63L95** (all 95 levels: 22 mesosphere, 47 stratosphere, 26
+  troposphere; L95's own 10-level sponge). Susanne 2026-09-23: "just use L95, definitely use all levels for troposphere and
+  stratosphere" (replaces a strat63 + L95-mesosphere hybrid, strat77, that was set up first and dropped before it ran).
+  Two questions at once: does resolving where the waves break (12 free mesospheric layers instead of 4) change the
+  mesospheric cell, and does the full troposphere change the wave source under the drag? Same grid as `p12_echam`, so
+  dry + drag vs full physics is a like-for-like comparison there. Reuses the 6-h L95 windows prefetched for `p12_echam`.
 * `p13_l81_n400` (GPU 3) - Phase 12's strat81 run (no drag) with the **ERA5 nudging cut off at 400 hPa** instead of 150
   (`nudging.min_pressure_hpa`): the upper troposphere, the tropopause region and the wave fluxes into the stratosphere
   become the model's own. Reuses the strat81 windows (the cutoff is a run-time mask).
 
 The Jucker et al. relaxation (a) is postponed, not dropped: the mesosphere result of 2026-09-22 made the drag the first
-question. Comparisons: gwd vs `p12ctl_5yr`, gwd_l77 vs gwd and vs ctl, l81_n400 vs `p12l81_5yr`, gwd vs `p12echam_5yr`;
+question. Comparisons: gwd vs `p12ctl_5yr`, gwd_l95 vs gwd, vs ctl and vs `p12echam_5yr`, l81_n400 vs `p12l81_5yr`, gwd vs `p12echam_5yr`;
 acceptance as above (entry-age clock `aoa150`), plus for the mesosphere: tropical w* UPWARD at 1-0.3 hPa and polar
 descent in the 1994 segment (the dry runs have -0.4 to -1 mm/s there, full ECHAM +1 to +2 / -3 to -7).

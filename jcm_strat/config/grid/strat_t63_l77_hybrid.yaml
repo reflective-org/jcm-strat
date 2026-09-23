@@ -1,9 +1,0 @@
-# T63 / 77 hybrid levels — the Phase 13 "strat77" table (jcm_strat/levels.py): strat63 with every
-# L95 MESOSPHERIC layer put back. The 22 L95 levels above 1.08 hPa and the 47 between 1.08 and
-# 159 hPa are kept exactly; the 26 below 159 hPa are thinned to 8 (as in strat63). Needs the
-# top-level key ``level_table: strat`` (set by the p13_gwd_l77 experiment) and L95's own sponge
-# (run.sponge levels 10, enspodi 2.0 = levels.sponge_for(77)).
-vertical: hybrid
-layers: 77
-spectral_truncation: 63
-spmd_mesh: null

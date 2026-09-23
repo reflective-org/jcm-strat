@@ -6,7 +6,7 @@
 #     state's specific humidity is zero, so "moist" air = dry air here;
 #   * hines_gwd: JCM's Hines (1997) non-orographic drag through jcm_strat.gwd.HinesGwdLaunch, launch level given
 #     as a PRESSURE (634 hPa = JCM's L95 default level, the Phase 12 full-physics reference; resolves to 589 hPa
-#     on strat63/strat77 whose 8 tropospheric layers would otherwise put the fixed "10 levels above the surface"
+#     on strat63 whose 8 tropospheric layers would otherwise put the fixed "10 levels above the surface"
 #     at 126 hPa). rms_launch_wind 1.0 m/s = the JCM/ECHAM default = what p12_echam ran with; the one knob PLANS
 #     Phase 13 allows retuning if the drag over-drives the circulation;
 #   * lott_miller_sso: Lott-Miller (1997) sub-grid orographic drag at JCM defaults (gkdrag 0.2, gkwake 1.0), the

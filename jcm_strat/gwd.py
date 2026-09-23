@@ -2,7 +2,7 @@
 
 JCM's :class:`~jcm.physics.gravity_waves.hines.HinesGwd` launches its wave spectrum from a level
 counted from the SURFACE (``launch_level`` = 10 levels above the surface, ECHAM's ``emiss_lev``),
-which is 634 hPa on L95 but 126 hPa — in the stratosphere — on the strat63/strat77 tables with their
+which is 634 hPa on L95 but 126 hPa — in the stratosphere — on the strat63 table with its
 8 tropospheric layers. :class:`HinesGwdLaunch` therefore takes the launch level as a PRESSURE and
 resolves the level index from the run's vertical coordinate in :meth:`cache_coords` (nearest full
 level at the reference surface pressure 1013.25 hPa), so the same yaml means the same thing on

@@ -1,4 +1,4 @@
-"""Stratosphere-preserving reductions of the ECHAM L95 hybrid grid (Phase 9; strat81 added in Phase 12, strat77 in Phase 13).
+"""Stratosphere-preserving reductions of the ECHAM L95 hybrid grid (Phase 9; strat81 added in Phase 12).
 
 L95 has 22 levels above 1.08 hPa, 47 between 1.08 and 159 hPa and 26 below. The tables here
 are subsets of L95's own interfaces, so every kept level *is* an L95 level and the stratosphere
@@ -7,20 +7,11 @@ is bit-identical to L95's:
     strat63 = 8 (mesosphere)  + 47 (1.08-159 hPa, intact)                          + 8 (troposphere)
     strat47 = 7 (mesosphere)  + 15 (1.08-30 hPa, every other interface) + 17 (30-159 hPa, intact) + 8
     strat81 = 8 (mesosphere)  + 47 (1.08-159 hPa, intact)                          + 26 (troposphere = all of L95's)
-    strat77 = 22 (mesosphere = all of L95's) + 47 (1.08-159 hPa, intact)             + 8 (troposphere)
 
 strat81 (Phase 12) is strat63 with every L95 tropospheric layer put back: the Phase 11 circulation
 looked too weak and the thinned troposphere (8 layers below 159 hPa, the layer the ERA5 nudging
 and the wave forcing live in) is one suspect. Its stratosphere and mesosphere are strat63's, so the
 sponge numbers of p9_l63 carry over unchanged (:func:`sponge_for`).
-
-strat77 (Phase 13) is strat63 with every L95 MESOSPHERIC layer put back: the Phase 12 mesosphere
-check showed the dry runs' residual motion reversed above ~1.5 hPa on strat63's 8 layers above 1 hPa
-(4 of them the sponge), and Phase 13 adds the gravity-wave drag that ventilates the mesosphere;
-the drag deposits its momentum where the waves saturate, which 4 free layers of ~3 km between
-1.08 and 0.2 hPa locate coarsely. Its stratosphere and troposphere are strat63's, so the ERA5
-windows differ (own coordinate hash) but the tropospheric nudging is unchanged. Sponge: L95's own
-(10 levels, tau doubling per level; :func:`sponge_for` gives (10, 2.0)).
 
 Thinned regions take every n-th L95 interface at (nearly) uniform index stride, so the layer
 thickness in log p grows by the same factor everywhere in that region.
@@ -74,19 +65,17 @@ def interface_indices(nlevels: int) -> np.ndarray:
         idx = _thin(0, _I_1HPA, 8) + list(range(_I_1HPA, _I_159HPA + 1)) + tropo
     elif nlevels == 81:      # Phase 12: strat63 with the full L95 troposphere
         idx = _thin(0, _I_1HPA, 8) + list(range(_I_1HPA, _L95_NLEV + 1))
-    elif nlevels == 77:      # Phase 13: strat63 with the full L95 mesosphere
-        idx = list(range(0, _I_159HPA + 1)) + tropo
     elif nlevels == 47:
         idx = (_thin(0, _I_1HPA, 7) + list(range(_I_1HPA, _I_30HPA + 1, 2))
                + list(range(_I_30HPA, _I_159HPA + 1)) + tropo)
     else:
-        raise ValueError(f"no strat level table for {nlevels} levels (have 47, 63, 77, 81)")
+        raise ValueError(f"no strat level table for {nlevels} levels (have 47, 63, 81)")
     out = np.unique(np.asarray(idx, dtype=int))
     assert out.size == nlevels + 1, (nlevels, out.size)
     return out
 
 
-TABLES = (47, 63, 77, 81)
+TABLES = (47, 63, 81)
 
 
 def strat_table(nlevels: int):
@@ -132,10 +121,7 @@ def sponge_for(nlevels: int) -> tuple[int, float]:
     its lower interface is within one L95 interface of that), enspodi = 2 ** (mean L95 levels
     per sponge level)."""
     idx = interface_indices(nlevels)
-    # exact hit first (a table that keeps L95's mesosphere, strat77, has L95's own 10-level sponge);
-    # the one-interface tolerance is for the thinned mesospheres of strat47/63/81
-    bottom = _SPONGE_BOTTOM_L95 if _SPONGE_BOTTOM_L95 in idx else _SPONGE_BOTTOM_L95 + 1
-    n = int(np.sum(idx[1:] <= bottom))
+    n = int(np.sum(idx[1:] <= _SPONGE_BOTTOM_L95 + 1))
     stride = idx[n] / n
     return n, float(round(2.0 ** stride, 2))
 

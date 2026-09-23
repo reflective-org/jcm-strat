@@ -1,0 +1,20 @@
+# @package _global_
+# Phase 13 run 2: p13_gwd (drag on) on JCM's native T63L95 grid - all 95 ECHAM levels: 22 mesosphere, 47 stratosphere,
+# 26 troposphere - with L95's own 10-level sponge (tau doubling per level; p12_ctl inherits the remapped strat63 sponge
+# of p9_l63, so it is set back here). Susanne, 2026-09-23: "just use L95, definitely use all levels for troposphere and
+# stratosphere". Against p13_gwd this changes the vertical grid everywhere (mesosphere 8 -> 22 layers, troposphere
+# 8 -> 26; the stratosphere is identical, strat63 keeps L95's 47 levels there); against the Phase 12 full-physics run
+# p12_echam it is the same grid with the dry physics + drag. The Hines launch pressure 634 hPa resolves to JCM's default
+# launch level 10 on L95. Reuses the 6-hourly T63L95 ERA5 windows prefetched for p12_echam (hash c39313fe, 31 GB/yr;
+# that run had to fall back to 12-hourly beside RRTMGP, the dry model does not).
+#   EXPERIMENT=p13_gwd_l95 PREFIX=p13gwdl95 SCHEME=calendar YEARS=1990-1994 AGG=p13gwdl95_5yr SAVE_INTERVAL=0.25 GPU=2 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p13_gwd
+  - override /grid: echam_t63_l95_hybrid
+
+level_table: null
+
+run:
+  sponge:
+    levels: 10
+    enspodi: 2.0
