@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Phase 13: gravity-wave drag for the dry model, the L95 mesosphere, and a lower nudging cutoff (Susanne, 2026-09-23),
-# unattended (tmux strat_p13_run, log runs/p13_run.log). Three 5-year chains 1990-1994, 6-hourly output like Phase 12:
+# unattended (tmux phase13-gravity-wave, log runs/p13_run.log). Three 5-year chains 1990-1994, 6-hourly output like Phase 12:
 #   gwd       p13_gwd       GPU_A  Phase 12 control + Hines (launch 634 hPa) + Lott-Miller drag, strat63
 #   gwd_l95   p13_gwd_l95   GPU_B  the same on JCM's native T63L95 (all 95 levels, L95 sponge; the 6-h L95 windows of p12_echam)
 #   l81_n400  p13_l81_n400  GPU_C  Phase 12 strat81 run (no drag) with the ERA5 nudging cut off at 400 hPa instead of 150

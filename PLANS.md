@@ -469,7 +469,7 @@ adjustment or a prescribed vertical tracer diffusion in the troposphere. Otherwi
 Branch `phase13-relaxation-gwd` off `phase12-circulation`.
 
 **Update 2026-09-23 (Susanne): what actually runs first.** Three runs, all 1990-1994, 6-hourly, in `scripts/phase13_run.sh`
-(tmux `strat_p13_run`), branch `phase13-gwd`, record `docs/outputs/13_gwd/`:
+(tmux `phase13-gravity-wave`), branch `phase13-gwd`, record `docs/outputs/13_gwd/`:
 
 * `p13_gwd` (GPU 1) - **drag only**, as above: `p12_ctl` + `HinesGwdLaunch` (JCM's Hines with the launch level given as a
   pressure, 634 hPa = the L95 default level; JCM's fixed "10 levels above the surface" would be 126 hPa on the 8-layer

@@ -1,6 +1,6 @@
 # Phase 13 — gravity-wave drag for the dry model, the same on native L95, and a 400 hPa nudging cutoff (1990–1994)
 
-Status: **running** (launched 2026-09-23, GPUs 1/2/3, tmux `strat_p13_run`, log `runs/p13_run.log`). Runs `p13gwd_5yr`,
+Status: **running** (launched 2026-09-23, GPUs 1/2/3, tmux `phase13-gravity-wave`, log `runs/p13_run.log`). Runs `p13gwd_5yr`,
 `p13gwdl95_5yr`, `p13l81n400_5yr`; the Phase 12 runs `p12ctl_5yr`, `p12l81_5yr`, `p12echam_5yr` are the references.
 
 ## Why
