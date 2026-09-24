@@ -116,13 +116,29 @@ lower stratosphere and extratropics, the package the better deep branch and meso
 (relaxation + drag) direction from the other side.
 
 
+## Addendum 2026-09-24: the free package has no QBO (`qbo_time_height_before_after.png`, `qbo_profiles.png`, `qbo_metrics.md`)
+
+`scripts/qbo_compare.py` on the equatorial (5°S–5°N) zonal-mean wind, 1990–1999, free vs nudged vs ERA5. The free run's
+equatorial stratosphere is **steady**: deseasonalised standard deviation 0.2 / 0.1 / 0.2 / 0.3 m/s at 10 / 20 / 30 / 50 hPa
+against ERA5's 18.8 / 18.2 / 16.0 / 11.9 (the nudged run, with the QBO term, 13.3 / 11.9 / 10.1 / 7.1). The time–height
+section shows weak westerlies (+5 to +10 m/s) from 100 to ~30 hPa, near-zero wind from 30 to 3 hPa and weak easterlies
+(−10 m/s) above, with only a faint semiannual wiggle at 2 hPa — no QBO, no SAO. RMS against ERA5's monthly equatorial
+wind 16.3 m/s (10–70 hPa; nudged 6.4). The tropical stratosphere of JCM's ECHAM package at T63L95 with its Hines/SSO
+settings therefore has no wave-driven equatorial oscillation at all; the tropospheric wave source and the parameterised
+drag are not producing one. With the QBO term switched off together with the ERA5 nudging, the "no nudging" run has a
+wind structure the real atmosphere never has — a permanent weak westerly shear zone in the lower stratosphere — which is
+part of why the equatorial residual motion there is downward (result 1) and the 55 hPa age flat in latitude (result 3).
+This makes the troposphere-only-off variant (QBO term kept, Open questions) the informative next run: it separates
+"the package has no tropical pipe" from "the package has no QBO". (The nudged panel has data gaps in 1990–1991: months
+the loader could not read from the compacted `p12echam` chunks, not a model gap; the metrics are over the months present.)
+
 ## Open questions
 
 - Chosen reading of "no nudging": both relaxations off (ERA5 below 150 hPa and the QBO term). A QBO-only-off or
   troposphere-only-off variant would separate the two; given result 1, the troposphere-only-off variant (QBO term kept)
   is the one that would tell whether the equatorial descent is a missing-QBO effect or the package's tropics.
-- Does the free package make a QBO? `scripts/qbo_compare.py` on the equatorial winds (`qbo_time_height_before_after.png`,
-  `qbo_metrics.md` in this directory) — see the addendum below once read.
+- ~~Does the free package make a QBO?~~ No (addendum above): equatorial wind steady to 0.3 m/s. Why not — Hines source
+  spectrum / launch level at T63L95, or the SL dycore's tropical wave damping — is a Phase 13-type drag question.
 - Why is the equatorial lower-stratospheric residual motion downward: is it the monsoon/subtropical heating pattern of the
   Tiedtke convection at T63, or the Hines drag deposited too low? A zonal-mean u and T climatology of the free run against
   ERA5 (`scripts/strat_compare.py`) is the next diagnostic; not run here (Phase 12 set only).
