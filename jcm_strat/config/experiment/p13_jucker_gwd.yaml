@@ -1,0 +1,8 @@
+# @package _global_
+# Phase 13b run 2: p13_jucker plus Hines + Lott-Miller gravity-wave drag (physics/strat_jucker_gwd_prod13.yaml) = option (c)
+# of the original Phase 13 plan, on strat81. One change against p13jucker_5yr (the drag); against p13gwd_5yr (strat63, PK
+# relaxation + drag) the relaxation and the troposphere grid differ.
+#   EXPERIMENT=p13_jucker_gwd PREFIX=p13juckergwd SCHEME=calendar YEARS=1990-1994 AGG=p13juckergwd_5yr SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p13_jucker
+  - override /physics: strat_jucker_gwd_prod13

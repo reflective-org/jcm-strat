@@ -492,7 +492,7 @@ question. Comparisons: gwd vs `p12ctl_5yr`, gwd_l95 vs gwd, vs ctl and vs `p12ec
 acceptance as above (entry-age clock `aoa150`), plus for the mesosphere: tropical w* UPWARD at 1-0.3 hPa and polar
 descent in the 1994 segment (the dry runs have -0.4 to -1 mm/s there, full ECHAM +1 to +2 / -3 to -7).
 
-# Phase 13b (planned 2026-09-23 19:40 PDT, awaiting Susanne's confirmation) — the Jucker et al. relaxation
+# Phase 13b (planned 2026-09-23 19:40 PDT; CONFIRMED 19:50 PDT "Go but do it with L81, not L63") — the Jucker et al. relaxation
 
 **Why.** Phase 13 (`docs/outputs/13_gwd/`) showed that Hines + Lott-Miller drag added to the dry Polvani-Kushner model puts
 its momentum into the lower stratosphere (shallow branch 2.6× WACCM6, extratropics 1.4 yr too young, 10 hPa ascent collapses)
@@ -516,14 +516,14 @@ the JFV fields; below p_hs = 250 hPa the term's present troposphere (Held-Suarez
 linear blend in pressure between - JFV's own `hs_forcing.f90` defaults (`p_hs=250e2, p_bd=100e2`). Nothing else changes:
 QBO nudging (in the same term), ERA5 nudging < 150 hPa, sponge, tracers with the 1 hPa lid, 6-h output, calendar.
 
-**Runs (GPU 1 only, sequential, strat63, 1990-1994, ~30 min/yr each):**
-* `p13_jucker`     - `p12_ctl` with the relaxation swapped: relaxation effect alone (vs `p12ctl_5yr`). ~2.5 h.
+**Runs (GPU 1 only, sequential, strat81 = full L95 troposphere (Susanne), 1990-1994, ~27 min/yr each):**
+* `p13_jucker`     - `p12_l81` with the relaxation swapped: relaxation effect alone (vs `p12l81_5yr`). ~2.3 h.
 * `p13_jucker_gwd` - the same plus Hines + Lott-Miller as in `p13_gwd`: option (c) of the original Phase 13 plan
   (vs `p13gwd_5yr` for the relaxation's effect under drag, vs `p13_jucker` for the drag's effect under the new relaxation,
   vs `p12echam_5yr`). ~2.7 h.
 Pipeline `scripts/phase13b_run.sh` (tmux `phase13b-jucker`): pytest -> 5-day smokes (both) -> chain 1 -> chain 2 -> diagnostics
 with the compare pairs in parallel (~1 h) -> mesosphere table over every Phase 12/13 run. Budget ~7 h, hard stop at 12 h.
-L95 is not repeated (Phase 13: ≤ 0.2 yr / 0.08 mm/s difference at 1.7× cost).
+Native L95 is not repeated (Phase 13: ≤ 0.2 yr / 0.08 mm/s difference at 1.7× cost); strat81 keeps every tropospheric level.
 
 **Rules for the unattended run.** Smoke gate: finite fields, 150 K < T < 330 K, |u| < 150 m/s, the term's log line shows the
 JFV table on the run's levels; a failed gate stops the phase and is recorded. No retunes, no extra runs, no pushes; both runs
