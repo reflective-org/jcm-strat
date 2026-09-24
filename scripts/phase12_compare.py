@@ -85,12 +85,21 @@ def main():
     ap.add_argument("--tag", required=True); ap.add_argument("--label", default="")
     ap.add_argument("--before-label", default=None); ap.add_argument("--after-label", default=None)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--stride", type=int, default=4, help="every n-th 6-hourly frame for the TEM covariances (4 = daily)")
+    ap.add_argument("--stride", default="4", help="every n-th frame for the TEM covariances (4 = daily on a 6-hourly archive), or 'auto' = the 00 UTC frames of any archive")
     ap.add_argument("--clocks", nargs="*", default=["aoa_sfc", "aoa500"])
     ap.add_argument("--last-saves", type=int, default=240, help="frames averaged for the age (240 = last 60 d of a 6-hourly archive)")
+    ap.add_argument("--last-days", type=float, default=None, help="instead of --last-saves: days averaged for the age, converted per run from its save interval (daily vs 6-hourly archives)")
     ap.add_argument("--waccm-years", default="1996-2014"); ap.add_argument("--clams-years", default="2005-2009")
     ap.add_argument("--no-waccm", action="store_true")
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
+    a.stride = "auto" if str(a.stride) == "auto" else int(a.stride)
+    def frames_for(run, days):
+        if days is None:
+            return a.last_saves
+        f0 = sorted(__import__("glob").glob(os.path.join(run, "longrun_day*.nc")))[0]
+        t = __import__("xarray").open_dataset(f0, decode_times=True).time.values
+        dt_days = float((t[1] - t[0]) / np.timedelta64(1, "D")) if t.size > 1 else 1.0
+        return max(1, int(round(days / dt_days)))
     nb = a.before_label or os.path.basename(a.before.rstrip("/")); na = a.after_label or os.path.basename(a.after.rstrip("/"))
     title = a.label or f"{nb} -> {na}"
     lines = [f"# Phase 12 comparison: {title}", "", f"before `{a.before}`, after `{a.after}`; TEM covariances from every {a.stride}th 6-hourly frame;",
@@ -179,7 +188,7 @@ def main():
     vmax = 6.0; levels = np.linspace(0, vmax, 25)
     for clock in a.clocks:
         print(f"[age] {clock}", flush=True)
-        pb, latb, ab, dayb = aoa.model_age(a.before, a.last_saves, clock); pa, lata, aa, daya = aoa.model_age(a.after, a.last_saves, clock)
+        pb, latb, ab, dayb = aoa.model_age(a.before, frames_for(a.before, a.last_days), clock); pa, lata, aa, daya = aoa.model_age(a.after, frames_for(a.after, a.last_days), clock)
         aa_on_b = on_levels(aa, pa, pb)
         fig, axes = plt.subplots(1, 4, figsize=(23, 5.2), sharey=True, layout="constrained")
         for ax, (p, lat, age, ttl) in zip(axes[:2], ((pb, latb, ab, f"before: {nb}  [{clock}] ends day {dayb}"), (pa, lata, aa, f"after: {na}  [{clock}] ends day {daya}"))):

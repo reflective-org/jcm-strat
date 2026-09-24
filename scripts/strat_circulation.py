@@ -110,14 +110,18 @@ def model_tem_fields(rundir, stride=1, with_omega=False):
     """Per save: zonal means of v and theta and the zonal eddy covariance v'theta' (and, with ``with_omega``, the
     zonal-mean omega). ``stride`` takes every n-th frame of a 6-hourly instantaneous archive (Phases 10-12;
     4 = daily, 20 = every 5 days): the covariance is formed within each snapshot, so a stride only thins the
-    sample of the time mean."""
+    sample of the time mean. ``stride="auto"`` (Phase 15) takes the 00 UTC frames, so a daily and a 6-hourly archive
+    give the same sample."""
     files = sorted(glob.glob(os.path.join(rundir, "longrun_day*.nc")), key=lambda q: int(re.search(r"_day(\d+)\.nc$", q).group(1)))
     vb, vth, thb, omb, times = [], [], [], [], []
     offset = 0
     for f in files:
         d = xr.open_dataset(f, decode_times=True)
         nt = d.sizes["time"]
-        idx = np.arange((-offset) % stride, nt, stride); offset = (offset + nt) % stride
+        if stride == "auto":
+            idx = np.where(d.time.dt.hour.values == 0)[0]
+        else:
+            idx = np.arange((-offset) % stride, nt, stride); offset = (offset + nt) % stride
         if idx.size == 0:
             d.close(); continue
         d = d.isel(time=idx)
