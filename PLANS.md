@@ -491,3 +491,46 @@ The Jucker et al. relaxation (a) is postponed, not dropped: the mesosphere resul
 question. Comparisons: gwd vs `p12ctl_5yr`, gwd_l95 vs gwd, vs ctl and vs `p12echam_5yr`, l81_n400 vs `p12l81_5yr`, gwd vs `p12echam_5yr`;
 acceptance as above (entry-age clock `aoa150`), plus for the mesosphere: tropical w* UPWARD at 1-0.3 hPa and polar
 descent in the 1994 segment (the dry runs have -0.4 to -1 mm/s there, full ECHAM +1 to +2 / -3 to -7).
+
+# Phase 13b (planned 2026-09-23 19:40 PDT, awaiting Susanne's confirmation) — the Jucker et al. relaxation
+
+**Why.** Phase 13 (`docs/outputs/13_gwd/`) showed that Hines + Lott-Miller drag added to the dry Polvani-Kushner model puts
+its momentum into the lower stratosphere (shallow branch 2.6× WACCM6, extratropics 1.4 yr too young, 10 hPa ascent collapses)
+and none above the stratopause (mesosphere still downward). The same schemes give the full physics a mesospheric cell, so the
+difference is the winds and temperatures the waves propagate through: Polvani-Kushner relaxes to a flat standard atmosphere
+above 3 hPa with one 15-day timescale, whereas the radiative equilibrium has a 300 K summer stratopause, a 190-200 K winter
+polar upper stratosphere and a 4-6 day relaxation time there. That is exactly what Jucker, Fueglistaler & Vallis (2013, JAS)
+provide. Susanne, 2026-09-23 19:20 PDT: "can you try this Jucker thing? ... one GPU ... nothing that takes more than 14 h".
+
+**Data.** JFV's own repository `github.com/mjucker/JFV-strat` (cloned read-only to `cache/jfv-strat`, 2026-09-23) ships
+`temp_monthly_L10_full.nc` and `tau_monthly_L10_full.nc`: the 2013 paper's equilibrium temperature T_e(month, p, lat) and
+relaxation time tau(month, p, lat) from their radiative calculation - 12 mid-month values, 40 pressure levels 0.007-945 hPa,
+64 Gaussian latitudes, zonally uniform. Checked: January T_e at 1 hPa is 305 K at 85S (summer stratopause) and 205 K at 85N;
+at 100 hPa 231 K / 186 K; tau is 25-40 d at 100-300 hPa, 5-10 d at 10 hPa, 4.5-6 d at 1-0.1 hPa, 15 d at 0.01 hPa. The
+zonal slice (12x40x64, 0.5 MB) is stored in the repo as `jcm_strat/data/jfv2013_te_tau_zm.nc`; the analytic 2014 formulas
+(also in the repo) are not used - the data is the paper's.
+
+**Term.** `jcm_strat/jucker.py: JuckerColumns(PolvaniKushnerQbo)`: T_e and 1/tau interpolated (log-p, latitude) onto the
+column grid in `cache_coords`, linear and periodic in the fraction of year between mid-months at run time. Above p_bd = 100 hPa
+the JFV fields; below p_hs = 250 hPa the term's present troposphere (Held-Suarez T_eq with the PK winter asymmetry, HS tau);
+linear blend in pressure between - JFV's own `hs_forcing.f90` defaults (`p_hs=250e2, p_bd=100e2`). Nothing else changes:
+QBO nudging (in the same term), ERA5 nudging < 150 hPa, sponge, tracers with the 1 hPa lid, 6-h output, calendar.
+
+**Runs (GPU 1 only, sequential, strat63, 1990-1994, ~30 min/yr each):**
+* `p13_jucker`     - `p12_ctl` with the relaxation swapped: relaxation effect alone (vs `p12ctl_5yr`). ~2.5 h.
+* `p13_jucker_gwd` - the same plus Hines + Lott-Miller as in `p13_gwd`: option (c) of the original Phase 13 plan
+  (vs `p13gwd_5yr` for the relaxation's effect under drag, vs `p13_jucker` for the drag's effect under the new relaxation,
+  vs `p12echam_5yr`). ~2.7 h.
+Pipeline `scripts/phase13b_run.sh` (tmux `phase13b-jucker`): pytest -> 5-day smokes (both) -> chain 1 -> chain 2 -> diagnostics
+with the compare pairs in parallel (~1 h) -> mesosphere table over every Phase 12/13 run. Budget ~7 h, hard stop at 12 h.
+L95 is not repeated (Phase 13: ≤ 0.2 yr / 0.08 mm/s difference at 1.7× cost).
+
+**Rules for the unattended run.** Smoke gate: finite fields, 150 K < T < 330 K, |u| < 150 m/s, the term's log line shows the
+JFV table on the run's levels; a failed gate stops the phase and is recorded. No retunes, no extra runs, no pushes; both runs
+are made regardless of the first one's result (each answers a different question). Record `docs/outputs/13b_jucker/output.md`
+with the Phase 13 acceptance table (entry-age clock vs WACCM6, w* vs WACCM6, mesosphere w* 1994) and a PROGRESS row; commit
+on `phase13-gwd`. Everything stays on Voltage Park in this folder.
+
+**Acceptance, as Phase 13:** tropical w* 30 / 10 hPa within 1.5× of 0.26 / 0.47 mm/s; tropical `aoa150` 12 hPa within 0.4 yr
+of 2.90, 55 hPa not worse than 1.29; 50-70° `aoa150` 55 hPa ≥ 3.6 (not the drag run's 2.5); tropical w* at 1-0.3 hPa upward
+and polar descent > 1 mm/s in the 1994 segment; cost ≤ 1.3× control.
