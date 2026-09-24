@@ -31,9 +31,9 @@ over-drive the lower stratosphere instead.
 
 ## The sweep
 
-**Base** `p15_base` = `p13_jucker` with daily instead of 6-hourly output and only the analysed variables written (u, v, T, omega, p_s,
-`aoa150`, `aoa_sfc`, `aoa500`); the dynamics are identical (every Phase 12/13 diagnostic reads the 00 UTC frames anyway). The base
-itself is not re-run: the Phase 13b segments 1990–1992 are linked (`scripts/link_segments.py`) and scored like every other run.
+**Base** `p15_base` = `p13_jucker` with only the analysed variables written (u, v, T, omega, p_s, `aoa150`, `aoa_sfc`, `aoa500`; still
+6-hourly, see the finding below); the dynamics are identical. The base itself is not re-run: the Phase 13b segments 1990–1992 are
+linked (`scripts/link_segments.py`) and scored like every other run.
 
 **Stage 1 — one knob at a time, three years 1990–1992 each** (`scripts/phase15_matrix.txt`, in this order):
 
@@ -57,12 +57,36 @@ more than 0.02): drag winner + relaxation winner, + the "other" winner, and the 
 Phase 12/13 diagnostics against `p13jucker_5yr` and `p12echam_5yr` (`final/`). Before every run the remaining budget (46 h from the
 start) is checked against the measured minutes per year; runs that would not fit are skipped and logged.
 
-## Scoring (`scripts/sweep_score.py`, window = the last two years of each run, age = the last 60 days)
+## A finding before the sweep: the TEM w* of Phases 12–13 depends on which hour of the day was sampled
+
+Setting the sweep up, the scorer's w* (from the 00 UTC frames) disagreed with the Phase 13b record (from every 4th 6-hourly frame,
+i.e. the 06 UTC frames). Recomputed on the 1991 segment of `p13jucker` for each daily phase separately and for all frames:
+
+| tropical (15S–15N) w*, 1991 annual mean [mm/s] | 100 hPa | 70 hPa | 50 hPa | 30 hPa | 10 hPa |
+|---|---|---|---|---|---|
+| 00 UTC frames only | 0.49 | 0.48 | 0.59 | 0.50 | 0.06 |
+| 06 UTC frames only (= the Phase 12/13 `--stride 4` sampling) | 0.28 | 0.17 | 0.15 | 0.11 | 0.41 |
+| 12 UTC frames only | 0.29 | 0.27 | 0.35 | 0.52 | 0.97 |
+| 18 UTC frames only | 0.17 | 0.17 | 0.35 | 0.54 | 0.33 |
+| **all four phases (1460 frames)** | **0.31** | **0.27** | **0.36** | **0.42** | **0.44** |
+| WACCM6 histSST 1996–2014 (daily-mean TEM tapes) | 0.40 | 0.21 | 0.20 | 0.26 | 0.47 |
+
+The zonal eddy covariance v'θ' and the zonal-mean v of a single daily phase carry the model's (nudging-imprinted, aliased) tides;
+the four phases differ by 0.4 mm/s at 30 hPa, more than the signal. WACCM6's tapes are daily means of the covariance, so the
+all-frame mean is the like-for-like number. **Consequence for the earlier records:** the "50–20 hPa stall" of every dry
+configuration (30 hPa w* 0.02–0.09 in Phases 12–13b) was measured on the 06 UTC phase, which happens to be the lowest of the four
+here; with all frames the 1991 Jucker segment has 0.42 mm/s at 30 hPa (WACCM6 0.26) — no stall, if anything too strong at
+50–30 hPa — while 10 hPa (0.44) and the lower branch (100 hPa 0.31 vs 0.40) barely move. The Phase 13b tropical entry age at
+12 hPa (3.67 vs 2.90) therefore is not explained by a missing 30 hPa ascent. The 5-year all-frame numbers of the base come out of
+this phase's final `phase12_compare --stride 1` (`final_*/vs_jucker_metrics.md`, "before" column). Everything in this sweep is
+scored on all frames; the sweep therefore keeps 6-hourly output.
+
+## Scoring (`scripts/sweep_score.py`, window = the last two years of each run, all 6-hourly frames; age = the last 60 days)
 
 | part | model quantity | reference | normalisation |
 |---|---|---|---|
 | age | entry-age clock `aoa150` (reset below 150 hPa), zonal mean, cos-weighted RMSE over 100–5 hPa, \|lat\| ≤ 80° | CLaMS v3.1 / ERA5 mean age 2005–2009 minus CLaMS' own tropical age at 150 hPa (0.09 yr) | 0.5 yr |
-| w* | TEM tropical (15S–15N) w* at 100 / 70 / 50 / 30 / 10 hPa, annual; mean \|ln(model/ref)\|, floor 0.02 mm/s, cap ln 10 | WACCM6 histSST 1996–2014 (CLaMS has no w*) | ln 1.5 |
+| w* | TEM tropical (15S–15N) w* at 100 / 70 / 50 / 30 / 10 hPa, annual, eddy covariance from every 6-hourly frame; mean \|ln(model/ref)\|, floor 0.02 mm/s, cap ln 10 | WACCM6 histSST 1996–2014 daily-mean TEM tapes (CLaMS has no w*) | ln 1.5 |
 | u | zonal-mean u, DJF and JJA, cos-weighted RMSE 100–1 hPa | ERA5 monthly zonal means of the same months | 5 m/s |
 | T | the same for temperature | ERA5 | 5 K |
 
@@ -76,6 +100,12 @@ run's own circulation over ~5 yr), so the ranking leans on w*, u and T; the stag
 
 <!-- leaderboard:start -->
 _no scored runs yet_
+
+_no scored runs yet_
+
+![scores](sweep_scores.png)
+![w*](sweep_wstar_profiles.png)
+![age](sweep_age_profiles.png)
 <!-- leaderboard:end -->
 
 ## Reading the result

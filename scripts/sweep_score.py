@@ -4,9 +4,9 @@
     python scripts/sweep_score.py runs/p15_ray10_3yr --name ray10 --out docs/outputs/15_sweep/scores \
         [--window-years 2] [--age-days 60] [--desc "Rayleigh 30-1 hPa, tau 10 d"]
 
-Reads a chained run's archive (daily or 6-hourly instantaneous frames; only the 00 UTC frames are used, so the two
-archive kinds give the same numbers) over the LAST ``--window-years`` years (the first year of a 3-year run is spin-up)
-and scores four things, each against the best reference this repo has:
+Reads a chained run's archive (6-hourly instantaneous frames; EVERY frame is used - the TEM eddy covariance from a single
+daily phase is biased by the model's tides, see the Phase 15 record) over the LAST ``--window-years`` years (the first year
+of a 3-year run is spin-up) and scores four things, each against the best reference this repo has:
 
   age    entry-age clock ``aoa150`` (reset below 150 hPa) vs the CLaMS v3.1/ERA5 mean age 2005-2009 minus CLaMS'
          own tropical age at 150 hPa (0.09 yr; scripts/aoa_vs_clams.py): cos-weighted RMSE over 100-5 hPa, |lat| <= 80.
@@ -85,7 +85,7 @@ def weighted_rmse(diff, lat, mask=None):
 
 # ------------------------------------------------------------------------------------------------ model archive
 def load_model(rundir, window_years=2.0, age_days=60.0):
-    """Zonal means of every 00 UTC frame in the last ``window_years`` years, and the clocks over the last ``age_days``."""
+    """Zonal means of every frame in the last ``window_years`` years, and the clocks over the last ``age_days`` days."""
     files = _files(rundir)
     last = xr.open_dataset(files[-1], decode_times=True)
     t_end = last.time.values[-1]; last.close()
@@ -96,7 +96,7 @@ def load_model(rundir, window_years=2.0, age_days=60.0):
     p_hpa = lat = None
     for f in files:
         d = xr.open_dataset(f, decode_times=True)
-        sel = (d.time.values > t0) & (d.time.dt.hour.values == 0)
+        sel = d.time.values > t0
         if not sel.any():
             d.close(); continue
         d = d.isel(time=np.where(sel)[0])

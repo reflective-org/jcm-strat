@@ -58,12 +58,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scores", required=True); ap.add_argument("--matrix", default=None); ap.add_argument("--stage2", default=None)
     ap.add_argument("--best", action="store_true"); ap.add_argument("--margin", type=float, default=MARGIN)
+    ap.add_argument("--top", type=int, default=0, help="print the N best CHANGED runs (not the base, not *_5yr rows), one per line")
     a = ap.parse_args()
     scores = {}
     for f in glob.glob(os.path.join(a.scores, "*.json")):
         r = json.load(open(f)); scores[r["name"]] = r
     if a.best:
         best = min(scores.values(), key=lambda r: r["composite"]); print(best["name"]); return
+    if a.top:
+        cands = sorted([r for n, r in scores.items() if n != "base" and not n.endswith("_5yr")], key=lambda r: r["composite"])
+        print("\n".join(r["name"] for r in cands[:a.top])); return
     matrix = read_matrix(a.matrix)
     base = scores.get("base")
     if base is None:

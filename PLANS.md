@@ -554,8 +554,9 @@ me the best (most similar) result to CLaMS. Continuously document what you are t
 takes longer than 48h. Run independently in the background."
 
 **Design** (`docs/outputs/15_sweep/output.md` has the full tables). Base = `p13_jucker` (Phase 13b: strat81, JFV2013 relaxation
-above 100 hPa, QBO nudging to 1 hPa, ERA5 nudging < 150 hPa, 1 hPa tracer lid) with daily whitelisted output (`p15_base`; dynamics
-unchanged). Stage 1: eleven one-knob 3-year chains 1990-1992 on GPU 0, sequentially — drag family (Rayleigh 30-1 hPa tau 10 / 30 d,
+above 100 hPa, QBO nudging to 1 hPa, ERA5 nudging < 150 hPa, 1 hPa tracer lid) with whitelisted 6-hourly output (`p15_base`; dynamics
+unchanged; daily output was tried and dropped: the TEM w* from one daily phase is tide-biased, record section "A finding before
+the sweep"). Stage 1: eleven one-knob 3-year chains 1990-1992 on GPU 0, sequentially — drag family (Rayleigh 30-1 hPa tau 10 / 30 d,
 full or zonal-mean wind; Hines only at rms 0.5 / 0.3 m/s or launched at 100 hPa; Lott-Miller only), relaxation family (JFV tau × 0.5;
 tau capped at 15 d), other (sponge without temperature damping; nudging cutoff 100 hPa as a bracket). Stage 2: `scripts/sweep_plan.py`
 combines the family winners (margin 0.02 on the composite). Stage 3: the best run continues to 1990-1994 and gets the Phase 12/13
@@ -566,7 +567,7 @@ composite = mean of the four normalised parts) and the leaderboard + record are 
 
 **New code.** `jcm_strat/rayleigh.py` (`RayleighDragProfile`: log-p ramp of Rayleigh drag, optional zonal-mean-only),
 `JuckerColumns(tau_scale, tau_max_days)`, eight generated physics groups `strat15_jucker[_hines][_lm][_ray]`, `scripts/link_segments.py`,
-`--stride auto` / `--last-days` in `phase12_compare.py` and `mesosphere_wstar.py` (daily and 6-hourly archives compared alike).
+`--last-days` in `phase12_compare.py`; the final diagnostics use `--stride 1` (all frames) because a single daily phase is tide-biased.
 Branch `phase15-sweep` off `phase13-gwd`, worktree `jcm-strat-phase15`; nothing is pushed (Susanne, 2026-09-23).
 
 **Rules for the unattended run.** GPU 0 only; no run longer than the budget; smoke gate as in Phase 13c; a failed chain is logged and

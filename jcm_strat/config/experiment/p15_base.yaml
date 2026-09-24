@@ -1,21 +1,18 @@
 # @package _global_
 # Phase 15 (hyperparameter sweep toward CLaMS/ERA5-like stratospheric dynamics): the sweep's BASE = Phase 13b's p13_jucker
-# (strat81, JFV2013 relaxation, QBO nudging to 1 hPa, ERA5 nudging < 150 hPa, four clocks with the 1 hPa lid) with two
-# output changes that leave the dynamics untouched:
-#   * DAILY instantaneous output (run.save_interval 1.0) instead of 6-hourly - every Phase 12/13 diagnostic reads every
-#     4th 6-hourly frame (stride 4 = daily) anyway, so nothing analysed is lost and the archive is 4x smaller/faster to write;
-#   * output_keep: only what the sweep score reads (u, v, T, omega, surface pressure, the three clocks aoa150/aoa_sfc/aoa500)
-#     - the 6-hourly Phase 13b segment spent 24 of its 31 min/yr outside the time stepping (66 GB/yr of 13 variables).
+# (strat81, JFV2013 relaxation, QBO nudging to 1 hPa, ERA5 nudging < 150 hPa, four clocks with the 1 hPa lid) with ONE
+# output change that leaves the dynamics untouched: output_keep = only what the sweep score reads (u, v, T, omega, surface
+# pressure, the three clocks aoa150/aoa_sfc/aoa500) - the Phase 13b segment spent 24 of its 31 min/yr outside the time
+# stepping writing 66 GB/yr of 13 variables. The output stays 6-HOURLY: the TEM w* from single-phase daily snapshots depends
+# on the sampling hour (1991 base segment, tropical w* at 30 hPa: 0.50 / 0.11 / 0.52 / 0.54 mm/s from the 00 / 06 / 12 / 18 UTC
+# frames, 0.42 from all four), so the score averages the eddy covariances over all four daily phases (docs/outputs/15_sweep).
 # Every sweep run = this experiment + a physics group `strat15_jucker[_hines][_lm][_ray]` + hydra overrides of the stated knobs
 # (scripts/phase15_matrix.txt, scripts/phase15_sweep.sh). Three years 1990-1992 per sweep run, the winner extended to 1990-1994.
-#   EXPERIMENT=p15_base PREFIX=p15_<name> SCHEME=calendar YEARS=1990-1992 AGG=p15_<name>_3yr SAVE_INTERVAL=1 GPU=0 \
+#   EXPERIMENT=p15_base PREFIX=p15_<name> SCHEME=calendar YEARS=1990-1992 AGG=p15_<name>_3yr SAVE_INTERVAL=0.25 GPU=0 \
 #     EXTRA="physics=strat15_jucker_ray physics.terms.rayleigh_drag.tau_days=10" bash scripts/chain_segments.sh
 defaults:
   - /experiment/p13_jucker
   - override /physics: strat15_jucker
-
-run:
-  save_interval: 1.0
 
 output_keep: [u_wind, v_wind, temperature, omega, normalized_surface_pressure, aoa150, aoa_sfc, aoa500]
 output_drop: []

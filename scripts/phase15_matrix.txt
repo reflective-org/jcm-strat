@@ -15,3 +15,5 @@ spongeT      | strat15_jucker           | run.sponge.damp_temperature=false     
 n100         | strat15_jucker           | nudging.min_pressure_hpa=100                                     | ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer)
 hines03      | strat15_jucker_hines     | physics.terms.hines_gwd.rms_launch_wind=0.3                      | Hines only, rms launch wind 0.3 m/s
 rayzm10      | strat15_jucker_ray       | physics.terms.rayleigh_drag.tau_days=10 physics.terms.rayleigh_drag.zonal_mean_only=true | Rayleigh drag 30 -> 1 hPa tau 10 d on the ZONAL-MEAN wind only (eddies untouched)
+raylow20     | strat15_jucker_ray       | physics.terms.rayleigh_drag.p_bot_hpa=50 physics.terms.rayleigh_drag.p_top_hpa=5 physics.terms.rayleigh_drag.tau_days=20 | Rayleigh drag 50 -> 5 hPa, tau 20 d at 5 hPa and above (drag placed right above the 50-20 hPa stall instead of near the stratopause)
+hines05_l100 | strat15_jucker_hines     | physics.terms.hines_gwd.rms_launch_wind=0.5 physics.terms.hines_gwd.launch_p_hpa=100 | Hines only, rms 0.5 m/s launched at 100 hPa (both Hines knobs at once)

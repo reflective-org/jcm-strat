@@ -100,11 +100,11 @@ def cfgs():
     return out
 
 
-def test_base_is_p13_jucker_with_daily_whitelisted_output_only(cfgs):
+def test_base_is_p13_jucker_with_whitelisted_output_only(cfgs):
     j, b = cfgs["p13_jucker"], cfgs["p15_base"]
-    assert b.run.save_interval == 1.0 and j.run.save_interval == 0.25
+    assert b.run.save_interval == 0.25 == j.run.save_interval          # 6-hourly: the TEM w* needs all four daily phases
     assert list(b.output_keep) == KEEP and list(b.output_drop) == []
-    assert {k: v for k, v in b.run.items() if k != "save_interval"} == {k: v for k, v in j.run.items() if k != "save_interval"}
+    assert b.run == j.run
     for k in ("grid", "nudging", "sl_mass_fixer_exclude", "calendar", "level_table", "terrain"):
         assert b[k] == j[k], k
     hs_b = {k: v for k, v in b.physics.terms.held_suarez.items() if k not in ("tau_scale", "tau_max_days")}
@@ -142,7 +142,7 @@ def test_every_matrix_line_composes_and_instantiates():
         assert name not in seen; seen.add(name)
         extra = [] if ov == "-" else ov.split()
         c = compose_run_config(["+experiment=p15_base", f"physics={phys}", *extra])
-        assert c.run.save_interval == 1.0 and list(c.output_keep) == KEEP
+        assert c.run.save_interval == 0.25 and list(c.output_keep) == KEEP
         terms = [hydra.utils.instantiate(v) for v in c.physics.terms.values()]
         names = [t.name for t in ComposablePhysics(terms).terms]
         assert names[0] in ("held_suarez", "moist_air_column_state") and names[-1] == "omega_diagnostic"

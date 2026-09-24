@@ -85,14 +85,13 @@ def main():
     ap.add_argument("--tag", required=True); ap.add_argument("--label", default="")
     ap.add_argument("--before-label", default=None); ap.add_argument("--after-label", default=None)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--stride", default="4", help="every n-th frame for the TEM covariances (4 = daily on a 6-hourly archive), or 'auto' = the 00 UTC frames of any archive")
+    ap.add_argument("--stride", type=int, default=4, help="every n-th 6-hourly frame for the TEM covariances (4 = daily, ONE phase of the day: biased by the tides - Phase 15; 1 = all frames)")
     ap.add_argument("--clocks", nargs="*", default=["aoa_sfc", "aoa500"])
     ap.add_argument("--last-saves", type=int, default=240, help="frames averaged for the age (240 = last 60 d of a 6-hourly archive)")
     ap.add_argument("--last-days", type=float, default=None, help="instead of --last-saves: days averaged for the age, converted per run from its save interval (daily vs 6-hourly archives)")
     ap.add_argument("--waccm-years", default="1996-2014"); ap.add_argument("--clams-years", default="2005-2009")
     ap.add_argument("--no-waccm", action="store_true")
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
-    a.stride = "auto" if str(a.stride) == "auto" else int(a.stride)
     def frames_for(run, days):
         if days is None:
             return a.last_saves
