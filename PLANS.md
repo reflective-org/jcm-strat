@@ -534,3 +534,13 @@ on `phase13-gwd`. Everything stays on Voltage Park in this folder.
 **Acceptance, as Phase 13:** tropical w* 30 / 10 hPa within 1.5× of 0.26 / 0.47 mm/s; tropical `aoa150` 12 hPa within 0.4 yr
 of 2.90, 55 hPa not worse than 1.29; 50-70° `aoa150` 55 hPa ≥ 3.6 (not the drag run's 2.5); tropical w* at 1-0.3 hPa upward
 and polar descent > 1 mm/s in the 1994 segment; cost ≤ 1.3× control.
+
+# Phase 13c (2026-09-24, Susanne) — Jucker + drag + 400 hPa cutoff, ten years, Lott-Miller on/off
+
+Susanne, 2026-09-24 10:30 PDT: "Can you do an additional run, 10 years, with Jucker relaxation, gravity wave drag and nudging
+only until 400 hPa. And do the same but for gravity use only Hines, not Lott-Miller." Two strat81 chains 1990-1999 in parallel
+(GPU 1: `p13_jucker_gwd_n400` = `p13_jucker_gwd` + `nudging.min_pressure_hpa: 400`; GPU 2: `p13_jucker_hines_n400` = the same
+without `lott_miller_sso`), pipeline `scripts/phase13c_run.sh` (tmux `phase13c-n400`), strat81 windows 1995-1999 prefetched,
+the nine moist_air_state diagnostics dropped from the output (31 GB/yr, never analysed). ~40 min/yr -> ~7 h + 1 h diagnostics.
+Record `docs/outputs/13c_jucker_n400/`. Comparisons: Hines-only vs Hines+LM (clean pair, both 10 yr), n400 vs `p13juckergwd_5yr`,
+vs `p12echam_5yr`, Hines-only vs `p13jucker_5yr`; mesosphere table on the 1994 and 1999 segments.
