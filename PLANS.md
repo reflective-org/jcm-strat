@@ -544,3 +544,11 @@ without `lott_miller_sso`), pipeline `scripts/phase13c_run.sh` (tmux `phase13c-n
 the nine moist_air_state diagnostics dropped from the output (31 GB/yr, never analysed). ~40 min/yr -> ~7 h + 1 h diagnostics.
 Record `docs/outputs/13c_jucker_n400/`. Comparisons: Hines-only vs Hines+LM (clean pair, both 10 yr), n400 vs `p13juckergwd_5yr`,
 vs `p12echam_5yr`, Hines-only vs `p13jucker_5yr`; mesosphere table on the 1994 and 1999 segments.
+
+# Phase 13d (2026-09-25, Susanne) — Jucker + Hines only, nudged below 150 hPa, strat81
+
+"Can you do an additional run: Jucker relaxation plus Hines only, nudged below 150 hPa, on strat81." `p13_jucker_hines` =
+`p13_jucker_gwd` minus `lott_miller_sso`, 1990-1994 (equal clock length with `p13jucker_5yr` and `p13juckergwd_5yr`), GPU 1,
+pipeline `scripts/phase13d_run.sh` (tmux `phase13d-jucker-hines`), record `docs/outputs/13d_jucker_hines/`. Comparisons: vs
+Jucker no drag (the Hines effect), vs Jucker + both schemes (Lott-Miller off at 150 hPa), vs full physics; mesosphere table 1994.
+If the shallow branch overshoots as in 13b, the next knob is `rms_launch_wind` (1.0 -> 0.5-0.7 m/s) - not part of this run.
