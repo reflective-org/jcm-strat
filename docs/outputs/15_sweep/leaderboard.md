@@ -1,6 +1,6 @@
 # Phase 15 sweep leaderboard
 
-18 scored run(s) as of 2026-09-25 15:23 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
+18 scored run(s) as of 2026-09-25 16:07 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
 
 **Best so far: `ray30+n100_5yr`** — stage 2: Rayleigh drag 30 -> 1 hPa, tau 30 d at 1 hPa (a third of ray10) + ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer) (five years): composite 0.811 (base 1.022); age RMSE 0.45 (base 0.55) yr, bias -0.00 (base -0.25); tropical w* 100/70/50/30/10 hPa 0.35/0.25/0.32/0.36/0.43 (base 0.32/0.28/0.34/0.36/0.43, WACCM6 0.40/0.21/0.20/0.26/0.47); u RMSE 3.6 (base 5.9) m/s, T RMSE 5.2 (base 5.4) K; `aoa150` 55 hPa tropics 1.56 (base 1.48) / 50-70 3.56 (base 3.22), 12 hPa tropics 3.61 (base 3.21) yr; cost 29 (base 32) min/yr.
 
