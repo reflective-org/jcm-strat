@@ -117,3 +117,21 @@ that Phase 13c reserved for a shallow-branch overshoot is not needed: the shallo
   `tau15cap` knob (JFV tau capped at 15 d) addresses the same thing.
 - The drag-tendency diagnostic (per-term momentum deposition on one segment) proposed in Phase 13b would show where Hines puts its
   momentum in this run; still not written.
+
+## Ten-year extension (1990–1999)
+
+Susanne, 2026-09-25 17:15 PDT: "lets do a 10year extension". The p13jh chain continues from its 1994 checkpoint to 1999
+(`scripts/phase13d_extend10.sh`, tmux `phase13d-extend10`, log `runs/p13d_ext_run.log`, GPU 1; aggregate `runs/p13jh_10yr`,
+segments 1990–1994 reused). Purpose: the two age criteria a 5-year clock cannot settle (50–70° 55 hPa 3.47 vs ≥ 3.6; tropical
+12 hPa 3.45 vs 2.90 ± 0.4), and the first Phase 13 diagnostics at **stride 1** (every 6-hourly frame; the Phase 15 tide finding).
+
+```
+EXPERIMENT=p13_jucker_hines PREFIX=p13jh SCHEME=calendar YEARS=1990-1999 AGG=p13jh_10yr SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
+```
+
+Diagnostics into `10yr/`: `jh10_vs_5_*` (5 → 10 yr, clock convergence), `jh10_vs_n400_*` (the clean 10-year pair against Phase 13c's
+Hines-only run: nudging cutoff 400 → 150 hPa), `jh10_vs_echam_*`, `hines_s1_*` (the 5-year Hines pair of this phase at stride 1: the
+30 hPa question), `p13jh_10yr_aoa_*` (5-yr run alongside), `p13d10_mesosphere.md/.png` (1999 segments, stride 1). Expected: chain
+~2.6 h (31 min/yr), diagnostics ~2 h; results here when finished.
+
+*(Results pending.)*
