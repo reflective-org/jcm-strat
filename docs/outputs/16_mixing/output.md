@@ -53,6 +53,12 @@ columns and by leaving the stratospheric parts unchanged.
 
 <!-- leaderboard:start -->
 _no scored runs yet_
+
+_no scored runs yet_
+
+![scores](sweep_scores.png)
+![w*](sweep_wstar_profiles.png)
+![age](sweep_age_profiles.png)
 <!-- leaderboard:end -->
 
 ## Reading the result
@@ -66,3 +72,7 @@ _no scored runs yet_
 
 ## Run log (appended by the queues)
 
+- 2026-09-29 09:41 PDT — queue A: started (commit c603cc6, GPUs 0, budget 23 h)
+- 2026-09-29 09:41 PDT — queue B: started (commit c603cc6, GPUs 1, budget 23 h)
+- 2026-09-29 09:41 PDT — queue C: started (commit c603cc6, GPUs 2 0 1, budget 23 h)
+- 2026-09-29 09:42 PDT — queue C: **FAILED** chain n100_10 after 0 min (runs/p16_n100_10_chain.log)
