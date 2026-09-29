@@ -52,12 +52,13 @@ columns and by leaving the stratospheric parts unchanged.
 ## Leaderboard (rewritten by `scripts/sweep_leaderboard.py` after every run)
 
 <!-- leaderboard:start -->
-2 scored run(s) as of 2026-09-29 14:40 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
+3 scored run(s) as of 2026-09-29 15:01 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
 
 | rank | run | stage | composite | age RMSE `aoa150` vs CLaMS-entry [yr] | age bias | w* log-err | u RMSE [m/s] | T RMSE [K] | w* 100/70/50/30/10 hPa [mm/s] | `aoa150` 55 hPa trop / 50-70 | `aoa150` 12 hPa trop / 50-70 | `aoa_sfc` RMSE vs CLaMS | `aoa_sfc` 55 hPa trop (CLaMS 1.33) | `aoa500` 100 hPa trop [yr] (500->100 transit) | w* 1 hPa trop / NH / SH | min/yr | what |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | **base10** | A | 0.805 | 0.48 | +0.20 | 0.18 | 3.7 | 5.4 | 0.35/0.24/0.29/0.33/0.47 | 1.83 / 3.74 | 3.77 / 4.73 | 1.99 | 3.92 | 1.70 | 0.99 / -2.26 / -2.57 | 30 | Phase 15 winner (Jucker, Rayleigh 30 d above 30 hPa, nudged < 100 hPa) continued from its 1994 checkpoint to 1999 - THE BASE |
-| 2 | n100_10 | C | 0.866 | 0.49 | +0.25 | 0.18 | 4.7 | 5.5 | 0.35/0.24/0.29/0.33/0.46 | 1.87 / 3.80 | 3.82 / 4.78 | 2.00 | 3.94 | 1.72 | 1.32 / -2.25 / -2.61 | 29 | Phase |
+| 2 | qbonarrow | B | 0.823 | 0.53 | +0.28 | 0.13 | 4.1 | 5.5 | 0.36/0.23/0.26/0.31/0.47 | 1.95 / 3.79 | 3.95 / 4.79 | 2.08 | 4.06 | 1.75 | 0.97 / -2.23 / -2.56 | 29 | base with the QBO nudging window narrowed (full weight |lat| < 10, zero at 15, instead of 15 / 25): a freer subtropical barrier |
+| 3 | n100_10 | C | 0.866 | 0.49 | +0.25 | 0.18 | 4.7 | 5.5 | 0.35/0.24/0.29/0.33/0.46 | 1.87 / 3.80 | 3.82 / 4.78 | 2.00 | 3.94 | 1.72 | 1.32 / -2.25 / -2.61 | 29 | Phase |
 | | *references* | | | CLaMS entry age (AGE − 0.09) | | WACCM6 | ERA5 | ERA5 | 0.40/0.21/0.20/0.26/0.47 | CLaMS 1.24 / 4.03 (WACCM entry 1.11 / 3.40) | CLaMS 3.59 / 4.47 (WACCM 2.82 / 4.18) | | | | full ECHAM 1994: +0.96 / −1.29 / −3.19 | | |
 
 ![scores](sweep_scores.png)
@@ -97,3 +98,4 @@ columns and by leaving the stratospheric parts unchanged.
 - 2026-09-29 14:41 PDT — queue E: started (commit 284bcd6, GPUs 0, budget 17 h)
 - 2026-09-29 14:41 PDT — queue F: started (commit 284bcd6, GPUs 2, budget 17 h)
 - 2026-09-29 14:41 PDT — the batched (all-tracers-at-once) tridiagonal solve committed at 10:36 ran 17x slower on the GPU (144 vs 2487 sim d/hr); reverted to one solve per tracer at 14:45; the 1992 segments of mix10 / n100mix10 killed; queues E / F re-run them on GPU 0 / 2 once A / C are done and run the final diagnostics.
+- 2026-09-29 15:01 PDT — queue B: **qbonarrow** (base with the QBO nudging window narrowed (full weight |lat| < 10, zero at 15, instead of 15 / 25): a freer subtropical barrier): 236 min for 8 new year(s); [score qbonarrow] composite 0.823 = mean(age 1.05, w* 0.33, u 0.81, T 1.10); age150 RMSE vs CLaMS-entry 0.53 yr (bias +0.28); tropical w* 100/70/50/30/10: 0.36/0.23/0.26/0.31/0.47 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 4.1 m/s, T RMSE 5.5 K; 29 min/yr -> /data/JCM_stripped/jcm-strat-phase16/docs/outputs/16_mixing/scores/qbonarrow.json
