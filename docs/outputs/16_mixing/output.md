@@ -78,3 +78,4 @@ _no scored runs yet_
 - 2026-09-29 09:43 PDT — queue A: started (commit f5e4190, GPUs 0, budget 23 h)
 - 2026-09-29 09:43 PDT — queue C: started (commit f5e4190, GPUs 2 0 1, budget 23 h)
 - 2026-09-29 09:51 PDT — queue C: **FAILED** chain n100_10 after 7 min (runs/p16_n100_10_chain.log)
+- 2026-09-29 09:51 PDT — queue A: **FAILED** chain base10 after 7 min (runs/p16_base10_chain.log)
