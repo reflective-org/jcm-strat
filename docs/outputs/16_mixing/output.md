@@ -85,3 +85,4 @@ _no scored runs yet_
 - 2026-09-29 10:56 PDT — queue C: started (commit 3105bee, GPUs 2 0 1, budget 23 h)
 - 2026-09-29 10:57 PDT — queue D: started (commit 3105bee, GPUs 0 2 1, budget 23 h)
 - 2026-09-29 10:57 PDT — queue D: **FAILED** chain base10 after 0 min (runs/p16_base10_chain.log)
+- 2026-09-29 10:59 PDT — relaunch: the 09:4x tmux kills had left duplicate queue-A/C scripts alive (two copies fought over GPUs 0/2, losers on the CPU); everything killed at 10:55, partial segments removed, A/B/C relaunched once at 10:57 (A and C re-run base10 / n100_10 themselves as their first entries); queue D and the watchdog withdrawn at 11:05 (D raced A for GPU 0). Final diagnostics again run by the last of A/B/C.
