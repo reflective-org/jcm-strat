@@ -1,0 +1,68 @@
+# Phase 16 — tropospheric tracer mixing and the in-mixing knobs on the Phase 15 winner (strat81, 1990–1999, GPUs 0/1/2)
+
+Status: **running unattended** (three queues, tmux `strat_p16_A` / `_B` / `_C`, logs `runs/p16_A.log` etc., branch `phase16-mixing`,
+worktree `/data/JCM_stripped/jcm-strat-phase16`). Susanne, 2026-09-28 21:30 PDT: "try all that on GPU0,1 and 2. Make your own
+judgements … don't push anything online … don't run anything longer than 24h." The leaderboard, figures and run log below are
+rewritten by the queues after every run; the commit history of this directory is the time line.
+
+## Why
+
+Phase 15 (`docs/outputs/15_sweep/`) ended with the circulation of the dry model on WACCM6 and its winds within 3.6 m/s of ERA5, but
+the age of air unchanged by any circulation knob: with all 6-hourly frames the residual ascent is already on or above WACCM6 through the
+whole stratosphere, so the remaining age error is not a w* problem. Two pieces remain, neither touched by Phase 15:
+
+1. **The surface clock (CLaMS' own clock) is 2 yr too old in the tropics** (55 hPa 3.3 vs 1.3 yr) while the entry-age clock is within
+   0.2 yr: the dry troposphere has no convection and no boundary-layer mixing, and air takes ~1.7 yr from 500 to 100 hPa (ECHAM 0.16;
+   Phase 12 addendum). A dry *convective adjustment* would not help: under the ERA5 nudging the tropospheric temperature is already
+   ERA5's, so it would have nothing to adjust and would move no tracer. What is missing is the tracer transport itself, so this phase
+   adds a **tropospheric vertical tracer mixing** term (`jcm_strat/tracer_mixing.py`): Fickian vertical diffusion of every tracer,
+   K m²/s below 100 hPa (full below 200 hPa), zero flux at the ends, mass-conserving, winds and temperature untouched.
+2. **The entry age is 0.2 yr too old at 55 hPa in the tropics and slightly old in the extratropics with w* already too strong**, which
+   points to too much in-mixing of old extratropical air into the tropical pipe, i.e. transport and numerics rather than forcing.
+   Three knobs that act on that without changing the forcing: the width of the QBO nudging window (the subtropical barrier), the
+   hyperdiffusion timescale, and the semi-Lagrangian departure-point iterations.
+
+Phase 13d showed the clocks are not converged at five years, so every run here is ten years (1990–1999), scored on 1998–1999.
+
+## Runs (`scripts/phase16_queues.txt`)
+
+| queue / GPU | run | change against the base | what it answers |
+|---|---|---|---|
+| A / 0 | `base10` | Phase 15 winner (`ray30+n100`: Jucker relaxation, Rayleigh drag tau 30 d above 30 hPa, ERA5 nudging < 100 hPa) continued from its 1994 checkpoint to 1999 | the ten-year reference; how much the 5-yr ages still move |
+| A / 0 | `mix10` | + tracer mixing K 10 m²/s | does tropospheric mixing bring the surface clock to CLaMS? (500–100 hPa exchange ~0.7 yr) |
+| A / 0 | `mix30` | + tracer mixing K 30 m²/s | the ECHAM-like transit (~0.2 yr) |
+| B / 1 | `qbonarrow` | QBO nudging window full to 10°, zero at 15° (was 15 / 25) | a freer subtropical barrier: does the tropical entry age get younger? |
+| B / 1 | `hdiff2` | hyperdiffusion timescales × 2 (weaker) | numerical horizontal mixing of the dynamics |
+| B / 1 | `slit2` | two semi-Lagrangian departure iterations | transport accuracy |
+| C / first idle of 2, 0, 1 | `n100_10` | Phase 15's `n100` (no Rayleigh drag) to 1999 | the base without the idealised drag |
+| C | `n100mix10` | `n100` + tracer mixing K 10 | does the mixing result hold without the Rayleigh drag? |
+| C | `mix10trop` | tracer mixing K 10 confined to \|lat\| < 30° | deep convection is tropical; does confining it matter? |
+
+GPU 2 carried a colleague's training job at launch; queue C takes the first idle GPU of 2, 0, 1 and skips a run that could not
+finish within the 24 h budget.
+
+## Scoring
+
+As Phase 15 (`scripts/sweep_score.py`: entry-age clock vs CLaMS entry age over 100–5 hPa, tropical w* vs WACCM6 from all frames,
+u and T vs ERA5 100–1 hPa, composite = mean of the normalised parts), plus two columns that this phase is about: the **surface
+clock at 55 hPa in the tropics** (CLaMS 1.33 yr) and the **age of the 500 hPa clock at 100 hPa in the tropics** (the 500 → 100 hPa
+transit; ECHAM 0.16 yr, dry base ~1.7 yr). The composite does not score the surface clock, so a mixing run is judged by those two
+columns and by leaving the stratospheric parts unchanged.
+
+## Leaderboard (rewritten by `scripts/sweep_leaderboard.py` after every run)
+
+<!-- leaderboard:start -->
+_no scored runs yet_
+<!-- leaderboard:end -->
+
+## Reading the result
+
+- `mix*` runs should move only the surface-clock columns (`aoa_sfc` 55 hPa, `aoa500` at 100 hPa); their stratospheric parts should
+  equal `base10`'s. If the entry age moves too, the mixing reaches above the tropopause (check `p_top_hpa`).
+- `qbonarrow`, `hdiff2`, `slit2` should leave the surface clock alone and are judged by the entry-age columns (55 hPa tropics vs
+  CLaMS 1.24 entry / WACCM6 1.11; 50–70° 4.03 / 3.40) and by w*, u, T not getting worse.
+- The final diagnostics (`final/`, written by the last queue) compare every run with `base10` at stride 1 and show the mixing runs'
+  surface clock against CLaMS with the Phase 13b Jucker base alongside.
+
+## Run log (appended by the queues)
+

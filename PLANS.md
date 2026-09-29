@@ -572,3 +572,21 @@ Branch `phase15-sweep` off `phase13-gwd`, worktree `jcm-strat-phase15`; nothing 
 
 **Rules for the unattended run.** GPU 0 only; no run longer than the budget; smoke gate as in Phase 13c; a failed chain is logged and
 the sweep continues with the next line; no retunes beyond the matrix and the planner's fixed rules; commit after every run, never push.
+
+# Phase 16 (2026-09-28, Susanne) — tropospheric tracer mixing and the in-mixing knobs, ten years, three GPUs
+
+**Ask.** After Phase 15 ("the result is hardly any better than Jucker"): "try all that on GPU0,1 and 2. Make your own judgements
+... don't push anything online or do anything weird that is outside of the workflow ... don't run anything longer than 24h."
+"All that" = (1) a tropospheric tracer transport term for the surface-clock transit (a dry convective adjustment would move no
+tracer under the ERA5 nudging), (2) the in-mixing knobs for the 0.2 yr entry-age excess (QBO window width, hyperdiffusion, SL
+departure iterations), (3) ten-year runs because the 5-yr clocks are not converged (Phase 13d).
+
+**Design** (`docs/outputs/16_mixing/output.md`). Base = the Phase 15 winner `ray30+n100` as `p16_base` (its 1990-1994 segments
+linked, continued to 1999); second base `p16_n100` (no Rayleigh drag). New term `jcm_strat/tracer_mixing.py: TropoTracerMixing`
+(vertical diffusion of every tracer, K m^2/s below 100 hPa, ramp to full at 200 hPa, optional tropical confinement, flux form,
+mass-conserving, unit-tested). Nine runs in three queues (`scripts/phase16_queues.txt`, `scripts/phase16_run.sh A|B|C`, tmux
+`strat_p16_A/B/C`): A on GPU 0 (base10, mix10, mix30), B on GPU 1 (qbonarrow, hdiff2, slit2), C on the first idle of GPU 2/0/1
+(n100_10, n100mix10, mix10trop). Scoring = Phase 15's `sweep_score.py` on 1998-1999 plus the surface clock at 55 hPa and the
+500 hPa clock at 100 hPa (the transit). Leaderboard/record rewritten and committed after every run under a shared lock; the last
+queue runs `phase12_compare --stride 1` of every run vs `base10` and `aoa_vs_clams` for the mixing runs. Budget 23 h per queue with
+a per-run check; nothing pushed. Branch `phase16-mixing` off `phase15-sweep`, worktree `jcm-strat-phase16`.

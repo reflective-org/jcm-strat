@@ -1,0 +1,16 @@
+# Phase 16 (Susanne 2026-09-28 21:30 PDT: "try all that on GPU0,1 and 2 ... don't run anything longer than 24h"): ten-year chains
+# 1990-1999 in three queues. Columns: queue | name | experiment | hydra overrides ('-' = none) | description.
+# Queue A (GPU 0): the base to ten years, then the tropospheric tracer mixing at two strengths.
+# Queue B (GPU 1): the in-mixing knobs on the base (QBO nudging window, hyperdiffusion, semi-Lagrangian departure iterations).
+# Queue C (first idle of GPU 2, 0, 1 - GPU 2 carried a colleague's job at launch): the n100 base to ten years, the mixing on it,
+#         and the mixing confined to the tropics.
+# scripts/phase16_run.sh <queue> runs a queue; a run that cannot finish inside the 24 h budget is skipped and logged.
+A | base10       | p16_base     | -                                                                                     | Phase 15 winner (Jucker, Rayleigh 30 d above 30 hPa, nudged < 100 hPa) continued from its 1994 checkpoint to 1999 - THE BASE
+A | mix10        | p16_base_mix | physics.terms.tropo_tracer_mixing.k_m2_s=10                                           | base + tropospheric vertical tracer mixing K 10 m^2/s (500-100 hPa exchange ~0.7 yr)
+A | mix30        | p16_base_mix | physics.terms.tropo_tracer_mixing.k_m2_s=30                                           | base + tracer mixing K 30 m^2/s (exchange ~0.2 yr, the ECHAM convective transit)
+B | qbonarrow    | p16_base     | physics.terms.held_suarez.qbo.lat_full_deg=10 physics.terms.held_suarez.qbo.lat_zero_deg=15 | base with the QBO nudging window narrowed (full weight |lat| < 10, zero at 15, instead of 15 / 25): a freer subtropical barrier
+B | hdiff2       | p16_base     | diffusion.scale=2.0                                                                   | base with the hyperdiffusion timescales doubled (weaker numerical horizontal diffusion of the dynamics)
+B | slit2        | p16_base     | ++sl_departure_iterations=2                                                           | base with two semi-Lagrangian departure-point iterations (more accurate transport, Phase 7 knob)
+C | n100_10      | p16_n100     | -                                                                                     | Phase 15's n100 (no Rayleigh drag) continued to 1999 - the base without the idealised drag
+C | n100mix10    | p16_n100_mix | physics.terms.tropo_tracer_mixing.k_m2_s=10                                           | n100 + tracer mixing K 10 m^2/s (does the mixing result hold without the Rayleigh drag?)
+C | mix10trop    | p16_base_mix | physics.terms.tropo_tracer_mixing.k_m2_s=10 physics.terms.tropo_tracer_mixing.lat_max_deg=30 | base + tracer mixing K 10 m^2/s confined to |lat| < 30 (deep convection is tropical)
