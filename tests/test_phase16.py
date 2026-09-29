@@ -73,6 +73,21 @@ def test_implicit_step_is_stable_conservative_and_matches_explicit_for_small_dt(
     assert c_new[-1] < c[-1, 0] and c_new[4] > c[4, 0]
 
 
+def test_all_tracers_solved_at_once_equal_one_by_one():
+    p = np.array([10.0, 100.0, 200.0, 400.0, 600.0, 800.0, 1000.0])
+    t = _term(p, [0.0, 30.0], k_m2_s=20.0)
+    state = type("S", (), {})()
+    state.normalized_surface_pressure = jnp.ones((2,)); state.temperature = jnp.full((p.size, 2), 250.0 * t._k_per_nondim)
+    state.specific_humidity = jnp.zeros((p.size, 2))
+    rng = np.random.default_rng(1)
+    state.tracers = {n: jnp.asarray(rng.uniform(0, 1000, (p.size, 2))) for n in ("aoa", "n2o", "sai", "pulse_1")}
+    tend = t(state, {"_dt_seconds": 720.0}, None, None)[0].tracers
+    p_pa = np.asarray(t._sigma.get_value()) * 101325.0 * np.ones((1, 2)); t_k = np.full((p.size, 2), 250.0); k = np.asarray(t._k.get_value())
+    for n, c in state.tracers.items():
+        one = np.asarray(t.implicit_tendency_per_second(c, jnp.asarray(p_pa), jnp.asarray(t_k), jnp.asarray(k), 720.0)) * t._per_s
+        assert np.allclose(np.asarray(tend[n]), one, rtol=1e-5, atol=1e-6 * np.abs(one).max()), n
+
+
 def test_tropical_confinement_and_validation():
     p = np.array([100.0, 300.0, 500.0, 900.0])
     t = _term(p, [0.0, 20.0, 40.0, 60.0], k_m2_s=10.0, lat_max_deg=40.0)

@@ -126,13 +126,17 @@ class TropoTracerMixing(PhysicsTerm):
         INCREMENT delta = C_new - C (not for C_new) keeps full float32 precision: a clock of ~3000 days solved directly
         would leave ~0.05 day of solver roundoff per step, several times the 0.008 day the clock gains per step."""
         a, b, c = self._operator(p_pa, t_k, k)
-        up = jnp.concatenate([jnp.zeros_like(tracer[:1]), tracer[:-1]], axis=0)
-        dn = jnp.concatenate([tracer[1:], jnp.zeros_like(tracer[:1])], axis=0)
-        lc = a * up + b * tracer + c * dn                                  # explicit L C, (nlev, ncols)
+        single = tracer.ndim == 2
+        trc = tracer[..., jnp.newaxis] if single else tracer               # (nlev, ncols, ntracers)
+        a3, b3, c3 = a[..., jnp.newaxis], b[..., jnp.newaxis], c[..., jnp.newaxis]
+        up = jnp.concatenate([jnp.zeros_like(trc[:1]), trc[:-1]], axis=0)
+        dn = jnp.concatenate([trc[1:], jnp.zeros_like(trc[:1])], axis=0)
+        lc = a3 * up + b3 * trc + c3 * dn                                  # explicit L C, (nlev, ncols, ntracers)
         dl, d, du = (-dt_s * a).T, (1.0 - dt_s * b).T, (-dt_s * c).T      # (ncols, nlev); dl[:, 0] = du[:, -1] = 0 by construction
-        rhs = (dt_s * lc).T[..., jnp.newaxis]                              # (ncols, nlev, 1)
-        delta = jax.lax.linalg.tridiagonal_solve(dl, d, du, rhs)[..., 0].T
-        return delta / dt_s
+        rhs = jnp.transpose(dt_s * lc, (1, 0, 2))                          # (ncols, nlev, ntracers): one solve, all tracers
+        delta = jnp.transpose(jax.lax.linalg.tridiagonal_solve(dl, d, du, rhs), (1, 0, 2))
+        out = delta / dt_s
+        return out[..., 0] if single else out
 
     def __call__(self, state: PhysicsState, diagnostics: dict, forcing, terrain):
         if not self._coords_cached:
@@ -144,7 +148,12 @@ class TropoTracerMixing(PhysicsTerm):
         if dt_s is None:
             tend = {name: self.tendency_per_second(c, p_pa, t_k, k) * self._per_s for name, c in state.tracers.items()}
         else:
-            tend = {name: self.implicit_tendency_per_second(c, p_pa, t_k, k, dt_s) * self._per_s for name, c in state.tracers.items()}
+            # one tridiagonal solve with every tracer as a right-hand side column (same matrix for all): 26 tracers in the
+            # production set, and a solve per tracer cost 2.3x the model's throughput (Phase 16 launch, 1381 vs 3198 d/hr)
+            names = list(state.tracers)
+            stacked = jnp.stack([state.tracers[n] for n in names], axis=-1)          # (nlev, ncols, ntracers)
+            out = self.implicit_tendency_per_second(stacked, p_pa, t_k, k, dt_s) * self._per_s
+            tend = {n: out[..., i] for i, n in enumerate(names)}
         zeros = jnp.zeros_like(state.temperature)
         return PhysicsTendency(u_wind=zeros, v_wind=zeros, temperature=zeros,
                                specific_humidity=jnp.zeros_like(state.specific_humidity), tracers=tend), diagnostics
