@@ -148,12 +148,10 @@ class TropoTracerMixing(PhysicsTerm):
         if dt_s is None:
             tend = {name: self.tendency_per_second(c, p_pa, t_k, k) * self._per_s for name, c in state.tracers.items()}
         else:
-            # one tridiagonal solve with every tracer as a right-hand side column (same matrix for all): 26 tracers in the
-            # production set, and a solve per tracer cost 2.3x the model's throughput (Phase 16 launch, 1381 vs 3198 d/hr)
-            names = list(state.tracers)
-            stacked = jnp.stack([state.tracers[n] for n in names], axis=-1)          # (nlev, ncols, ntracers)
-            out = self.implicit_tendency_per_second(stacked, p_pa, t_k, k, dt_s) * self._per_s
-            tend = {n: out[..., i] for i, n in enumerate(names)}
+            # one solve per tracer. Batching all 26 tracers as right-hand-side columns of ONE tridiagonal_solve call was
+            # tried (Phase 16, 2026-09-29) and ran 17x SLOWER on the H200 (144 vs 2487 sim days/hr): the multi-RHS path of
+            # the cuSPARSE solver is not the one to use; a solve per tracer costs ~25 % of the model's throughput.
+            tend = {name: self.implicit_tendency_per_second(c, p_pa, t_k, k, dt_s) * self._per_s for name, c in state.tracers.items()}
         zeros = jnp.zeros_like(state.temperature)
         return PhysicsTendency(u_wind=zeros, v_wind=zeros, temperature=zeros,
                                specific_humidity=jnp.zeros_like(state.specific_humidity), tracers=tend), diagnostics
