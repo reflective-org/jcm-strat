@@ -94,3 +94,6 @@ columns and by leaving the stratospheric parts unchanged.
 - 2026-09-29 13:35 PDT — queue C: **n100_10** (Phase): 150 min for 5 new year(s); [score n100_10] composite 0.866 = mean(age 0.99, w* 0.44, u 0.94, T 1.10); age150 RMSE vs CLaMS-entry 0.49 yr (bias +0.25); tropical w* 100/70/50/30/10: 0.35/0.24/0.29/0.33/0.46 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 4.7 m/s, T RMSE 5.5 K; 29 min/yr -> /data/JCM_stripped/jcm-strat-phase16/docs/outputs/16_mixing/scores/n100_10.json
 - 2026-09-29 14:40 PDT — queue A: **FAILED** chain mix10 after 64 min (runs/p16_mix10_chain.log)
 - 2026-09-29 14:40 PDT — queue C: **FAILED** chain n100mix10 after 64 min (runs/p16_n100mix10_chain.log)
+- 2026-09-29 14:41 PDT — queue E: started (commit 284bcd6, GPUs 0, budget 17 h)
+- 2026-09-29 14:41 PDT — queue F: started (commit 284bcd6, GPUs 2, budget 17 h)
+- 2026-09-29 14:41 PDT — the batched (all-tracers-at-once) tridiagonal solve committed at 10:36 ran 17x slower on the GPU (144 vs 2487 sim d/hr); reverted to one solve per tracer at 14:45; the 1992 segments of mix10 / n100mix10 killed; queues E / F re-run them on GPU 0 / 2 once A / C are done and run the final diagnostics.
