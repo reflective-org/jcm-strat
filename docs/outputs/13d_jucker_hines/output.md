@@ -131,7 +131,64 @@ EXPERIMENT=p13_jucker_hines PREFIX=p13jh SCHEME=calendar YEARS=1990-1999 AGG=p13
 
 Diagnostics into `10yr/`: `jh10_vs_5_*` (5 → 10 yr, clock convergence), `jh10_vs_n400_*` (the clean 10-year pair against Phase 13c's
 Hines-only run: nudging cutoff 400 → 150 hPa), `jh10_vs_echam_*`, `hines_s1_*` (the 5-year Hines pair of this phase at stride 1: the
-30 hPa question), `p13jh_10yr_aoa_*` (5-yr run alongside), `p13d10_mesosphere.md/.png` (1999 segments, stride 1). Expected: chain
-~2.6 h (31 min/yr), diagnostics ~2 h; results here when finished.
+30 hPa question), `p13jh_10yr_aoa_*` (5-yr run alongside), `p13d10_mesosphere.md/.png` (1999 segments, stride 1).
 
-*(Results pending.)*
+Status: **complete** (pipeline 2026-09-25 17:16 → 21:15 PDT on GPU 1; chain 17:16–20:01 at 29–30 min/yr, diagnostics 20:03–21:15).
+Run `p13jh_10yr` (370 chunk files, segments 1990–1999).
+
+### Results, ten years and stride 1
+
+**Stride 1 removes the 30 hPa stall — and reverses its sign (`hines_s1_metrics.md`, the 1990–1994 pair recomputed from every
+frame).** Tropical w* 100 / 70 / 50 / 30 / 10 hPa, Jucker + Hines: stride 4 gave 0.33 / 0.19 / 0.13 / 0.04 / 0.49; stride 1 gives
+**0.35 / 0.30 / 0.34 / 0.37 / 0.49** mm/s (WACCM6 0.40 / 0.21 / 0.20 / 0.26 / 0.47). The no-drag Jucker run at stride 1: 0.31 / 0.27 /
+0.33 / 0.35 / 0.46. So the "50–20 hPa stall" of the Phase 12–13d tables was the 06 UTC tidal phase, as Phase 15 found; at stride 1 the
+dry model's middle-stratospheric ascent is 40–70 % *stronger* than WACCM6 between 70 and 30 hPa, on WACCM6 at 100 and 10 hPa. The
+monthly series (`hines_s1_wstar_tropics.png`) sit above WACCM6's cycle in most months, with the seasonal phase right. Hines adds
++0.02 to +0.05 mm/s at every level at stride 1 (mass flux +8–13 %), the same message as before. The 30 hPa criterion (within 1.5× of
+0.26) is therefore **met** (0.37, 1.4×); 50 hPa is 1.7× WACCM6.
+
+**Ten years: the circulation is stationary, the clocks were not converged (`jh10_vs_5_metrics.md`).** Every w* and mass-flux number
+of the 10-year mean is within 0.01 mm/s / 0.07 ×10⁹ kg/s of the 5-year mean — the same years plus five more of the same forcing
+statistics. The clocks moved:
+
+| clock | level | region | after 5 yr | after 10 yr | change | target |
+|---|---|---|---|---|---|---|
+| `aoa150` | 55 hPa | tropics | 1.41 | **1.62** | +0.21 | WACCM6 1.19 (control 1.31) |
+| `aoa150` | 55 hPa | 50–70° | 3.47 | **3.60** | +0.13 | ≥ 3.6 (CLaMS sfc 4.12) |
+| `aoa150` | 12 hPa | tropics | 3.45 | **3.47** | +0.02 | 2.90 ± 0.4 |
+| `aoa150` | 12 hPa | 50–70° | 4.44 | 4.56 | +0.13 | CLaMS 4.56, WACCM6 4.18 |
+| `aoa500` | 55 hPa | tropics / 50–70° | 2.38 / 4.28 | 2.72 / 4.56 | +0.34 / +0.28 | CLaMS 1.33 / 4.12 |
+| `aoa_sfc` | 55 hPa | tropics / 50–70° | 3.13 / 4.67 | 3.64 / 5.12 | +0.51 / +0.45 | CLaMS 1.33 / 4.12 |
+
+The extratropical entry age reaches the ≥ 3.6 criterion exactly, still rising (+0.13 in five years; the SH polar 55 hPa value rose
+0.6, `jh10_vs_5_age_profiles.png`). The tropical 12 hPa entry age is converged at 3.47 — 0.17 outside 2.90 ± 0.4 and it will not move.
+The **tropical 55 hPa entry age rose 0.21 yr to 1.62** (WACCM6 1.19): the tropical lower stratosphere was *not* converged at five
+years, contrary to the "tropical clock plateaus by year 3" reading of Phase 13c, and it fails the "not worse than the control" criterion
+by 0.31. With the tropical ascent at 100–50 hPa on or above WACCM6, an entry age 0.4 yr too old at 55 hPa cannot be slow ascent; it is
+old air mixed in from the extratropics (whose clocks are themselves still ageing, which is why the tropical value kept rising) — a
+weak subtropical barrier in the dry model is the natural reading, untested. The surface and 500 hPa clocks rose 0.3–0.5 yr everywhere
+(the dry troposphere's transit plus the lid-valued upper stratosphere feeding down), so their 10-year values are further from CLaMS
+than the 5-year ones; the entry-age clock is the one to compare, as before.
+
+**The clean ten-year pair, nudging cutoff 400 → 150 hPa (`jh10_vs_n400_metrics.md`, both Jucker + Hines, both 1990–1999, stride 1).**
+100 hPa w* 0.16 → 0.35 (WACCM6 0.40), 70 hPa 0.21 → 0.30, 10 hPa 0.42 → 0.50; 100 hPa mass flux 9.3 → 12.0 (10.9). Entry ages 0.33–0.74 yr
+younger everywhere (55 hPa tropics 2.26 → 1.62, 12 hPa 4.21 → 3.47, 50–70° 3.96 → 3.60). Phase 13c's conclusion holds at equal clock
+length and stride 1: the shallow branch is what the ERA5-nudged upper troposphere supplies.
+
+**Against full physics at stride 1 (`jh10_vs_echam_metrics.md`).** ECHAM's own stride-1 profile is 1.46 / 0.60 / 0.15 / 0.18 / 0.80
+(stride 4 gave 0.20 / 0.28 at 50 / 30 hPa): the full physics is 3–4× WACCM6 below 70 hPa, *below* WACCM6 at 50–30 hPa, 1.7× at 10 hPa.
+The dry run (0.35 / 0.30 / 0.34 / 0.37 / 0.50) is nearer WACCM6 at 100, 70 and 10 hPa, further at 50 and 30. Entry ages: tropics 55 hPa
+1.62 vs 0.96 (WACCM6 1.19, now bracketed asymmetrically), 12 hPa 3.47 vs 3.33 (2.90), 50–70° 3.60 vs 2.41 (CLaMS 4.12).
+
+**Mesosphere at stride 1 (`p13d10_mesosphere.md`; tropics / NH cap / SH cap, mm/s):** the 1999 segment repeats 1994 to within
+0.1–0.3 mm/s at every level (0.3 hPa +1.74 / −3.29 / −6.94 vs +1.68 / −3.38 / −6.66; ECHAM at stride 1 +2.64 / −4.96 / −6.59): the cell is
+stationary. At stride 1 the tropical ascent at 1 hPa is **+1.0 to +1.1** where stride 4 read +0.04 — the daily-phase sampling hid the
+base of the cell too. The 400 hPa-cutoff run's 1999 mesosphere is weaker in the NH (−2.7 at 0.3 hPa vs −3.3) and its age has no
+latitude structure at 3 hPa (std 0.06 vs 0.09).
+
+**Verdict after ten years, stride 1.** Met: 30 hPa w* (0.37, 1.4× WACCM6 — the criterion the dry model had "failed" since Phase 12),
+10 hPa w* (0.50), 100 hPa w* (0.35, no overshoot), extratropical entry age (3.60, at the threshold and rising), mesosphere (ECHAM
+strength, stationary), cost (29–30 min/yr). Missed: tropical entry age 12 hPa 3.47 (0.17 outside the tolerance, converged) and 55 hPa
+1.62 (0.31 worse than the control's 1.31 and 0.43 older than WACCM6, still rising at year 10). The circulation criteria are all met;
+what remains is a tropical lower stratosphere that is too old *despite* ascent on WACCM6 — an in-mixing question, not a Brewer–Dobson
+strength question. `p13_jucker_hines` stays the candidate production dry configuration. Cost of the extension: 5 × 30 min GPU.

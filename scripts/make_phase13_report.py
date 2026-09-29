@@ -100,6 +100,10 @@ def build(out_pdf):
     lm = metrics(D13D, "lm_off")            # before = p13juckergwd_5yr
     ech = metrics(D13D, "jh_vs_echam")      # before = p12echam_5yr
     meso = mesosphere(D13D, "p13d_mesosphere.md")
+    D10 = os.path.join(D13D, "10yr")
+    s1 = metrics(D10, "hines_s1")           # the 5-yr Hines pair at stride 1
+    t10 = metrics(D10, "jh10_vs_5")         # before = 5 yr, after = 10 yr (stride 1)
+    meso10 = mesosphere(D10, "p13d10_mesosphere.md")
 
     def w(m, ph, seas="annual", col=1):
         return m[0][(f"tropical w* 15S-15N {ph} hPa [mm/s]", seas)][col]
@@ -158,6 +162,9 @@ def build(out_pdf):
                   "entry-age latitude std 3 / 1.5 hPa [yr]"]]
     for k in ("strat81 PK", "Jucker", "Jucker + Hines + LM", "Jucker + Hines", "full ECHAM"):
         meso_rows.append([k] + meso[k])
+    for k, lab in (("Jucker + Hines 1994", "Jucker + Hines 1994, stride 1"), ("Jucker + Hines 1999", "Jucker + Hines 1999, stride 1"),
+                   ("full ECHAM 1994", "full ECHAM 1994, stride 1")):
+        meso_rows.append([lab] + meso10[k])
     meso_w = [c * (W / 100) for c in (22, 11, 11, 11, 11, 11, 11, 12)]
 
     s = [P("jcm-strat Phase 13: wave drag and the radiative relaxation for the dry stratosphere", TITLE),
@@ -281,10 +288,50 @@ def build(out_pdf):
               "Figure 6. Entry-age clock after five years (left) against CLaMS's surface clock (middle) and WACCM6's entry age (right). The tropical "
               "pipe has WACCM6's width and contour spacing up to ~10 hPa; above 20 hPa the run is still bounded by the lid value.", maxh=6.5 * cm)]
 
+    s1_rows = [["tropical w* [mm/s], 1990-1994", "Jucker no drag, stride 4", "Jucker + Hines, stride 4", "Jucker no drag, stride 1",
+                "<b>Jucker + Hines, stride 1</b>", "WACCM6"]]
+    for ph in (100, 70, 50, 30, 10):
+        q = f"tropical w* 15S-15N {ph} hPa [mm/s]"
+        s1_rows.append([f"{ph} hPa", hines[0][(q, "annual")][0], hines[0][(q, "annual")][1], s1[0][(q, "annual")][0], s1[0][(q, "annual")][1],
+                        s1[0][(q, "annual")][3]])
+    t10_rows = [["entry-age clock [yr]", "after 5 yr", "<b>after 10 yr</b>", "change", "target"]]
+    for lev, reg, rl, tgt in (("55 hPa", "tropics 10S-10N", "55 hPa, tropics", "WACCM6 1.19 (control 1.31)"),
+                              ("55 hPa", "50-70 deg", "55 hPa, 50-70 deg", "≥ 3.6"),
+                              ("12 hPa", "tropics 10S-10N", "12 hPa, tropics", "2.90 ± 0.4"),
+                              ("12 hPa", "50-70 deg", "12 hPa, 50-70 deg", "CLaMS 4.56, WACCM6 4.18")):
+        b, a, d = t10[1][("aoa150", lev, reg)][:3]
+        t10_rows.append([rl, b, a, d, tgt])
+    for lev, reg, rl, tgt in (("55 hPa", "tropics 10S-10N", "surface clock, 55 hPa, tropics", "CLaMS 1.33"),
+                              ("55 hPa", "50-70 deg", "surface clock, 55 hPa, 50-70 deg", "CLaMS 4.12")):
+        b, a, d = t10[1][("aoa_sfc", lev, reg)][:3]
+        t10_rows.append([rl, b, a, d, tgt])
+    s += [PageBreak(), P("Ten years, and every frame: the stride-1 diagnostics", H2),
+          P("The chain was continued from its 1994 checkpoint to 1999 (25 September, GPU 1, 29-30 min per year) and every comparison "
+            "was recomputed from all 6-hourly frames instead of one daily phase, after Phase 15 found that phase tide-biased."),
+          table(s1_rows, [c * (W / 100) for c in (22, 15, 15, 15, 18, 15)]), Spacer(1, 4),
+          P("Table 5. The same five years, sampled two ways (hines_metrics.md vs 10yr/hines_s1_metrics.md). The 50-20 hPa 'stall' of every "
+            "Phase 12-13 table was the 06 UTC tidal phase: from all frames the dry model's ascent between 70 and 30 hPa is 40-70 % above "
+            "WACCM6, on it at 100 and 10 hPa. The 30 hPa criterion (within 1.5x of 0.26) is met.", CAP),
+          table(t10_rows, [c * (W / 100) for c in (34, 14, 14, 12, 26)]), Spacer(1, 4),
+          P("Table 6. The clocks after five and after ten years (10yr/jh10_vs_5_metrics.md; the circulation itself is identical to 0.01 mm/s). "
+            "The extratropical entry age reaches the criterion and is still rising; the tropical 12 hPa value is converged and stays 0.17 "
+            "outside its tolerance; the tropical 55 hPa entry age was not converged at five years and is now 0.43 yr older than WACCM6 "
+            "despite ascent on WACCM6 - old extratropical air mixed into the pipe, not slow ascent. The surface clock keeps drifting with "
+            "the dry troposphere's transit.", CAP),
+          fig(D10, "hines_s1_wstar_tropics.png",
+              "Figure 8. The Phase 13d pair at stride 1: annual tropical w* (WACCM6 dashed) and monthly w* at 70 and 30 hPa. The model sits "
+              "above WACCM6's cycle in most months with the seasonal phase right; compare Figure 3, the same runs from the 06 UTC frames.",
+              maxh=6.2 * cm),
+          fig(D10, "jh10_vs_5_age_profiles.png",
+              "Figure 9. Age of air after five (blue) and ten (red) years, CLaMS dashed: surface clock, 500 hPa clock and entry-age clock "
+              "(rows). The entry-age clock moves 0.1-0.2 yr at 55 hPa (0.6 over the Antarctic) and is converged at 12 hPa in the tropics; "
+              "the two lower clocks rise 0.3-0.5 yr everywhere.", maxh=11 * cm)]
     s += [PageBreak(), P("Mesosphere", H2),
           table(meso_rows, meso_w, hl=[4], style=XS), Spacer(1, 4),
           P("Table 4. Annual-mean w* above 10 hPa in the 1994 segment, tropics / NH cap / SH cap, and the latitude standard deviation of the "
-            "entry age at 3 / 1.5 hPa. Read from p13d_mesosphere.md.", CAP),
+            "entry age at 3 / 1.5 hPa. Rows 1-5 from p13d_mesosphere.md (every 4th frame), the last three from 10yr/p13d10_mesosphere.md "
+            "(every frame): at stride 1 the tropical ascent at 1 hPa is +1.0 to +1.1 mm/s where the daily phase read +0.04, and the 1999 "
+            "segment repeats 1994 to 0.1-0.3 mm/s.", CAP),
           fig(D13D, "p13d_mesosphere.png",
               "Figure 7. Annual-mean w* above 30 hPa in 1994: the tropical profile for the five runs (left) and the latitude–pressure maps. The "
               "Hines-only run (fourth panel) has the full-physics cell above 1 hPa — tropical ascent of 2 mm/s at 0.3 hPa, polar descent of "
@@ -316,11 +363,11 @@ def build(out_pdf):
           P("8. Where things are", H2),
           P("Worktree /data/JCM_stripped/jcm-strat-phase13, branch phase13-gwd (not pushed). Runs under runs/p13*_&lt;YYYYMMDD&gt; with the "
             "aggregates runs/p13gwd_5yr, p13gwdl95_5yr, p13l81n400_5yr, p13jucker_5yr, p13juckergwd_5yr, p13jgn400_10yr, p13jhn400_10yr, "
-            "p13jh_5yr. Records docs/outputs/13_gwd, 13b_jucker, 13c_jucker_n400, 13d_jucker_hines (output.md, &lt;tag&gt;_metrics.md, figures, "
-            "p13*_mesosphere.md). Code: jcm_strat/gwd.py (Hines launch level as a pressure), jcm_strat/jucker.py (JuckerColumns) with the table "
+            "p13jh_5yr, p13jh_10yr. Records docs/outputs/13_gwd, 13b_jucker, 13c_jucker_n400, 13d_jucker_hines (output.md, &lt;tag&gt;_metrics.md, "
+            "figures, p13*_mesosphere.md; the ten-year, stride-1 diagnostics under 13d_jucker_hines/10yr). Code: jcm_strat/gwd.py (Hines launch level as a pressure), jcm_strat/jucker.py (JuckerColumns) with the table "
             "jcm_strat/data/jfv2013_te_tau_zm.nc, experiments p13_* and physics presets strat_pk_gwd_prod13, strat_jucker_qbo_prod13, "
             "strat_jucker_gwd_prod13, strat_jucker_hines_prod13; pipelines scripts/phase13_run.sh, phase13b_run.sh, phase13c_run.sh, "
-            "phase13d_run.sh; analysis scripts/phase12_compare.py, aoa_vs_clams.py, mesosphere_wstar.py. Decision 43 in KEY_DECISIONS.md; "
+            "phase13d_run.sh, phase13d_extend10.sh; analysis scripts/phase12_compare.py, aoa_vs_clams.py, mesosphere_wstar.py. Decision 43 in KEY_DECISIONS.md; "
             "PLANS.md Phase 13–13d; the PROGRESS.md throughput rows.")]
 
     doc = SimpleDocTemplate(out_pdf, pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm, topMargin=1.8 * cm, bottomMargin=1.8 * cm,
