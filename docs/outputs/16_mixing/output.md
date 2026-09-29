@@ -80,3 +80,8 @@ _no scored runs yet_
 - 2026-09-29 09:51 PDT — queue C: **FAILED** chain n100_10 after 7 min (runs/p16_n100_10_chain.log)
 - 2026-09-29 09:51 PDT — queue A: **FAILED** chain base10 after 7 min (runs/p16_base10_chain.log)
 - 2026-09-29 09:52 PDT — queue D: started (commit 7029f54, GPUs 0 2 1, budget 23 h)
+- 2026-09-29 10:56 PDT — queue A: started (commit 3105bee, GPUs 0, budget 23 h)
+- 2026-09-29 10:56 PDT — queue B: started (commit 3105bee, GPUs 1, budget 23 h)
+- 2026-09-29 10:56 PDT — queue C: started (commit 3105bee, GPUs 2 0 1, budget 23 h)
+- 2026-09-29 10:57 PDT — queue D: started (commit 3105bee, GPUs 0 2 1, budget 23 h)
+- 2026-09-29 10:57 PDT — queue D: **FAILED** chain base10 after 0 min (runs/p16_base10_chain.log)
