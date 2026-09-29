@@ -122,12 +122,17 @@ class TropoTracerMixing(PhysicsTerm):
         return a * up + b * tracer + c * dn
 
     def implicit_tendency_per_second(self, tracer, p_pa, t_k, k, dt_s):
-        """(C_new - C) / dt [1/s] with C_new the backward-Euler solution of (I - dt L) C_new = C, column by column."""
+        """Backward-Euler tendency [1/s]: (I - dt L) delta = dt L C, tendency = delta / dt, column by column. Solving for the
+        INCREMENT delta = C_new - C (not for C_new) keeps full float32 precision: a clock of ~3000 days solved directly
+        would leave ~0.05 day of solver roundoff per step, several times the 0.008 day the clock gains per step."""
         a, b, c = self._operator(p_pa, t_k, k)
+        up = jnp.concatenate([jnp.zeros_like(tracer[:1]), tracer[:-1]], axis=0)
+        dn = jnp.concatenate([tracer[1:], jnp.zeros_like(tracer[:1])], axis=0)
+        lc = a * up + b * tracer + c * dn                                  # explicit L C, (nlev, ncols)
         dl, d, du = (-dt_s * a).T, (1.0 - dt_s * b).T, (-dt_s * c).T      # (ncols, nlev); dl[:, 0] = du[:, -1] = 0 by construction
-        rhs = tracer.T[..., jnp.newaxis]                                   # (ncols, nlev, 1)
-        c_new = jax.lax.linalg.tridiagonal_solve(dl, d, du, rhs)[..., 0].T
-        return (c_new - tracer) / dt_s
+        rhs = (dt_s * lc).T[..., jnp.newaxis]                              # (ncols, nlev, 1)
+        delta = jax.lax.linalg.tridiagonal_solve(dl, d, du, rhs)[..., 0].T
+        return delta / dt_s
 
     def __call__(self, state: PhysicsState, diagnostics: dict, forcing, terrain):
         if not self._coords_cached:
