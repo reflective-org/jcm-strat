@@ -18,3 +18,7 @@ C | mix10trop    | p16_base_mix | physics.terms.tropo_tracer_mixing.k_m2_s=10 ph
 # GPUs were still releasing the memory of the first (wrong-prefix) launches I had just killed; queues A and C moved on to their next entries.
 D | base10       | p16_base     | -                                                                                     | Phase 15 winner (Jucker, Rayleigh 30 d above 30 hPa, nudged < 100 hPa) continued from its 1994 checkpoint to 1999 - THE BASE
 D | n100_10      | p16_n100     | -                                                                                     | Phase 15's n100 (no Rayleigh drag) continued to 1999 - the base without the idealised drag
+# Queues E / F (added 2026-09-29 15:00 PDT, scripts/phase16_run_ef.sh): mix10 and n100mix10 again from their 1991 segments, on the
+# GPU of queue A / C once that queue is done (their 1992 segments ran 17x slow under a batched solver and were killed).
+E | mix10        | p16_base_mix | physics.terms.tropo_tracer_mixing.k_m2_s=10                                           | base + tropospheric vertical tracer mixing K 10 m^2/s (500-100 hPa exchange ~0.7 yr)
+F | n100mix10    | p16_n100_mix | physics.terms.tropo_tracer_mixing.k_m2_s=10                                           | n100 + tracer mixing K 10 m^2/s (does the mixing result hold without the Rayleigh drag?)
