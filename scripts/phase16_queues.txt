@@ -15,6 +15,6 @@ C | n100_10      | p16_n100     | -                                             
 C | n100mix10    | p16_n100_mix | physics.terms.tropo_tracer_mixing.k_m2_s=10                                           | n100 + tracer mixing K 10 m^2/s (does the mixing result hold without the Rayleigh drag?)
 C | mix10trop    | p16_base_mix | physics.terms.tropo_tracer_mixing.k_m2_s=10 physics.terms.tropo_tracer_mixing.lat_max_deg=30 | base + tracer mixing K 10 m^2/s confined to |lat| < 30 (deep convection is tropical)
 # Queue D (added 2026-09-29 09:55 PDT, scripts/phase16_run_d.sh): the two base continuations again - both OOMed at 09:44 PDT because the
-# GPUs were still releasing the memory of the first (wrong-prefix) launches I had just killed; the chain then ran from scratch instead.
+# GPUs were still releasing the memory of the first (wrong-prefix) launches I had just killed; queues A and C moved on to their next entries.
 D | base10       | p16_base     | -                                                                                     | Phase 15 winner (Jucker, Rayleigh 30 d above 30 hPa, nudged < 100 hPa) continued from its 1994 checkpoint to 1999 - THE BASE
 D | n100_10      | p16_n100     | -                                                                                     | Phase 15's n100 (no Rayleigh drag) continued to 1999 - the base without the idealised drag
