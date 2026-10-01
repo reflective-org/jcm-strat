@@ -53,6 +53,11 @@ step() { echo "[chain] $(date -Is) $*" | tee -a "$LOG"; }
 if nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
   step "refusing: GPU $GPU is busy"; exit 1
 fi
+# JAX falls back to the CPU silently when the host has no /dev/nvidia* nodes (they vanish at every reboot of this
+# node: the driver is a container, nothing recreates them). A CPU chain runs 100x slower and looks normal.
+if ! python -c "import jax, sys; sys.exit(0 if any(d.platform == 'gpu' for d in jax.devices()) else 1)" 2>/dev/null; then
+  step "refusing: JAX sees no GPU (missing /dev/nvidia*? recreate the device nodes, see docs/outputs/11_lid_tracers/output.md)"; exit 1
+fi
 # the time step must divide the save interval (JCM truncates silently); default 12 min
 dt_min=$(printf '%s\n' $EXTRA | sed -n 's/^run\.time_step=//p' | tail -1); dt_min="${dt_min:-12}"
 JAX_PLATFORMS=cpu python -c "from jcm_strat.segments import check_time_step; check_time_step($dt_min, $SAVE_INTERVAL)" \
