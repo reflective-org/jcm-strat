@@ -129,3 +129,33 @@ Figures: `p11{a,b}_5yr_aoa_{triptych,profiles}.png`, `_steady_clocks.png`, `_pul
   the same stratosphere below it and pin less; not tested (keep-it-simple).
 - The tropical 55 hPa age converges slowly (~0.15 yr per year after five years); the 30-year extension will
   show the equilibrium.
+
+## Operations: the GPU device nodes vanish at every reboot (2026-09-15/16)
+
+The node rebooted on 2026-09-14 09:03 PDT and again on 2026-09-16 09:30 PDT. Its NVIDIA driver is a GPU-Operator
+container (`/run/nvidia/driver`; `nvidia-smi` on the host is a sudo-chroot wrapper into it), and nothing recreates the
+host's `/dev/nvidia*` nodes at boot. Without them JAX falls back to the CPU **silently** (`CUDA_ERROR_NO_DEVICE` in
+the log, `1xcpu` in the provenance line, ~30 simulated days per hour instead of ~4,000) — the first Phase 11 pipeline
+launch and the first launch of the 1995–2009 extension both ran on the CPU and were killed. Fix (root, after every
+reboot until an admin adds a udev rule or boot unit):
+
+```
+for i in 0 1 2 3 4 5 6 7; do sudo mknod -m 666 /dev/nvidia$i c 195 $i; done
+sudo mknod -m 666 /dev/nvidiactl c 195 255; sudo mknod -m 666 /dev/nvidia-modeset c 195 254
+sudo mknod -m 666 /dev/nvidia-uvm c 501 0; sudo mknod -m 666 /dev/nvidia-uvm-tools c 501 1
+```
+
+(major/minor numbers from `/run/nvidia/driver/dev`). `scripts/chain_segments.sh` now refuses to start when JAX
+sees no GPU. Check before any launch: `python -c "import jax; print(jax.devices())"` must print a `CudaDevice`.
+
+## Extension of A to 2009 (requested 2026-09-16)
+
+Susanne chose A and asked for 15 more years: `PREFIX=p11a YEARS=1990-2009 AGG=p11a_20yr` (tmux `strat_p11a_20yr`,
+GPU 0; the chain skips 1990–1994 and continues from the 1994 checkpoint). First launch 14:01 PDT ran on the CPU
+(see above), was stopped and its partial 1995 segment removed; relaunch pending the device nodes.
+
+Relaunched 2026-09-16 15:47 PDT after Susanne recreated the device nodes (an earlier relaunch had a line break inside
+the tmux command and left an idle shell). The 1995 segment stepped its first chunk in 24.8 s, as before. **The node's
+GPUs are now NVIDIA H200 (141 GB), not the H100 80 GB the 1990–1994 segments ran on** — the reboots of 2026-09-14
+and 09-16 were a hardware change. Same code, same driver container; the checkpoint restart is exact, but the two
+halves of the chain ran on different silicon (roundoff-level differences only; the tracers are passive).

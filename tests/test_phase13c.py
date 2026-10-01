@@ -42,3 +42,13 @@ def test_hines_only_list_composes(cfgs):
     levels.install("strat")
     terms = [hydra.utils.instantiate(v) for v in cfgs["p13_jucker_hines_n400"].physics.terms.values()]
     assert [t.name for t in ComposablePhysics(terms).terms] == ["moist_air_column_state", "held_suarez", "hines_gwd", "production_tracers", "omega_diagnostic"]
+
+
+def test_phase13d_jucker_hines_is_hines_n400_with_the_150_cutoff():
+    """Phase 13d: p13_jucker_hines = p13_jucker_hines_n400 but nudged below 150 hPa (and = p13_jucker_gwd minus Lott-Miller)."""
+    h4 = compose_run_config(["+experiment=p13_jucker_hines_n400"]); jh = compose_run_config(["+experiment=p13_jucker_hines"])
+    jg = compose_run_config(["+experiment=p13_jucker_gwd"])
+    assert jh.nudging.min_pressure_hpa == 150.0 and jh.nudging == jg.nudging
+    assert jh.physics == h4.physics and set(jh.output_drop) == set(h4.output_drop)
+    assert list(jh.physics.terms) == ["moist_air_state", "held_suarez", "hines_gwd", "production_tracers", "omega_diagnostic"]
+    assert jh.grid.layers == 81 and jh.run == jg.run
