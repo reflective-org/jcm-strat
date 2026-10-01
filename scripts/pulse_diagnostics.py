@@ -34,8 +34,9 @@ import xarray as xr
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tracer_budget import P0, gauss_weights, install_level_table, layer_dp  # noqa: E402
 
-PULSES = tuple(f"pulse_{i}" for i in range(1, 6))
-SOURCES = tuple(f"src_{i}" for i in range(1, 5))
+SHAPES = ("", "_box")                                  # Gaussian and sharp-edged twin (jcm_strat/advection_tracers.py)
+PULSES = tuple(f"pulse_{i}{s}" for i in range(1, 6) for s in SHAPES)
+SOURCES = tuple(f"src_{i}{s}" for i in range(1, 5) for s in SHAPES)
 REF = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "jcm_strat", "data", "waccm_tracer_ref.nc")
 
 
@@ -67,15 +68,13 @@ def injection_days(rundir, last_day, n_per_year=4):
 
 
 def analytic_target(name, lat, lon, p_hpa, term):
-    """The blob the term injects, on the file's (lev, lon, lat) grid, from the term's own parameters."""
-    i = int(name.split("_")[1]) - 1
-    lat0, lon0, p0, amp = term.pulses[i]
-    la, lo = np.deg2rad(lat), np.deg2rad(lon)
-    LA, LO = np.meshgrid(la, lo)                                              # (lon, lat)
-    cosang = np.sin(LA) * np.sin(np.deg2rad(lat0)) + np.cos(LA) * np.cos(np.deg2rad(lat0)) * np.cos(LO - np.deg2rad(lon0))
-    theta = np.arccos(np.clip(cosang, -1, 1))
+    """The shape the term injects (Gaussian or sharp-edged twin), on the file's (lev, lon, lat) grid, from the term itself."""
+    from jcm_strat.advection_tracers import site_of
+    kind, i, suffix = site_of(name)
+    LA, LO = np.meshgrid(np.deg2rad(lat), np.deg2rad(lon))                    # (lon, lat)
     zeta = np.log10(p_hpa / 1000.0)
-    return amp * np.exp(-0.5 * (theta / term.sigma_h) ** 2)[None] * np.exp(-0.5 * ((zeta - np.log10(p0 / 1000.0)) / term.sigma_z) ** 2)[:, None, None]
+    shape = term.shape(LA.ravel(), LO.ravel(), zeta, *(term.pulses if kind == "pulse" else term.sources)[i], suffix)
+    return shape.reshape(zeta.size, *LA.shape)
 
 
 def main():
@@ -112,15 +111,15 @@ def main():
     axes[1].set_yscale("symlog", linthresh=1e-6); axes[1].set_title("pulse tracers: cell extremes"); axes[1].legend(fontsize=6, ncol=2)
     for ax in axes: ax.set_xlabel("day")
     fig.suptitle(a.label or run); fig.tight_layout(); f = os.path.join(a.outdir, f"{run}_pulse_burdens.png"); fig.savefig(f, dpi=130); print("wrote", f)
-    lines += ["## pulses", "", "| tracer | amplitude | first-frame RMSE vs target / amp | burden after 1st injection | min over run | max over run | burden between injections (should only fall) |", "|---|---|---|---|---|---|---|"]
+    lines += ["## pulses", "", "| tracer | shape | first-frame RMSE vs target | burden after 1st injection | min over run | max over run | burden between injections (no sink: constant; with a sink: may only fall) |", "|---|---|---|---|---|---|---|"]
     nsp0 = np.asarray(ds.normalized_surface_pressure.isel(time=0))
     for k in names:
-        amp = term.pulses[int(k.split("_")[1]) - 1][3]
+        shape = "box" if k.endswith("_box") else "gaussian"
         q0 = np.asarray(ds[k].isel(time=0)); tgt = analytic_target(k, lat, lon, p_nom * nsp0.mean(), term)
-        rmse = float(np.sqrt(np.mean((q0 - tgt) ** 2))) / amp
+        rmse = float(np.sqrt(np.mean((q0 - tgt) ** 2)))
         b = burden[k]
         # injections happen on a known schedule (1 Jan and every 365/4 d of each calendar year, segments.txt
-        # gives the year starts); between two injection dates the burden may only fall (surface absorption)
+        # gives the year starts); between two injection dates the burden may only fall (or stay constant without a sink)
         inj = injection_days(a.rundir, day[-1]) if a.injection == "quarterly" else np.asarray([0.0])
         cycle = np.searchsorted(inj, tday, side="right")                # which injection cycle each sample is in
         # the largest relative rise between consecutive samples of one cycle: the burden is a
@@ -128,7 +127,7 @@ def main():
         # the change of the air-mass distribution (1e-4-1e-3); anything larger would be a real source
         rises = [np.diff(b[cycle == c]) / max(b.max(), 1e-30) for c in np.unique(cycle) if (cycle == c).sum() > 1]
         max_rise = max((float(r.max()) for r in rises if r.size), default=0.0)
-        lines.append(f"| {k} | {amp} | {rmse:.3f} | {b[0]:.3e} | {qmin[k].min():.2e} | {qmax[k].max():.3f} | "
+        lines.append(f"| {k} | {shape} | {rmse:.3f} | {b[0]:.3e} | {qmin[k].min():.2e} | {qmax[k].max():.3f} | "
                      f"largest rise within a cycle {max_rise:.1e} of the peak burden ({inj.size} injections scheduled to day {day[-1]:.0f}) |")
     # ---- pulse_1 evolution
     if "pulse_1" in ds:
