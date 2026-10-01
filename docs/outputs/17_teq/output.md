@@ -61,7 +61,7 @@ follow-up is decided once the ERA5 w* reference is in (see the run log).
 ## Leaderboard
 
 <!-- leaderboard:start -->
-12 scored run(s) as of 2026-10-01 06:14 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
+12 scored run(s) as of 2026-10-01 06:16 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
 
 **Best so far: `A2`** — mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing), iteration 2 (1998-1999 from mix10trop 1997): composite 0.550 (base 0.785); age RMSE 0.47 (base 0.44) yr, bias +0.16 (base +0.12); tropical w* 100/70/50/30/10 hPa 0.34/0.22/0.25/0.30/0.53 (base 0.35/0.24/0.29/0.33/0.47, WACCM6 0.40/0.21/0.20/0.26/0.47); u RMSE 2.7 (base 3.7) m/s, T RMSE 1.9 (base 5.4) K; `aoa150` 55 hPa tropics 1.78 (base 1.68) / 50-70 3.70 (base 3.68), 12 hPa tropics 3.67 (base 3.69) yr; cost 34 (base 34) min/yr.
 
@@ -109,3 +109,5 @@ _to be written when the tracks finish_
 - 2026-10-01 05:14 PDT — track B: **B_final** (mix10trop without the Rayleigh drag with correction B4, ten years 1990-1999 from ERA5): [score B_final] composite 0.598 = mean(age 1.05, w* 0.49, u 0.57, T 0.30); age150 RMSE vs CLaMS-entry 0.52 yr (bias +0.28); tropical w* 100/70/50/30/10: 0.33/0.20/0.22/0.28/0.54 (WACCM 0.40/0.21/0.20/0.26/0.47; ERA5 0.42/0.24/0.27/0.33/0.44); barrier age 55 hPa 0.90 (CLaMS 1.57); u RMSE 2.8 m/s, T RMSE 1.5 K; 34 min/yr -> /data/JCM_stripped/jcm-strat-phase17/docs/outputs/17_teq/scores/B_final.json
 - 2026-10-01 05:15 PDT — track A: **A_final** (mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing) with correction A4, ten years 1990-1999 from ERA5): [score A_final] composite 0.575 = mean(age 1.02, w* 0.52, u 0.50, T 0.27); age150 RMSE vs CLaMS-entry 0.51 yr (bias +0.23); tropical w* 100/70/50/30/10: 0.32/0.20/0.22/0.28/0.55 (WACCM 0.40/0.21/0.20/0.26/0.47; ERA5 0.42/0.24/0.27/0.33/0.44); barrier age 55 hPa 0.86 (CLaMS 1.57); u RMSE 2.5 m/s, T RMSE 1.3 K; 34 min/yr -> /data/JCM_stripped/jcm-strat-phase17/docs/outputs/17_teq/scores/A_final.json
 - 2026-10-01 06:14 PDT — track B: final diagnostics for B_final in `final/`
+- 2026-10-01 06:14 PDT — track B: finished
+- 2026-10-01 06:16 PDT — track A: final diagnostics for A_final in `final/`
