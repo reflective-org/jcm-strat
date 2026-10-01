@@ -1,0 +1,170 @@
+# Phase 15 — hyperparameter sweep of the dry stratosphere toward CLaMS / ERA5 (strat81, 1990–1992 per run, GPU 0)
+
+Status: **running unattended** (tmux `strat_p15_sweep`, log `runs/p15_sweep.log`, branch `phase15-sweep`, worktree
+`/data/JCM_stripped/jcm-strat-phase15`). Susanne, 2026-09-24 11:00 PDT: "I want to get stratospheric dynamics in the dry dycore of
+JCM (dinosaur) that look like the ones we see in CLaMS (ERA5 reanalysis) … Make a hyperparameter sweep of the configurations to see
+what gives me the best (most similar) result to CLaMS. Continuously document what you are trying and only use GPU 0 … Do not run
+anything that takes longer than 48h." The leaderboard, the figures and the run log below are rewritten by the pipeline after every
+run; the commit history of this directory is the time line.
+
+## What was already tried (Phases 1–14, the state this sweep starts from)
+
+| Phase | change | what it did to the stratosphere | record |
+|---|---|---|---|
+| 1–4 | dry Held-Suarez on T63L95, ERA5 nudging of u, v, T below 150 hPa (tau 6 h), passive clocks | isothermal stratosphere, no polar-night jet, tropical age 1.5 yr too old vs CLaMS | `01_dry` … `04_5yr` |
+| 6 | Polvani–Kushner seasonal stratosphere (gamma 4 K/km, tau 15 d, vortex cooling faded above 3 hPa) | polar-night jets, 2 of 3 SSW winters, 6.4 K / 5.6 m/s vs ERA5; age pattern right, tropics old | `06_stratosphere` |
+| 7 | time step | 12 min kept (30 min degrades the Antarctic jet) | `07_timestep` |
+| 8 | QBO nudging of the tropical zonal-mean u to ERA5 (window to 1 hPa, tau 1 d, mean-preserving target) | equatorial u RMS 16 → 4 m/s, QBO 93 % of ERA5, SAO appears; age 0.1 yr younger in the tropics only | `08_qbo` |
+| 9 | resolution T63/T85/T119 × L95/strat63/strat47 | age of air is not a resolution problem; strat63 chosen | `09_resolution` |
+| 10–11 | production tracers, 1 hPa tracer lid relaxing the clocks to WACCM | bounds the clocks, but 20–1 hPa fills from the lid: the mesosphere is not ventilated | `10_production`, `11_lid_tracers` |
+| 12 | QBO off; strat81 (all 26 L95 tropospheric layers); full ECHAM physics under the same nudging | neither dry change moves the age; full physics puts the tropical age on CLaMS but is too strong (100 hPa w* 3.6× WACCM6, no vortex, extratropics too young). Entry-age clock `aoa150` vs WACCM6 becomes the stratospheric criterion; dry runs' mesosphere is DOWNWARD above 1.5 hPa | `12_circulation` |
+| 13 | Hines + Lott-Miller drag on the dry PK model (strat63 and native L95); strat81 nudged only below 400 hPa | drag closes the tropical age via a 2.6× shallow branch, extratropics 1.4 yr too young, 10 hPa ascent collapses, mesosphere still downward; L95 no change; 400 hPa cutoff ages everything 0.3–0.6 yr | `13_gwd` |
+| 13b | Jucker, Fueglistaler & Vallis (2013) radiative T_e/tau in place of PK above 100 hPa (strat81), with/without drag | **best dry configuration so far**: mesosphere ventilated without drag, 10 hPa w* 0.41 (WACCM6 0.47), extratropical age right; 30 hPa stall remains (0.03 vs 0.26), tropical 55 hPa entry age 1.56 vs 1.19; drag on top repeats the Phase 13 damage | `13b_jucker` |
+| 13c | Jucker + drag + 400 hPa cutoff, 10 yr, Hines with/without Lott-Miller | running on GPUs 1/2 in parallel with this sweep (started 2026-09-24 10:44 PDT) | `13c_jucker_n400` |
+| 14 | full ECHAM physics free-running (no nudging), 10 yr | equatorial lower-stratospheric DESCENT, deep branch 2.8× WACCM6, no QBO: the package alone has no tropical pipe; Phase 12's "age on CLaMS" was the nudging's shallow branch | `14_free_physics` |
+
+So the starting point is `p13_jucker` (strat81, JFV relaxation, QBO nudging to 1 hPa, ERA5 nudging < 150 hPa, no drag), and its
+defects against CLaMS/WACCM6 are: (1) the 50–20 hPa stall of the tropical ascent (30 hPa w* 0.03 vs 0.26 mm/s) and with it the
+old tropical 12 hPa entry age (3.67 vs 2.90); (2) a slightly weak lower branch (100/70 hPa w* 0.29/0.17 vs 0.40/0.21, tropical
+55 hPa entry age 1.56 vs 1.19); (3) a mesospheric cell of only half the full-physics strength. The drag schemes at JCM defaults
+over-drive the lower stratosphere instead.
+
+## The sweep
+
+**Base** `p15_base` = `p13_jucker` with only the analysed variables written (u, v, T, omega, p_s, `aoa150`, `aoa_sfc`, `aoa500`; still
+6-hourly, see the finding below); the dynamics are identical. The base itself is not re-run: the Phase 13b segments 1990–1992 are
+linked (`scripts/link_segments.py`) and scored like every other run.
+
+**Stage 1 — one knob at a time, three years 1990–1992 each** (`scripts/phase15_matrix.txt`, in this order):
+
+| run | family | change against the base | why |
+|---|---|---|---|
+| `ray10` | drag | Rayleigh drag on u, v ramping in log p from 0 at 30 hPa to 1/(10 d) at 1 hPa (`jcm_strat/rayleigh.py`) | the idealised stand-in for the missing wave drag above 30 hPa (Phase 13 plan's fallback); by downward control it should lift the 30 hPa ascent |
+| `hines05` | drag | Hines only, launch 634 hPa, rms launch wind 0.5 m/s | Phase 13b open question (a): is the lower-stratospheric deposition the amplitude's? |
+| `tau05` | relaxation | JFV tau × 0.5 above 100 hPa (`tau_scale`) | a faster radiative relaxation strengthens the temperature-gradient-driven cell (Phase 13b's mechanism) |
+| `lm` | drag | Lott-Miller orographic drag only | the other half of the Phase 13c pair: is the shallow-branch over-drive the orographic scheme's? |
+| `tau15cap` | relaxation | JFV tau capped at 15 d (`tau_max_days`) | Phase 13b: the tropical 55 hPa age got 0.25 yr older because JFV's lower-stratospheric tau is 12–39 d vs PK's 15 d |
+| `hines1_l100` | drag | Hines only, default amplitude, launched at 100 hPa | no deposition between the launch and the tropopause; tests whether the Phase 13 damage was low-level deposition |
+| `ray30` | drag | Rayleigh 30 → 1 hPa, 1/(30 d) at 1 hPa | a third of ray10 |
+| `spongeT` | other | sponge damps winds only (no temperature damping toward 250 K in the top 4 levels) | the sponge fights the JFV T_e (150–330 K) in the top levels (Phase 13b open question) |
+| `n100` | other | ERA5 nudging cutoff 150 → 100 hPa | a bracket: how much of the remaining gap is the tropopause layer (not a free-stratosphere fix) |
+| `hines03` | drag | Hines only, rms launch wind 0.3 m/s | the low end of the amplitude |
+| `rayzm10` | drag | ray10 on the zonal-mean wind only | eddies untouched: does it matter whether the drag acts on the waves too? |
+
+**Stage 2** — `scripts/sweep_plan.py` combines the family winners (a member wins its family if it beats the base composite by
+more than 0.02): drag winner + relaxation winner, + the "other" winner, and the neighbouring Rayleigh strength; three years each.
+**Stage 3** — the best run of all stages continues its chain to 1990–1994 (the 1990–1992 segments are reused) and gets the standard
+Phase 12/13 diagnostics against `p13jucker_5yr` and `p12echam_5yr` (`final/`). Before every run the remaining budget (46 h from the
+start) is checked against the measured minutes per year; runs that would not fit are skipped and logged.
+
+## A finding before the sweep: the TEM w* of Phases 12–13 depends on which hour of the day was sampled
+
+Setting the sweep up, the scorer's w* (from the 00 UTC frames) disagreed with the Phase 13b record (from every 4th 6-hourly frame,
+i.e. the 06 UTC frames). Recomputed on the 1991 segment of `p13jucker` for each daily phase separately and for all frames:
+
+| tropical (15S–15N) w*, 1991 annual mean [mm/s] | 100 hPa | 70 hPa | 50 hPa | 30 hPa | 10 hPa |
+|---|---|---|---|---|---|
+| 00 UTC frames only | 0.49 | 0.48 | 0.59 | 0.50 | 0.06 |
+| 06 UTC frames only (= the Phase 12/13 `--stride 4` sampling) | 0.28 | 0.17 | 0.15 | 0.11 | 0.41 |
+| 12 UTC frames only | 0.29 | 0.27 | 0.35 | 0.52 | 0.97 |
+| 18 UTC frames only | 0.17 | 0.17 | 0.35 | 0.54 | 0.33 |
+| **all four phases (1460 frames)** | **0.31** | **0.27** | **0.36** | **0.42** | **0.44** |
+| WACCM6 histSST 1996–2014 (daily-mean TEM tapes) | 0.40 | 0.21 | 0.20 | 0.26 | 0.47 |
+
+The zonal eddy covariance v'θ' and the zonal-mean v of a single daily phase carry the model's (nudging-imprinted, aliased) tides;
+the four phases differ by 0.4 mm/s at 30 hPa, more than the signal. WACCM6's tapes are daily means of the covariance, so the
+all-frame mean is the like-for-like number. **Consequence for the earlier records:** the "50–20 hPa stall" of every dry
+configuration (30 hPa w* 0.02–0.09 in Phases 12–13b) was measured on the 06 UTC phase, which happens to be the lowest of the four
+here; with all frames the 1991 Jucker segment has 0.42 mm/s at 30 hPa (WACCM6 0.26) — no stall, if anything too strong at
+50–30 hPa — while 10 hPa (0.44) and the lower branch (100 hPa 0.31 vs 0.40) barely move. The Phase 13b tropical entry age at
+12 hPa (3.67 vs 2.90) therefore is not explained by a missing 30 hPa ascent. The 5-year all-frame numbers of the base come out of
+this phase's final `phase12_compare --stride 1` (`final_*/vs_jucker_metrics.md`, "before" column). Everything in this sweep is
+scored on all frames; the sweep therefore keeps 6-hourly output.
+
+## Scoring (`scripts/sweep_score.py`, window = the last two years of each run, all 6-hourly frames; age = the last 60 days)
+
+| part | model quantity | reference | normalisation |
+|---|---|---|---|
+| age | entry-age clock `aoa150` (reset below 150 hPa), zonal mean, cos-weighted RMSE over 100–5 hPa, \|lat\| ≤ 80° | CLaMS v3.1 / ERA5 mean age 2005–2009 minus CLaMS' own tropical age at 150 hPa (0.09 yr) | 0.5 yr |
+| w* | TEM tropical (15S–15N) w* at 100 / 70 / 50 / 30 / 10 hPa, annual, eddy covariance from every 6-hourly frame; mean \|ln(model/ref)\|, floor 0.02 mm/s, cap ln 10 | WACCM6 histSST 1996–2014 daily-mean TEM tapes (CLaMS has no w*) | ln 1.5 |
+| u | zonal-mean u, DJF and JJA, cos-weighted RMSE 100–1 hPa | ERA5 monthly zonal means of the same months | 5 m/s |
+| T | the same for temperature | ERA5 | 5 K |
+
+composite = mean of the four normalised parts; lower is closer; 1.0 is "every part at the edge of what Phases 12–13 called
+acceptable". The surface clock `aoa_sfc` against CLaMS' AGE is reported but not scored: the dry troposphere's 500 → 100 hPa
+transit puts 1.5–2 yr on it that no stratospheric knob can remove (Phase 12 addendum). Mesospheric w* (5–0.5 hPa) is reported
+for the record. Three-year runs under-state the age response (the clocks start from WACCM's climatology and drift toward the
+run's own circulation over ~5 yr), so the ranking leans on w*, u and T; the stage-3 five-year run gives the age its time.
+
+## Leaderboard (rewritten by `scripts/sweep_leaderboard.py` after every run)
+
+<!-- leaderboard:start -->
+18 scored run(s) as of 2026-09-25 16:07 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
+
+**Best so far: `ray30+n100_5yr`** — stage 2: Rayleigh drag 30 -> 1 hPa, tau 30 d at 1 hPa (a third of ray10) + ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer) (five years): composite 0.811 (base 1.022); age RMSE 0.45 (base 0.55) yr, bias -0.00 (base -0.25); tropical w* 100/70/50/30/10 hPa 0.35/0.25/0.32/0.36/0.43 (base 0.32/0.28/0.34/0.36/0.43, WACCM6 0.40/0.21/0.20/0.26/0.47); u RMSE 3.6 (base 5.9) m/s, T RMSE 5.2 (base 5.4) K; `aoa150` 55 hPa tropics 1.56 (base 1.48) / 50-70 3.56 (base 3.22), 12 hPa tropics 3.61 (base 3.21) yr; cost 29 (base 32) min/yr.
+
+Closer than the base (1.022): ray30+n100_5yr, n100_5yr, ray30+n100, n100, ray30, ray60, hines1_l100, hines05, hines05_l100, hines03. Further from it: spongeT, rayzm10, raylow20, ray10, tau15cap, lm, tau05.
+
+| rank | run | stage | composite | age RMSE `aoa150` vs CLaMS-entry [yr] | age bias | w* log-err | u RMSE [m/s] | T RMSE [K] | w* 100/70/50/30/10 hPa [mm/s] | `aoa150` 55 hPa trop / 50-70 | `aoa150` 12 hPa trop / 50-70 | `aoa_sfc` RMSE vs CLaMS | w* 1 hPa trop / NH / SH | min/yr | what |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | **ray30+n100_5yr** | 3 | 0.811 | 0.45 | -0.00 | 0.24 | 3.6 | 5.2 | 0.35/0.25/0.32/0.36/0.43 | 1.56 / 3.56 | 3.61 / 4.55 | 1.51 | 1.01 / -2.28 / -2.55 | 29 | stage 2: Rayleigh drag 30 -> 1 hPa, tau 30 d at 1 hPa (a third of ray10) + ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer) (five years) |
+| 2 | n100_5yr | 3 | 0.862 | 0.44 | +0.06 | 0.24 | 4.6 | 5.3 | 0.35/0.25/0.32/0.36/0.42 | 1.60 / 3.64 | 3.72 / 4.63 | 1.56 | 1.35 / -2.26 / -2.55 | 29 | ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer) (five years) |
+| 3 | ray30+n100 | 2 | 0.887 | 0.59 | -0.31 | 0.22 | 4.0 | 5.1 | 0.38/0.26/0.31/0.34/0.43 | 1.45 / 3.11 | 3.10 / 4.20 | 0.92 | 1.02 / -2.24 / -2.58 | 29 | stage 2: Rayleigh drag 30 -> 1 hPa, tau 30 d at 1 hPa (a third of ray10) + ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer) |
+| 4 | n100 | 1 | 0.924 | 0.54 | -0.23 | 0.22 | 5.2 | 5.2 | 0.37/0.26/0.31/0.34/0.42 | 1.50 / 3.20 | 3.24 / 4.32 | 0.96 | 1.46 / -2.33 / -2.63 | 28 | ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer) |
+| 5 | ray30 | 1 | 0.967 | 0.62 | -0.34 | 0.29 | 4.3 | 5.3 | 0.32/0.28/0.34/0.36/0.44 | 1.42 / 3.11 | 3.03 / 4.18 | 0.91 | 1.09 / -2.37 / -2.59 | 28 | Rayleigh drag 30 -> 1 hPa, tau 30 d at 1 hPa (a third of ray10) |
+| 6 | ray60 | 2 | 0.977 | 0.58 | -0.29 | 0.29 | 4.9 | 5.3 | 0.32/0.28/0.34/0.36/0.44 | 1.45 / 3.18 | 3.09 / 4.23 | 0.93 | 1.25 / -2.41 / -2.62 | 30 | stage 2: Rayleigh drag 30 -> 1 hPa, tau 60 d (neighbour of the stage-1 winner ray30) |
+| 7 | hines1_l100 | 1 | 1.009 | 0.53 | -0.21 | 0.29 | 5.8 | 5.4 | 0.32/0.28/0.33/0.35/0.40 | 1.51 / 3.25 | 3.30 / 4.33 | 0.97 | 1.21 / -2.46 / -2.66 | 31 | Hines only, JCM default amplitude 1.0 m/s but launched at 100 hPa (no deposition in the troposphere/tropopause layer) |
+| 8 | hines05 | 1 | 1.012 | 0.57 | -0.27 | 0.29 | 5.7 | 5.4 | 0.32/0.28/0.34/0.36/0.44 | 1.45 / 3.20 | 3.14 / 4.26 | 0.94 | 1.46 / -2.67 / -2.86 | 33 | Hines only (no Lott-Miller), launch 634 hPa, rms launch wind 0.5 m/s (half the JCM default) |
+| 9 | hines05_l100 | 1 | 1.018 | 0.56 | -0.25 | 0.29 | 5.8 | 5.4 | 0.32/0.28/0.34/0.36/0.43 | 1.47 / 3.22 | 3.17 / 4.28 | 0.96 | 1.47 / -2.47 / -2.64 | 31 | Hines only, rms 0.5 m/s launched at 100 hPa (both Hines knobs at once) |
+| 10 | hines03 | 1 | 1.019 | 0.56 | -0.25 | 0.29 | 5.9 | 5.4 | 0.32/0.28/0.34/0.36/0.44 | 1.48 / 3.22 | 3.20 / 4.28 | 0.96 | 1.47 / -2.48 / -2.67 | 31 | Hines only, rms launch wind 0.3 m/s |
+| 11 | base | 1 | 1.022 | 0.55 | -0.25 | 0.29 | 5.9 | 5.4 | 0.32/0.28/0.34/0.36/0.43 | 1.48 / 3.22 | 3.21 / 4.29 | 0.96 | 1.50 / -2.43 / -2.63 | 32 | p13_jucker segments 1990-1992 (Phase 13b): strat81, JFV relaxation, no drag - THE BASE |
+| 12 | spongeT | 1 | 1.023 | 0.55 | -0.25 | 0.29 | 6.0 | 5.4 | 0.32/0.28/0.34/0.36/0.44 | 1.47 / 3.23 | 3.17 / 4.28 | 0.96 | 1.49 / -2.45 / -2.66 | 29 | sponge damps winds only: no temperature damping toward 250 K in the top four levels (JFV T_e there is 150-330 K) |
+| 13 | rayzm10 | 1 | 1.034 | 0.68 | -0.41 | 0.29 | 4.9 | 5.4 | 0.33/0.29/0.35/0.36/0.46 | 1.38 / 3.02 | 2.96 / 4.05 | 0.89 | 0.95 / -2.49 / -2.74 | 29 | Rayleigh drag 30 -> 1 hPa tau 10 d on the ZONAL-MEAN wind only (eddies untouched) |
+| 14 | raylow20 | 1 | 1.041 | 0.73 | -0.47 | 0.29 | 4.6 | 5.3 | 0.32/0.29/0.34/0.36/0.43 | 1.36 / 2.94 | 2.90 / 4.00 | 0.88 | 0.92 / -2.17 / -2.38 | 28 | Rayleigh drag 50 -> 5 hPa, tau 20 d at 5 hPa and above (drag placed right above the 50-20 hPa stall instead of near the stratopause) |
+| 15 | ray10 | 1 | 1.075 | 0.75 | -0.50 | 0.29 | 5.0 | 5.4 | 0.33/0.29/0.35/0.37/0.45 | 1.33 / 2.92 | 2.82 / 3.93 | 0.87 | 0.85 / -2.32 / -2.60 | 29 | Rayleigh drag 30 -> 1 hPa, tau 10 d at 1 hPa (idealised stand-in for the missing upper-stratospheric wave drag) |
+| 16 | tau15cap | 1 | 1.202 | 0.66 | -0.42 | 0.45 | 6.1 | 5.8 | 0.46/0.43/0.46/0.43/0.46 | 1.18 / 3.09 | 2.95 / 4.18 | 0.85 | 1.51 / -2.55 / -2.66 | 28 | JFV relaxation time capped at 15 d (lower stratosphere relaxes as fast as Polvani-Kushner; upper unchanged) |
+| 17 | lm | 1 | 1.574 | 1.25 | -0.98 | 0.27 | 9.2 | 6.5 | 0.93/0.30/0.23/0.25/0.48 | 1.11 / 1.81 | 3.36 / 3.80 | 1.03 | 1.02 / -1.35 / -1.79 | 31 | Lott-Miller orographic drag only (no Hines), JCM defaults - the other half of the Phase 13c pair |
+| 18 | tau05 | 1 | 1.580 | 0.71 | -0.45 | 0.52 | 11.2 | 6.9 | 0.41/0.41/0.51/0.54/0.61 | 1.17 / 3.15 | 2.94 / 4.24 | 0.87 | 3.18 / -3.04 / -3.62 | 30 | JFV relaxation time halved everywhere above 100 hPa (T_e unchanged) |
+| | *references* | | | CLaMS entry age (AGE − 0.09) | | WACCM6 | ERA5 | ERA5 | 0.40/0.21/0.20/0.26/0.47 | CLaMS 1.24 / 4.03 (WACCM entry 1.11 / 3.40) | CLaMS 3.59 / 4.47 (WACCM 2.82 / 4.18) | | full ECHAM 1994: +0.96 / −1.29 / −3.19 | | |
+
+![scores](sweep_scores.png)
+![w*](sweep_wstar_profiles.png)
+![age](sweep_age_profiles.png)
+<!-- leaderboard:end -->
+
+## Reading the result
+
+- The composite is a ranking device; the parts are what to look at. A run that improves w* at 30 hPa but breaks the
+  extratropical age (the Phase 13 drag signature: 50–70° 55 hPa entry age falling toward 2 yr) shows up as a better w* part and a
+  worse age part.
+- Runs on GPUs 1/2 (Phase 13c, ten years, Jucker + drag + 400 hPa cutoff) are the other half of the picture and are not in this table;
+  their record is `docs/outputs/13c_jucker_n400/`.
+- Every run directory is `runs/p15_<name>_3yr` (segments `runs/p15_<name>_YYYYMMDD`), its score `scores/<name>.json`, its chain log
+  `runs/p15_<name>_chain.log`; the stage-3 run adds `runs/p15_<name>_5yr` and the diagnostics in `final/`.
+
+## Run log (appended by the pipeline)
+
+- 2026-09-24 12:07 PDT — pipeline started (commit 4e289aa, GPU 0, budget 46 h)
+- 2026-09-24 12:23 PDT — pytest and the four 5-day smokes (base, ray10, hines05, lm) passed; the sweep starts
+- 2026-09-24 13:58 PDT — stage 1 **ray10** (Rayleigh drag 30 -> 1 hPa, tau 10 d at 1 hPa (idealised stand-in for the missing upper-stratospheric wave drag)): 87 min for 3 yr; [score ray10] composite 1.075 = mean(age 1.50, w* 0.72, u 1.00, T 1.08); age150 RMSE vs CLaMS-entry 0.75 yr (bias -0.50); tropical w* 100/70/50/30/10: 0.33/0.29/0.35/0.37/0.45 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 5.0 m/s, T RMSE 5.4 K; 29 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/ray10.json
+- 2026-09-24 15:44 PDT — stage 1 **hines05** (Hines only (no Lott-Miller), launch 634 hPa, rms launch wind 0.5 m/s (half the JCM default)): 97 min for 3 yr; [score hines05] composite 1.012 = mean(age 1.13, w* 0.70, u 1.14, T 1.08); age150 RMSE vs CLaMS-entry 0.57 yr (bias -0.27); tropical w* 100/70/50/30/10: 0.32/0.28/0.34/0.36/0.44 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 5.7 m/s, T RMSE 5.4 K; 33 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/hines05.json
+- 2026-09-24 17:21 PDT — stage 1 **tau05** (JFV relaxation time halved everywhere above 100 hPa (T_e unchanged)): 89 min for 3 yr; [score tau05] composite 1.580 = mean(age 1.41, w* 1.29, u 2.23, T 1.39); age150 RMSE vs CLaMS-entry 0.71 yr (bias -0.45); tropical w* 100/70/50/30/10: 0.41/0.41/0.51/0.54/0.61 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 11.2 m/s, T RMSE 6.9 K; 30 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/tau05.json
+- 2026-09-24 19:00 PDT — stage 1 **lm** (Lott-Miller orographic drag only (no Hines), JCM defaults - the other half of the Phase 13c pair): 92 min for 3 yr; [score lm] composite 1.574 = mean(age 2.49, w* 0.67, u 1.84, T 1.29); age150 RMSE vs CLaMS-entry 1.25 yr (bias -0.98); tropical w* 100/70/50/30/10: 0.93/0.30/0.23/0.25/0.48 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 9.2 m/s, T RMSE 6.5 K; 31 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/lm.json
+- 2026-09-24 20:32 PDT — stage 1 **tau15cap** (JFV relaxation time capped at 15 d (lower stratosphere relaxes as fast as Polvani-Kushner; upper unchanged)): 84 min for 3 yr; [score tau15cap] composite 1.202 = mean(age 1.33, w* 1.11, u 1.21, T 1.16); age150 RMSE vs CLaMS-entry 0.66 yr (bias -0.42); tropical w* 100/70/50/30/10: 0.46/0.43/0.46/0.43/0.46 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 6.1 m/s, T RMSE 5.8 K; 28 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/tau15cap.json
+- 2026-09-24 22:12 PDT — stage 1 **hines1_l100** (Hines only, JCM default amplitude 1.0 m/s but launched at 100 hPa (no deposition in the troposphere/tropopause layer)): 93 min for 3 yr; [score hines1_l100] composite 1.009 = mean(age 1.07, w* 0.72, u 1.17, T 1.08); age150 RMSE vs CLaMS-entry 0.53 yr (bias -0.21); tropical w* 100/70/50/30/10: 0.32/0.28/0.33/0.35/0.40 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 5.8 m/s, T RMSE 5.4 K; 31 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/hines1_l100.json
+- 2026-09-24 23:44 PDT — stage 1 **ray30** (Rayleigh drag 30 -> 1 hPa, tau 30 d at 1 hPa (a third of ray10)): 85 min for 3 yr; [score ray30] composite 0.967 = mean(age 1.23, w* 0.72, u 0.87, T 1.06); age150 RMSE vs CLaMS-entry 0.62 yr (bias -0.34); tropical w* 100/70/50/30/10: 0.32/0.28/0.34/0.36/0.44 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 4.3 m/s, T RMSE 5.3 K; 28 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/ray30.json
+- 2026-09-25 01:17 PDT — stage 1 **spongeT** (sponge damps winds only: no temperature damping toward 250 K in the top four levels (JFV T_e there is 150-330 K)): 85 min for 3 yr; [score spongeT] composite 1.023 = mean(age 1.11, w* 0.71, u 1.19, T 1.08); age150 RMSE vs CLaMS-entry 0.55 yr (bias -0.25); tropical w* 100/70/50/30/10: 0.32/0.28/0.34/0.36/0.44 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 6.0 m/s, T RMSE 5.4 K; 29 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/spongeT.json
+- 2026-09-25 02:49 PDT — stage 1 **n100** (ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer)): 84 min for 3 yr; [score n100] composite 0.924 = mean(age 1.07, w* 0.55, u 1.03, T 1.04); age150 RMSE vs CLaMS-entry 0.54 yr (bias -0.23); tropical w* 100/70/50/30/10: 0.37/0.26/0.31/0.34/0.42 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 5.2 m/s, T RMSE 5.2 K; 28 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/n100.json
+- 2026-09-25 04:29 PDT — stage 1 **hines03** (Hines only, rms launch wind 0.3 m/s): 92 min for 3 yr; [score hines03] composite 1.019 = mean(age 1.11, w* 0.70, u 1.18, T 1.08); age150 RMSE vs CLaMS-entry 0.56 yr (bias -0.25); tropical w* 100/70/50/30/10: 0.32/0.28/0.34/0.36/0.44 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 5.9 m/s, T RMSE 5.4 K; 31 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/hines03.json
+- 2026-09-25 06:02 PDT — stage 1 **rayzm10** (Rayleigh drag 30 -> 1 hPa tau 10 d on the ZONAL-MEAN wind only (eddies untouched)): 86 min for 3 yr; [score rayzm10] composite 1.034 = mean(age 1.36, w* 0.71, u 0.99, T 1.08); age150 RMSE vs CLaMS-entry 0.68 yr (bias -0.41); tropical w* 100/70/50/30/10: 0.33/0.29/0.35/0.36/0.46 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 4.9 m/s, T RMSE 5.4 K; 29 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/rayzm10.json
+- 2026-09-25 07:34 PDT — stage 1 **raylow20** (Rayleigh drag 50 -> 5 hPa, tau 20 d at 5 hPa and above (drag placed right above the 50-20 hPa stall instead of near the stratopause)): 84 min for 3 yr; [score raylow20] composite 1.041 = mean(age 1.47, w* 0.72, u 0.91, T 1.06); age150 RMSE vs CLaMS-entry 0.73 yr (bias -0.47); tropical w* 100/70/50/30/10: 0.32/0.29/0.34/0.36/0.43 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 4.6 m/s, T RMSE 5.3 K; 28 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/raylow20.json
+- 2026-09-25 09:13 PDT — stage 1 **hines05_l100** (Hines only, rms 0.5 m/s launched at 100 hPa (both Hines knobs at once)): 91 min for 3 yr; [score hines05_l100] composite 1.018 = mean(age 1.12, w* 0.71, u 1.17, T 1.08); age150 RMSE vs CLaMS-entry 0.56 yr (bias -0.25); tropical w* 100/70/50/30/10: 0.32/0.28/0.34/0.36/0.43 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 5.8 m/s, T RMSE 5.4 K; 31 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/hines05_l100.json
+- 2026-09-25 09:13 PDT — stage 2 planned: drag: winner ray30 (0.967 vs base 1.022);relax: best member tau15cap (1.202) does not beat the base (1.022) by 0.02;other: winner n100 (0.924 vs base 1.022); -> ray30+n100,ray60
+- 2026-09-25 10:46 PDT — stage 2 **ray30+n100** (stage 2: Rayleigh drag 30 -> 1 hPa, tau 30 d at 1 hPa (a third of ray10) + ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer)): 85 min for 3 yr; [score ray30+n100] composite 0.887 = mean(age 1.19, w* 0.55, u 0.80, T 1.01); age150 RMSE vs CLaMS-entry 0.59 yr (bias -0.31); tropical w* 100/70/50/30/10: 0.38/0.26/0.31/0.34/0.43 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 4.0 m/s, T RMSE 5.1 K; 29 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/ray30+n100.json
+- 2026-09-25 12:23 PDT — stage 2 **ray60** (stage 2: Rayleigh drag 30 -> 1 hPa, tau 60 d (neighbour of the stage-1 winner ray30)): 89 min for 3 yr; [score ray60] composite 0.977 = mean(age 1.16, w* 0.71, u 0.98, T 1.06); age150 RMSE vs CLaMS-entry 0.58 yr (bias -0.29); tropical w* 100/70/50/30/10: 0.32/0.28/0.34/0.36/0.44 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 4.9 m/s, T RMSE 5.3 K; 30 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/ray60.json
+- 2026-09-25 12:23 PDT — stage 3: best run **ray30+n100**; ray30+n100 n100 extended to 1990-1994
+- 2026-09-25 13:31 PDT — stage 3 **ray30+n100_5yr** (stage 2: Rayleigh drag 30 -> 1 hPa, tau 30 d at 1 hPa (a third of ray10) + ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer) (five years)): 60 min for 5 yr; [score ray30+n100_5yr] composite 0.811 = mean(age 0.90, w* 0.59, u 0.71, T 1.04); age150 RMSE vs CLaMS-entry 0.45 yr (bias -0.00); tropical w* 100/70/50/30/10: 0.35/0.25/0.32/0.36/0.43 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 3.6 m/s, T RMSE 5.2 K; 29 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/ray30+n100_5yr.json
+- 2026-09-25 14:14 PDT — final diagnostics of **ray30+n100** (1990-1994) in `final_ray30_n100/`: `vs_jucker_*`, `vs_echam_*` (w*, ages, metrics.md), `*_aoa_*` (vs CLaMS/WACCM, base alongside), `p15_mesosphere.md`
+- 2026-09-25 15:23 PDT — stage 3 **n100_5yr** (ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer) (five years)): 60 min for 5 yr; [score n100_5yr] composite 0.862 = mean(age 0.88, w* 0.59, u 0.92, T 1.05); age150 RMSE vs CLaMS-entry 0.44 yr (bias +0.06); tropical w* 100/70/50/30/10: 0.35/0.25/0.32/0.36/0.42 (WACCM 0.40/0.21/0.20/0.26/0.47); u RMSE 4.6 m/s, T RMSE 5.3 K; 29 min/yr -> /data/JCM_stripped/jcm-strat-phase15/docs/outputs/15_sweep/scores/n100_5yr.json
+- 2026-09-25 16:07 PDT — final diagnostics of **n100** (1990-1994) in `final_n100/`: `vs_jucker_*`, `vs_echam_*` (w*, ages, metrics.md), `*_aoa_*` (vs CLaMS/WACCM, base alongside), `p15_mesosphere.md`
+- 2026-09-25 16:07 PDT — pipeline finished (28 h 0 min); best run: ray30+n100_5yr

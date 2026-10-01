@@ -75,8 +75,8 @@ def main():
     ap.add_argument("runs", nargs="+", help="rundir[:label] (one calendar-year segment or an aggregate)")
     ap.add_argument("--reference", default=None, help="rundir[:label] drawn as a reference (e.g. the full-physics segment)")
     ap.add_argument("--out", required=True); ap.add_argument("--tag", default="meso")
-    ap.add_argument("--stride", type=int, default=4, help="every n-th 6-hourly frame (4 = daily)")
-    ap.add_argument("--clock", default="aoa150"); ap.add_argument("--last-saves", type=int, default=240)
+    ap.add_argument("--stride", type=int, default=4, help="every n-th 6-hourly frame (4 = daily = one phase of the day, biased by the tides - Phase 15; 1 = all frames)")
+    ap.add_argument("--clock", default="aoa150"); ap.add_argument("--last-saves", default="240", help="frames for the clock std, or 'auto' = the last 60 days of each archive")
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
 
     specs = [(s.split(":", 1)[0], s.split(":", 1)[1] if ":" in s else os.path.basename(s.rstrip("/"))) for s in a.runs]
@@ -87,7 +87,12 @@ def main():
     for rundir, label in specs + ([ref] if ref else []):
         print(f"[meso] {label}: {rundir} (stride {a.stride})", flush=True)
         p, lat, w = annual_wstar(rundir, a.stride)
-        std = clock_lat_std(rundir, a.clock, a.last_saves)
+        if str(a.last_saves) == "auto":     # the last 60 days of this archive, whatever its save interval
+            f0 = sorted(glob.glob(os.path.join(rundir, "longrun_day*.nc")))[0]; t = xr.open_dataset(f0, decode_times=True).time.values
+            last_saves = max(1, int(round(60.0 / (float((t[1] - t[0]) / np.timedelta64(1, "D")) if t.size > 1 else 1.0))))
+        else:
+            last_saves = int(a.last_saves)
+        std = clock_lat_std(rundir, a.clock, last_saves)
         results.append((rundir, label, p, lat, w, std))
 
     lines = [f"# Mesosphere check ({a.tag}): annual-mean TEM w* above 10 hPa, mm/s, upward positive", "",

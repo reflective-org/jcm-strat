@@ -1,0 +1,6 @@
+# Phase 15 stage 2 (written by scripts/sweep_plan.py from the stage-1 scores):
+#   drag: winner ray30 (0.967 vs base 1.022)
+#   relax: best member tau15cap (1.202) does not beat the base (1.022) by 0.02
+#   other: winner n100 (0.924 vs base 1.022)
+ray30+n100     | strat15_jucker_ray         | physics.terms.rayleigh_drag.tau_days=30 nudging.min_pressure_hpa=100 | stage 2: Rayleigh drag 30 -> 1 hPa, tau 30 d at 1 hPa (a third of ray10) + ERA5 nudging cutoff raised from 150 to 100 hPa (bracket: how much of the gap is the tropopause layer)
+ray60          | strat15_jucker_ray         | physics.terms.rayleigh_drag.tau_days=60                      | stage 2: Rayleigh drag 30 -> 1 hPa, tau 60 d (neighbour of the stage-1 winner ray30)

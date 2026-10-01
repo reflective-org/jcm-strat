@@ -110,7 +110,9 @@ def model_tem_fields(rundir, stride=1, with_omega=False):
     """Per save: zonal means of v and theta and the zonal eddy covariance v'theta' (and, with ``with_omega``, the
     zonal-mean omega). ``stride`` takes every n-th frame of a 6-hourly instantaneous archive (Phases 10-12;
     4 = daily, 20 = every 5 days): the covariance is formed within each snapshot, so a stride only thins the
-    sample of the time mean."""
+    sample of the time mean. Phase 15: the covariance from ONE daily phase is biased by the model's tides (1991 Jucker
+    segment, tropical w* at 30 hPa: 0.50 / 0.11 / 0.52 / 0.54 mm/s from the 00 / 06 / 12 / 18 UTC frames, 0.42 from all
+    four) - use stride 1 for numbers that are compared across runs or with WACCM6's daily-mean TEM tapes."""
     files = sorted(glob.glob(os.path.join(rundir, "longrun_day*.nc")), key=lambda q: int(re.search(r"_day(\d+)\.nc$", q).group(1)))
     vb, vth, thb, omb, times = [], [], [], [], []
     offset = 0
