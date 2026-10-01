@@ -552,3 +552,23 @@ vs `p12echam_5yr`, Hines-only vs `p13jucker_5yr`; mesosphere table on the 1994 a
 pipeline `scripts/phase13d_run.sh` (tmux `phase13d-jucker-hines`), record `docs/outputs/13d_jucker_hines/`. Comparisons: vs
 Jucker no drag (the Hines effect), vs Jucker + both schemes (Lott-Miller off at 150 hPa), vs full physics; mesosphere table 1994.
 If the shallow branch overshoots as in 13b, the next knob is `rms_launch_wind` (1.0 -> 0.5-0.7 m/s) - not part of this run.
+
+# Phase 14 (running, 2026-09-22) — free-running full physics, 10 years
+
+**Susanne, 2026-09-22:** "Can you create a new phase that runs JCM full physics with no nudging? Can you run it for 10 years?
+Look at the same plots as in phase 12." Numbered 14 because Phase 13 (above) is planned and agreed but not started.
+
+**Run.** `p14_free` = `p12_echam` (JCM's full ECHAM package on T63L95 with the Phase 12 clocks and omega) with BOTH
+relaxations removed: `nudging: none` (no ERA5 u/v/T relaxation below 150 hPa) and physics `echam_free14` (= `echam_prod12`
+without the `qbo_nudging` term). ERA5 initial state 1990-01-01, present-day climatological boundary conditions, ten
+calendar-year segments 1990-1999 chained on GPU 0 (`p14free_10yr`; the first five also linked as `p14free_5yr`),
+~2.5-3 h per year. Pipeline `scripts/phase14_run.sh`.
+
+**Diagnostics (the Phase 12 set).** `scripts/phase12_compare.py` with before = `p12echam_5yr` (nudged full physics) for the
+10-yr and the first-5-yr aggregate, and before = `p12ctl_5yr` (dry control) for the 10-yr; clocks `aoa_sfc`, `aoa500`,
+`aoa150`; `scripts/aoa_vs_clams.py` triptychs and profiles for the three clocks. Question answered: is the over-driven
+shallow branch / missing vortex / too-young extratropics of Phase 12 run 4 the package's own or the nudging's, and does
+the free package make a QBO.
+
+**Record.** `docs/outputs/14_free_physics/output.md`; KEY_DECISIONS #45. Branch `phase14-free-physics` off
+`phase12-circulation`.
