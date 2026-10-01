@@ -1,0 +1,11 @@
+# @package _global_
+# Phase 13d (Susanne 2026-09-25): "Jucker relaxation plus Hines only, nudged below 150 hPa, on strat81" - the one combination
+# Phases 13b/13c left out. = p13_jucker_gwd (strat81, JFV2013 relaxation, ERA5 nudging < 150 hPa) with Lott-Miller off
+# (physics/strat_jucker_hines_prod13.yaml). Five years 1990-1994 so it compares at equal clock length with p13jucker_5yr
+# (no drag) and p13juckergwd_5yr (Hines + Lott-Miller). The moist_air_state diagnostics are dropped from the output as in 13c.
+#   EXPERIMENT=p13_jucker_hines PREFIX=p13jh SCHEME=calendar YEARS=1990-1994 AGG=p13jh_5yr SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p13_jucker_gwd
+  - override /physics: strat_jucker_hines_prod13
+
+output_drop: [sai, pulse_1, pulse_1_box, pulse_2, pulse_2_box, pulse_3, pulse_3_box, pulse_4, pulse_4_box, pulse_5, pulse_5_box, src_1, src_1_box, src_2, src_2_box, src_3, src_3_box, src_4, src_4_box, air_density, height_full, height_half, layer_thickness, pressure_full, pressure_half, pressure_thickness, relative_humidity, surface_pressure]

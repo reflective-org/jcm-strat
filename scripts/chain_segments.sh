@@ -44,7 +44,7 @@ _default_per_seg='physics.terms.held_suarez.qbo.year={year}'
 EXTRA_PER_SEG="${EXTRA_PER_SEG-$_default_per_seg}"        # '-' not ':-': set-but-empty = no per-segment override
 COMPACT="${COMPACT:-1}"
 if [ -z "${FIRST_SEG_EXTRA+x}" ]; then      # unset: the production experiments inject their WACCM initial state on segment 1
-  case "$EXPERIMENT" in p10_*|p11*|p12*|p13*|p15*|p16*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
+  case "$EXPERIMENT" in p10_*|p1[1-9]*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
 fi
 export CUDA_VISIBLE_DEVICES="$GPU"
 LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"
@@ -52,6 +52,11 @@ step() { echo "[chain] $(date -Is) $*" | tee -a "$LOG"; }
 
 if nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
   step "refusing: GPU $GPU is busy"; exit 1
+fi
+# JAX falls back to the CPU silently when the host has no /dev/nvidia* nodes (they vanish at every reboot of this
+# node: the driver is a container, nothing recreates them). A CPU chain runs 100x slower and looks normal.
+if ! python -c "import jax, sys; sys.exit(0 if any(d.platform == 'gpu' for d in jax.devices()) else 1)" 2>/dev/null; then
+  step "refusing: JAX sees no GPU (missing /dev/nvidia*? recreate the device nodes, see docs/outputs/11_lid_tracers/output.md)"; exit 1
 fi
 # the time step must divide the save interval (JCM truncates silently); default 12 min
 dt_min=$(printf '%s\n' $EXTRA | sed -n 's/^run\.time_step=//p' | tail -1); dt_min="${dt_min:-12}"
