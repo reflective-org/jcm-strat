@@ -149,6 +149,160 @@ The 30-year chain is `scripts/phase10_run30.sh` (tmux `strat_p10_30yr`): waits f
 (37 files × 40 frames, ~130 GB raw → ~90 GB compressed), aggregate `runs/p10_30yr/` (symlinks with
 cumulative day numbers). Expected ~30 min per year → ~15 h.
 
+## Pulse and source evolution, 1990–2019 (`scripts/pulse_evolution.py`, 2026-09-14)
+
+One figure per tracer in the layout of `p10_30yr_pulse_evolution.png` (map at the tracer's own
+injection level, zonal mean below, injection site marked): `p10_30yr_pulse_<i>_evolution.png` at
+0, 5, 20, 60, 180 and 365 days after the single injection, `p10_30yr_src_<i>_evolution.png` at
+5, 20, 60, 180, 365 and 1825 days of continuous emission. Animations over the first year (daily to
+day 60, then every 3 d to 180, every 10 d to 365; log colour scale fixed at four decades below the
+tracer's largest value): `p10_30yr_<tracer>_evolution.gif`, and all nine maps together in
+`p10_30yr_tracers_evolution.gif`.
+
+```
+python scripts/pulse_evolution.py runs/p10_30yr docs/outputs/10_production --label "P10 1990-2019 (strat63, tau 1 d)"
+```
+
+What the panels show (instantaneous fields, peak values in the colour bars):
+
+- **pulse_1** (0°, 30 hPa, 1.0): sheared into a zonal band within 5 d, filaments to 60°N by day 20,
+  a tropical band at 3 % of the amplitude after 60 d, a nearly zonal tropical maximum at 2.5e-3 after
+  180 d and 2e-4 after a year; vertically it stays in the 10–100 hPa layer for the first two months
+  and has spread from 300 to 1 hPa after a year.
+- **pulse_2** (45°N, 70 hPa, 0.5): torn apart by the winter vortex edge within 5 d, fills the
+  northern extratropics by day 60 (5e-3) and is hemispherically uniform, 4e-4, after 180 d; a
+  sharp gradient at the subtropical edge persists all year, with the southern hemisphere at
+  a tenth of the north. Vertically it drains downwards past 200 hPa within 6 months.
+- **pulse_3** (60°S, 10 hPa, 0.2): the summer polar stratosphere; the blob circles the pole once in
+  5 d, is zonal by day 20 and stays confined to the southern extratropics for the whole year
+  (2.5e-5 after 365 d) while descending from 10 to 100 hPa: the smallest horizontal spread of the
+  five and the clearest downward branch.
+- **pulse_4** (30°N, 3 hPa, 0.1): rolled up by the planetary-wave breaking of the upper stratosphere
+  (a closed vortex at day 5), spread across the whole northern hemisphere by day 60 (2e-3) and, after
+  a year, descended to a maximum near 30 hPa with the tropics still an order of magnitude lower.
+- **pulse_5** (15°S, 300 hPa, 0.05): the tropospheric pulse is stretched into filaments within 5 d,
+  covers 40°S–40°N by day 20 at a tenth of its amplitude and fills the whole troposphere by day 60;
+  a tail leaks into the tropical lower stratosphere and after a year the maximum of what is left
+  (1e-5) sits at 50–100 hPa: the troposphere has drained to the surface while the stratosphere holds.
+- **src_1** (0°, 20 hPa, 1.0): a tropical plume that saturates in about six months (zonal-mean peak
+  0.054 at 180 d, 0.056 at 5 yr) and stays within 30°S–30°N at the injection level; the filaments to
+  the extratropics are at a few percent of the core.
+- **src_2** (30°N, 100 hPa, 0.5): sheared along the subtropical jet, its plume fills the northern
+  lower stratosphere and upper troposphere; the equilibrium peak (0.012–0.013) is reached after a
+  year, the southern hemisphere stays clean.
+- **src_3** (60°S, 5 hPa, 0.2): polar summer at the start, so the plume circles the pole; by day 180
+  (austral winter) the vortex confines it to 60–90°S at 0.02 and only after a year does the plume
+  reach 40°S. Equilibrium peak 0.014.
+- **src_4** (30°S, 55 hPa, 0.3, Susanne's site): the southern subtropical plume mixes into the
+  southern hemisphere within 60 d and reaches equilibrium (0.011) in about a year; its northern edge
+  sits at the equator.
+
+All four sources are near their equilibrium burden after a year (`p10_30yr_pulse_metrics.md`:
+src_1–3 flat, src_4 still rising slowly at the end); the five pulses are the transient signal, a
+homogeneous background within one hemisphere after 6–12 months.
+
+**Vertical structure** (`p10_30yr_<tracer>_vertical.png`, `p10_30yr_tracers_vertical.png`; first
+730 days, every 5 days, `--stages vertical`). Each tracer's figure shows time–pressure sections of
+the mass-weighted global mean and of the zonal mean within 10° of the injection latitude, the
+mass-centroid pressure (mass-weighted mean of log10 p) overlaid, and line profiles of the band mean
+at 0, 5, 20, 60, 180, 365 and 730 days. The summary figure has the centroid and the vertical spread
+(mass-weighted std of log10 p) of all nine. Because the weights are layer mass, a blob centred at
+p0 in mixing ratio has its centroid below p0 from the start (30 hPa → 45 hPa for pulse_1).
+
+- Every stratospheric pulse's centroid **descends and converges to 160–180 hPa within 1–2 years**
+  (pulse_1 from 45 hPa in ~300 d, pulse_2 from 100 hPa in ~50 d, pulse_3 from 13 hPa in ~250 d,
+  pulse_4 from 3 hPa in ~500 d): the mass that is left sits in the lowermost stratosphere and upper
+  troposphere while the surface sink drains what reaches the troposphere. The tropospheric pulse_5
+  moves the other way, from 300 to 170 hPa, as its tropospheric part is removed and the lower-
+  stratospheric tail is what remains after a year.
+- Vertical spread grows from the injected 0.25 decades to 0.45–0.5 decades for the stratospheric
+  pulses within 100–200 days and then stays; pulse_4 (3 hPa) spreads most (0.67 decades at 250 d)
+  because it descends through the whole stratosphere.
+- The sources reach a fixed profile: src_1 (20 hPa) has its centroid at 65 hPa and a plume spanning
+  1–200 hPa after a year; src_2 (100 hPa) and src_4 (55 hPa) settle at 200 and 170 hPa within 100 d
+  with the smallest spread (0.3–0.4 decades). **src_3 (60°S, 5 hPa) shows a clear annual cycle**:
+  its centroid sinks from 20 to 55 hPa during austral winter (day ~250 and ~600) and rises back to
+  25 hPa in austral summer (day ~450), i.e. the polar vortex descent and its summer breakdown are in
+  the tracer, with the spread swinging between 0.6 and 0.7 decades in step.
+- The profiles of pulse_1 and pulse_3 at 365 and 730 days show the blob reaching the 1 hPa level at
+  1e-3 to 1e-4 of the amplitude: the tropical upwelling branch carries the tropical pulse up as the
+  bulk descends, the polar pulse_3 has no such tail.
+
+**Total global tracer mass** (`p10_30yr_tracer_mass.png`, numbers in `p10_30yr_tracer_mass.md`;
+`--stages mass`, every 10 d for two years then every 30 d, 414 frames, series cached in
+`runs/p10_30yr/tracer_mass.npz`). Mass = mixing ratio × layer air mass summed over the globe
+(4πa²/g · Σ q Δp w), in kg; the dry-air total comes out at 5.19e18 kg, as it should. The GIFs and
+panels above show mixing ratio, not mass.
+
+| tracer | injected / emitted | half-life | e-folding | left after 1 yr |
+|---|---|---|---|---|
+| pulse_1 (30 hPa) | 5.7e15 kg | 120 d | 150 d | 3.9 % |
+| pulse_2 (70 hPa) | 6.5e15 kg | 50 d | 70 d | 0.7 % |
+| pulse_3 (10 hPa) | 3.8e14 kg | 210 d | 240 d | 7.1 % |
+| pulse_4 (3 hPa) | 5.7e13 kg | 280 d | 320 d | 22 % |
+| pulse_5 (300 hPa) | 2.5e15 kg | 60 d | 90 d | 0.8 % |
+| src_1 (20 hPa) | 4.3e13 kg/d | | residence 0.49 yr | equilibrium 7.7e15 kg |
+| src_2 (100 hPa) | 1.0e14 kg/d | | residence 0.24 yr | 7.7–9.3e15 kg |
+| src_3 (5 hPa) | 2.2e12 kg/d | | residence 0.44 yr | 3.5–3.8e14 kg |
+| src_4 (55 hPa) | 3.6e13 kg/d | | residence 0.26 yr | 3.4–3.7e15 kg |
+
+- **The pulses are gone within 2–3 years**: below 1e-4 of the injected mass after 2.5 yr, 1e-8 to
+  1e-10 after 5 yr, and at 1e-32 to 1e-34 (float32 roundoff, still positive) after 30 years. The decay
+  is exponential after the first 100–200 days, with an e-folding time that increases with height:
+  70 d at 70 hPa, 150 d at 30 hPa, 240 d at 10 hPa, 320 d at 3 hPa. Two time scales are in this:
+  the time the air needs to reach the tropopause, and **tropospheric removal, which in this model is
+  itself slow, ~75 d**. The only sink is relaxation to zero in the two lowest layers, and the dry
+  model has no convection or boundary-layer mixing, so tracer reaches those layers by the resolved
+  (ERA5-nudged) circulation alone. Splitting pulse_5's mass at 150 hPa shows it: 96 % of the
+  300 hPa pulse is tropospheric at t0, and that tropospheric part alone falls to 41 % after 60 d and
+  26 % after 90 d; the 4–8 % above 150 hPa decays in step with it, so it is not a lingering tail.
+  From day 180 on every pulse decays at the same ~75–80 d e-folding, the tropospheric removal
+  rate; pulse_2 (70 hPa, 45°N, injected in NH winter) falls faster at first only because it starts
+  with 23 % of its mass below 150 hPa and the winter lowermost stratosphere flushes into the
+  troposphere within two months (77 % → 11 % above 150 hPa by day 60). A real troposphere removes a
+  300 hPa tracer to the boundary layer in days to a couple of weeks; the model's 75 d is a property
+  of the stripped physics, not of the atmosphere, and it lengthens every pulse's lifetime by the same
+  amount. So the once-injected pulses carry signal for the first two years of the archive and are
+  exactly zero for the other 28 (their fields still cost 5 × 186 MB per 10-day file; see the question
+  below).
+- **The sources reach equilibrium within a year** and then hold a stratospheric mass of
+  residence time × emission, with the residence time 0.24–0.49 yr: shortest for the 100 hPa and
+  55 hPa sources, longest for the 20 hPa and 5 hPa ones. All four show an **annual cycle** of
+  ±10–20 % in mass (strongest for src_3, the polar one): the seasonal Brewer-Dobson circulation
+  modulates how fast the plume reaches the troposphere. The cumulative-emission lines (dotted) show
+  that after 30 years 98–99 % of what was emitted has been absorbed at the surface.
+- **n2o and cfc11 lose 11–12 % / 13–14 % of their WACCM initial mass in the first two years** and
+  then hold a stationary level with an annual cycle of ±0.5 %: the model's stratospheric loss
+  (the WACCM CHML rates) is stronger than the WACCM state implies for this circulation, or the tropical
+  ascent that carries fresh tracer up is slower (the same direction as the old age of air, KEY_DECISIONS
+  #35). Below 700 hPa they are pinned at 1, so all of the lost mass is stratospheric, consistent
+  with the zonal means sitting below the WACCM contours in `p10_30yr_steady_clocks.png`. Which of
+  the two causes dominates is not settled here.
+- **sai** (box source, no sink) grows to 3.9e19 kg in 30 years, 0.8 % of the atmosphere's mass; its
+  growth rate is the analytic source to within the 2 % threshold (`p10_30yr_pulse_metrics.md`).
+
+## Linearity check: the pulse amplitude only scales the field (2026-09-15)
+
+Susanne asked whether advection depends on the concentration, i.e. whether the five amplitudes
+(1.0, 0.5, 0.2, 0.1, 0.05) probe anything beyond a scale factor. In this model they cannot: the
+tracers are passive, the winds are prescribed (dry Held-Suarez + ERA5 nudging), and every operator
+on q — semi-Lagrangian interpolation, the quasi-monotone limiter, the mass fixer, the surface
+relaxation — is homogeneous of degree one. Checked by running p10_prod for 5 days from 2005-01-01
+twice, once with the default pulses and once with pulse_1's amplitude set to 2.0 (`runs/lin_a1`,
+`runs/lin_a2`, `runs/lin_check.sh`; CPU, ~10 min each):
+
+- pulse_1: the doubled run equals exactly 2 × the reference in 94 % of the cells in float32 and
+  differs by < 1e-18 (denormal roundoff near zero) in the rest, at every one of the 20 frames; peak
+  ratio 2.0000000, global-mass ratio 2.0000000.
+- pulse_2, src_1, u, T: bit-identical between the two runs — the tracer does not touch the flow.
+
+So the amplitude sets the initial mixing ratio and nothing else; the transport pattern, timing and
+lifetimes are amplitude-independent. Concentration-dependent transport (self-lofting by aerosol
+heating, size-dependent settling after coagulation) requires a model in which the tracer acts on
+the dynamics or has nonlinear microphysics — the coupled TOMAS/CESM model or an emulated dycore
+closing the loop — and is outside Approach A by construction. The amplitude variety in the archive
+is useful only as a linearity / normalisation test for a learned transport operator.
+
 ## Questions that came up, and my answers
 
 *(kept while the run proceeds; Susanne reviews once the 30 years are done)*
@@ -170,3 +324,44 @@ cumulative day numbers). Expected ~30 min per year → ~15 h.
   the three age tracers are converged only after ~6–8 years of the 30. Analyses of age should use
   1998 onward; the ML training set can use every year since it learns the local transport, not the
   absolute age.
+
+## Age of air after 30 years: the mesosphere is never ventilated (`scripts/aoa_vs_clams.py`, 2026-09-15)
+
+Susanne asked which figure compares age of air with CLaMS; none existed for this run, so it was made:
+`p10_30yr_2009_aoa_{triptych,profiles}.png` (the chain at the end of 2009, last 60 days, against
+CLaMS/WACCM 2005–2009 — the window Phases 4–9 used) and `p10_30yr_aoa_{triptych,profiles}.png` (the 2019
+annual mean against 2015–2019). **The clock never equilibrates.** Surface-clock mean age in years:
+
+| level, band | end 2009 | 2019 | CLaMS |
+|---|---|---|---|
+| 55 hPa, tropics | 4.9 | 6.5 | 1.3 |
+| 55 hPa, 50–70° | 10.8 | 13.7 | 4.2 |
+| 12 hPa, tropics | 10.4 | 13.0 | 3.7 |
+| 12 hPa, 50–70° | 13.6 | 18.4 | 4.7 |
+
+Sampled at every second year end, the age grows almost linearly: 0.2 yr per year at 55 hPa in the tropics,
+0.5 yr per year at 12 hPa. In the last frame the age above ~1 hPa is 22–23 yr **and uniform in latitude**
+(tropics 23.2, poles 23.2 at 0.02 hPa; the oldest cell, 23.3 yr, is at the model top): the mesosphere has
+not been flushed once in 30 years, and the smooth fall-off below it is the profile of a stagnant lid
+leaking down by mixing, not of an overturning cell. This is **not a weak Brewer–Dobson circulation**
+(Susanne's objection, correct): the tropical upward mass flux at 100 / 70 / 30 / 10 hPa is 11.1 / 8.2 /
+3.7 / 1.35 × 10⁹ kg/s against WACCM6's 10.8 / 6.1 / 3.1 / 1.39 (`09_resolution/strat/strat_metrics.md`),
+and 1.35 × 10⁹ kg/s through 10 hPa would replace the air above it in ~1.2 yr. The stratospheric cell is as
+strong as WACCM's but closes below the mesosphere, which has no drag to drive a circulation (gravity-wave
+drag was dropped in Phase 1, issue #20; the Rayleigh sponge holds the top four levels above 0.2 hPa; the
+semi-Lagrangian top is a no-flux cap). Mean age is a mass-weighted average over all transit paths, so a
+correct w* and a very old mean age coexist once the old-air tail exists.
+
+Consequences. (1) The Phase 9 statement "0.8 yr too old at 55 hPa" was a spin-up artefact — a 5-year clock
+cannot exceed 5 yr, and the 1994 value of this chain (2.2 yr) matches the 5-year chains. The answer above,
+"converged after ~6–8 years", is wrong: the clocks never converge in this configuration. (2) The N2O and
+CFC-11 depletion (isopleths ~6 km below WACCM's, half-value surface at 21 hPa vs 8 hPa in the tropics) has
+the same cause: air that has been to the mesosphere returns N2O-free and is recirculated into the pipe and
+the lowermost stratosphere (0.43 vs 0.85 at 100 hPa, 50–70°, where the lifetime is centuries). CFC-11 in
+the tropical pipe above 30 hPa, where its lifetime is months and the field is set locally by ascent against
+loss, matches WACCM (0.18 vs 0.20 at 20 hPa) — the fingerprint of recirculated old air rather than slow
+ascent. The implied N2O emission (stratospheric loss at steady state) is 0.39 % of the atmosphere per year,
+i.e. a whole-atmosphere lifetime of ~256 yr against the accepted ~120: the loss is supply-limited because
+the pipe is diluted with depleted air. **Phase 11** (branch `phase11-lid-tracers`, `11_lid_tracers/output.md`)
+prescribes the tracers above 1 hPa (relaxation to WACCM's mesospheric age and state) and re-runs; the
+dynamical fix is deferred.
