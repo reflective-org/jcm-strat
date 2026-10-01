@@ -590,3 +590,15 @@ mass-conserving, unit-tested). Nine runs in three queues (`scripts/phase16_queue
 500 hPa clock at 100 hPa (the transit). Leaderboard/record rewritten and committed after every run under a shared lock; the last
 queue runs `phase12_compare --stride 1` of every run vs `base10` and `aoa_vs_clams` for the mixing runs. Budget 23 h per queue with
 a per-run check; nothing pushed. Branch `phase16-mixing` off `phase15-sweep`, worktree `jcm-strat-phase16`.
+
+# Phase 17 (2026-10-01, Susanne) — re-optimise the JFV equilibrium temperature toward ERA5; age like CLaMS, upwelling like ERA5
+
+Susanne: "It seems that there is too much mixing, so the waves are breaking in the wrong place. Would it help to re-optimize the TEQ
+field, focusing on temperature gradients ... to improve the winds?" then "Yes, you can use GPU 0,1 and 2. I need age of air to look
+like that of CLaMS, and the tropical upwelling needs to match ERA5 better too." Additive monthly correction of the JFV T_e
+(`te_correction_file`), damped fixed-point iterations (alpha 0.7) toward the ERA5 1990-1999 monthly zonal-mean T, 100-1 hPa, smoothed,
+no masks (`scripts/teq_correction.py`); each iteration 1998-1999 from Phase 16 `mix10trop`'s 1997 state; at most four, then the last
+correction ten years from ERA5. Tracks (`scripts/phase17_run.sh A|B|B0`, tmux `strat_p17_*`): A = mix10trop (GPU 0), B = without the
+Rayleigh drag (GPU 1), B0 = without the drag, no correction (GPU 2). New ERA5 w* reference from CDS 6-hourly v, T
+(`scripts/fetch_era5_tem.py`) replaces WACCM6 in the score once present; new subtropical barrier age. Budget 24 h per track; nothing
+pushed. Branch `phase17-teq` off `phase16-mixing`, worktree `jcm-strat-phase17`. Record `docs/outputs/17_teq/output.md`.

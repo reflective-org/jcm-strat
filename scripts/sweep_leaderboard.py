@@ -33,10 +33,10 @@ def fmt(x, nd=2, plus=False):
 
 
 def table(runs):
-    base = next((r for r in runs if r["name"] == "base"), None)
+    base = next((r for r in runs if r["name"] in ("base", "p16_mix10trop")), None)
     ref = runs[0]
     head = ["rank", "run", "stage", "composite", "age RMSE `aoa150` vs CLaMS-entry [yr]", "age bias", "w* log-err", "u RMSE [m/s]", "T RMSE [K]",
-            "w* 100/70/50/30/10 hPa [mm/s]", "`aoa150` 55 hPa trop / 50-70", "`aoa150` 12 hPa trop / 50-70", "`aoa_sfc` RMSE vs CLaMS", "`aoa_sfc` 55 hPa trop (CLaMS 1.33)", "`aoa500` 100 hPa trop [yr] (500->100 transit)", "w* 1 hPa trop / NH / SH", "min/yr", "what"]
+            "w* 100/70/50/30/10 hPa [mm/s]", "`aoa150` 55 hPa trop / 50-70", "`aoa150` 12 hPa trop / 50-70", "`aoa_sfc` RMSE vs CLaMS", "`aoa_sfc` 55 hPa trop (CLaMS 1.33)", "`aoa500` 100 hPa trop [yr] (500->100 transit)", "w* 1 hPa trop / NH / SH", "w* ref", "ERA5 w* 100/70/50/30/10", "barrier age 55 hPa (25-35 minus 0-10)", "min/yr", "what"]
     lines = ["| " + " | ".join(head) + " |", "|" + "---|" * len(head)]
     for i, r in enumerate(runs, 1):
         w = "/".join(fmt(r.get(f"wstar_annual_{lv:g}"), 2) for lv in W_LEVELS)
@@ -45,16 +45,17 @@ def table(runs):
             fmt(r.get("age_rmse_aoa150")), fmt(r.get("age_bias_aoa150"), 2, True), fmt(r.get("w_logerr")), fmt(r.get("u_rmse"), 1), fmt(r.get("T_rmse"), 1),
             w, f"{fmt(r.get('age_aoa150_55_tropics'))} / {fmt(r.get('age_aoa150_55_5070'))}", f"{fmt(r.get('age_aoa150_12_tropics'))} / {fmt(r.get('age_aoa150_12_5070'))}",
             fmt(r.get("age_rmse_aoa_sfc")), fmt(r.get("age_aoa_sfc_55_tropics")), fmt(r.get("age_aoa500_100_tropics")), f"{fmt(r.get('meso_1_tropics'))} / {fmt(r.get('meso_1_nh'))} / {fmt(r.get('meso_1_sh'))}",
+            r.get("w_ref", "WACCM6"), "/".join(fmt(r.get(f"wstar_era5_annual_{lv:g}")) for lv in W_LEVELS), fmt(r.get("age_aoa150_55_barrier")),
             fmt(r.get("minutes_per_year"), 0), r.get("desc", "")]) + " |")
     r = ref
-    refrow = ("| | *references* | | | CLaMS entry age (AGE − {:.2f}) | | WACCM6 | ERA5 | ERA5 | {} | CLaMS {} / {} (WACCM entry {} / {}) | CLaMS {} / {} (WACCM {} / {}) | | | | full ECHAM 1994: +0.96 / −1.29 / −3.19 | | |"
+    refrow = ("| | *references* | | | CLaMS entry age (AGE − {:.2f}) | | WACCM6 | ERA5 | ERA5 | {} | CLaMS {} / {} (WACCM entry {} / {}) | CLaMS {} / {} (WACCM {} / {}) | | | | full ECHAM 1994: +0.96 / −1.29 / −3.19 | | | CLaMS {} | | |"
               .format(r.get("clams_offset_150", 0.09), "/".join(fmt(r.get(f"wstar_waccm_annual_{lv:g}")) for lv in W_LEVELS),
                       fmt(r.get("age_clams_55_tropics") - r.get("clams_offset_150", 0.09) if r.get("age_clams_55_tropics") is not None else None),
                       fmt(r.get("age_clams_55_5070") - r.get("clams_offset_150", 0.09) if r.get("age_clams_55_5070") is not None else None),
                       fmt(r.get("age_waccm_55_tropics")), fmt(r.get("age_waccm_55_5070")),
                       fmt(r.get("age_clams_12_tropics") - r.get("clams_offset_150", 0.09) if r.get("age_clams_12_tropics") is not None else None),
                       fmt(r.get("age_clams_12_5070") - r.get("clams_offset_150", 0.09) if r.get("age_clams_12_5070") is not None else None),
-                      fmt(r.get("age_waccm_12_tropics")), fmt(r.get("age_waccm_12_5070"))))
+                      fmt(r.get("age_waccm_12_tropics")), fmt(r.get("age_waccm_12_5070")), fmt(r.get("age_clams_55_barrier"))))
     lines.append(refrow)
     return "\n".join(lines), base, ref
 
