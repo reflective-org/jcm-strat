@@ -63,6 +63,48 @@ def era5_monthly_T(years, lat):
     return t.groupby("time.month").mean("time")
 
 
+CLAMS_REA_ZIP = "/data/CLaMS/CLaMS_v3/clams_reanalyses/clams_era5_zm_lat_press.zip"
+HEAT_CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache", "era5_ref", "era5_heating_clams_2000-2014.npz")
+
+
+def era5_monthly_Q(lat):
+    """Phase 18: ERA5 total diabatic heating as a temperature tendency Q = theta_dot (p/1000)^kappa [K/day], monthly climatology
+    of the CLaMS v3 ERA5 reanalysis files 2000-2014 (``THETA_DOT_TOT``, the vertical velocity CLaMS itself is driven by; its
+    units attribute is a placeholder, the values are K/day), on P_CORR x ``lat`` -> (12, len(P_CORR), nlat)."""
+    if not os.path.exists(HEAT_CACHE):
+        import zipfile, netCDF4
+        z = zipfile.ZipFile(CLAMS_REA_ZIP); acc = []
+        for n in sorted(x for x in z.namelist() if x.endswith(".nc")):
+            d = netCDF4.Dataset(n, memory=z.read(n)); acc.append(np.asarray(d["THETA_DOT_TOT"][:], float))
+            p = np.asarray(d["press"][:], float); la = np.asarray(d["lat"][:], float); d.close()
+        os.makedirs(os.path.dirname(HEAT_CACHE), exist_ok=True)
+        np.savez(HEAT_CACHE, p=p, lat=la, thdot=np.mean(acc, 0), years="2000-2014")
+    z = np.load(HEAT_CACHE); p, la = z["p"], z["lat"]
+    q = z["thdot"] * (p[None, :, None] / 1000.0) ** 0.2857                  # (12, np, nlat) K/day of T
+    o = np.argsort(p); q, p = q[:, o], p[o]
+    from jcm_strat.jucker import interpolate_table
+    return interpolate_table(q, p, la, P_CORR, lat)
+
+
+def model_monthly_Q(tm, lat, prev):
+    """The model's own Newtonian heating (T_e - T) / tau [K/day] from its monthly-mean T on P_CORR, with the JFV T_e plus the
+    correction ``prev`` the run used (monthly means of a linear relaxation; T_e and tau vary slowly within a month)."""
+    from jcm_strat.jucker import load_jfv_table, interpolate_table
+    _, pj, latj, te, tau = load_jfv_table()
+    te_k = interpolate_table(te, pj, latj, P_CORR, lat) + (0.0 if prev is None else prev)
+    tau_d = interpolate_table(tau, pj, latj, P_CORR, lat) / 86400.0
+    return (te_k - tm) / tau_d, tau_d
+
+
+def heating_mask(lat, lat_full, lat_zero, p_full, p_zero):
+    """1 inside |lat| <= lat_full and p >= p_full (hPa), cos^2 tapers to 0 at lat_zero and (in log p) at p_zero; (len(P_CORR), nlat)."""
+    al = np.abs(np.asarray(lat))
+    ml = np.where(al <= lat_full, 1.0, np.where(al >= lat_zero, 0.0, np.cos(0.5 * np.pi * (al - lat_full) / (lat_zero - lat_full)) ** 2))
+    lp = np.log(P_CORR); x = np.clip((np.log(p_full) - lp) / (np.log(p_full) - np.log(p_zero)), 0.0, 1.0)
+    mp = np.cos(0.5 * np.pi * x) ** 2
+    return mp[:, None] * ml[None, :]
+
+
 def smooth121(x, axis, periodic=False):
     x = np.moveaxis(x, axis, -1)
     if periodic:
@@ -78,6 +120,13 @@ def main():
     ap.add_argument("rundir"); ap.add_argument("--out", required=True); ap.add_argument("--prev", default=None)
     ap.add_argument("--alpha", type=float, default=0.7); ap.add_argument("--cap", type=float, default=25.0)
     ap.add_argument("--window-years", type=float, default=2.0); ap.add_argument("--era5-years", default="1990-1999")
+    # Phase 18: inside a tropical lower-stratosphere mask the target is ERA5's diabatic HEATING, not its temperature:
+    # dT_e -= alpha * tau * (Q_model - Q_ERA5); the T target stays outside; cos^2 tapers between
+    ap.add_argument("--heating-target", action="store_true")
+    ap.add_argument("--heat-lat", type=float, nargs=2, default=(30.0, 40.0), help="full / zero weight |lat| (deg)")
+    ap.add_argument("--heat-p", type=float, nargs=2, default=(30.0, 15.0), help="full weight at p >= first, zero at p <= second (hPa)")
+    ap.add_argument("--outer-from", default=None, help="Phase 18 first step: take the correction OUTSIDE the mask from this file "
+                    "(e.g. Phase 17's converged A4) and start the inside from the run's own heating error")
     a = ap.parse_args()
     y0, y1 = (int(v) for v in a.era5_years.split("-"))
     tm, lat, span = model_monthly_T(a.rundir, a.window_years)
@@ -85,14 +134,30 @@ def main():
     diff = (tm - te).transpose("month", "plev", "lat").values        # (12, 11, nlat)
     w = np.cos(np.deg2rad(lat))
     rms_before = float(np.sqrt(np.nansum(w * diff ** 2) / np.sum(w * np.isfinite(diff))))
-    inc = smooth121(smooth121(diff, 2), 2)
+    def read_corr(path):
+        with xr.open_dataset(path) as d:
+            return d.dte.sel(pfull=list(P_CORR)).interp(lat=lat).transpose("month", "pfull", "lat").values
+    prev = read_corr(a.prev) if a.prev else None
+    err = diff                                                # K, the quantity the update drives to zero
+    heat_report = None
+    if a.heating_target:
+        m = heating_mask(lat, a.heat_lat[0], a.heat_lat[1], a.heat_p[0], a.heat_p[1])[None]      # (1, np, nlat)
+        qm, tau_d = model_monthly_Q(tm.transpose("month", "plev", "lat").values, lat, prev)
+        qe = era5_monthly_Q(lat)
+        err = m * tau_d * (qm - qe) + (1.0 - m) * diff     # heating error in K (tau * dQ) inside, T error outside
+        inside = (m[0] > 0.5)
+        dq = (qm - qe)[:, inside]; wq = np.broadcast_to(np.cos(np.deg2rad(lat))[None, :], m[0].shape)[inside][None, :]
+        heat_report = (float(np.sqrt(np.nansum(wq * dq ** 2) / np.sum(wq * np.isfinite(dq)))), qm, qe)
+    inc = smooth121(smooth121(err, 2), 2)
     inc = -a.alpha * smooth121(inc, 0, periodic=True)
     inc[:, P_CORR == 100.0, :] = 0.0                          # nudged below; keep the 100 hPa node at zero
-    prev = None
-    if a.prev:
-        with xr.open_dataset(a.prev) as d:
-            prev = d.dte.sel(pfull=list(P_CORR)).interp(lat=lat).transpose("month", "pfull", "lat").values
-    tot = np.clip(inc + (0.0 if prev is None else prev), -a.cap, a.cap)
+    base = prev
+    if a.outer_from:
+        if not a.heating_target:
+            raise SystemExit("--outer-from needs --heating-target")
+        base = (1.0 - m[0][None]) * read_corr(a.outer_from) + m[0][None] * (0.0 if prev is None else prev)
+        inc = inc * m                                         # outside, the converged file already answers this run's T error
+    tot = np.clip(inc + (0.0 if base is None else base), -a.cap, a.cap)
     # vertical extension: zero at 150 hPa and below, taper above 1 hPa to zero at 0.1 hPa
     p_top = np.array([0.01, 0.1, 0.2, 0.3, 0.5, 0.7])
     taper = np.log(p_top / 0.1) / np.log(10.0); taper = np.clip(taper, 0.0, 1.0)
@@ -103,13 +168,24 @@ def main():
                     coords={"month": np.arange(1, 13), "pfull": p_all, "lat": lat})
     ds.dte.attrs.update(units="K", long_name="additive correction to the JFV2013 equilibrium temperature")
     ds.attrs.update(source_run=os.path.abspath(a.rundir), window=f"{span[0]}..{span[1]}", era5_years=a.era5_years,
-                    alpha=a.alpha, cap=a.cap, prev=str(a.prev), rms_T_error_before=rms_before)
+                    alpha=a.alpha, cap=a.cap, prev=str(a.prev), rms_T_error_before=rms_before,
+                    heating_target=int(a.heating_target), heat_lat=str(a.heat_lat), heat_p=str(a.heat_p), outer_from=str(a.outer_from),
+                    rms_heating_error_inside=(heat_report[0] if heat_report else -1.0))
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     ds.to_netcdf(a.out)
     # report: error and correction per region
     lev = {p: i for i, p in enumerate(P_CORR)}
     print(f"[teq] {a.rundir} window {span[0]}..{span[1]} vs ERA5 {a.era5_years}: monthly T RMSE 100-1 hPa {rms_before:.2f} K; "
           f"increment {np.nanmin(inc):+.1f}..{np.nanmax(inc):+.1f} K, total {np.nanmin(tot):+.1f}..{np.nanmax(tot):+.1f} K -> {a.out}")
+    if heat_report:
+        rq, qm, qe = heat_report
+        print(f"[teq] heating target inside |lat|<{a.heat_lat[0]:g} (zero at {a.heat_lat[1]:g}), p>={a.heat_p[0]:g} hPa (zero at {a.heat_p[1]:g}): "
+              f"monthly heating RMSE inside {rq:.3f} K/day")
+        for pl in (70, 50, 30, 20, 10):
+            k = lev[pl]
+            print(f"[teq]   annual heating at {pl:>3} hPa, lat 0/15/25/35, model | ERA5 [K/d]: " +
+                  " ".join(f"{np.interp(l, lat, qm[:, k].mean(0)):+.2f}" for l in (0, 15, 25, 35)) + " | " +
+                  " ".join(f"{np.interp(l, lat, qe[:, k].mean(0)):+.2f}" for l in (0, 15, 25, 35)))
     for pl in (1, 5, 10, 30, 70):
         row = tot[:, lev[pl], :].mean(0)
         print(f"[teq]   annual dT_e at {pl:>3} hPa, lat -80/-60/-30/0/30/60/80: " +
