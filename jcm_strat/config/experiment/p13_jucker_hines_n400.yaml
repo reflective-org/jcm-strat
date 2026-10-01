@@ -1,0 +1,7 @@
+# @package _global_
+# Phase 13c run 2 (Susanne 2026-09-24): p13_jucker_gwd_n400 with Hines only - no Lott-Miller orographic drag
+# (physics/strat_jucker_hines_prod13.yaml). One change against p13_jucker_gwd_n400. Ten years 1990-1999.
+#   EXPERIMENT=p13_jucker_hines_n400 PREFIX=p13jhn400 SCHEME=calendar YEARS=1990-1999 AGG=p13jhn400_10yr SAVE_INTERVAL=0.25 GPU=2 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p13_jucker_gwd_n400
+  - override /physics: strat_jucker_hines_prod13

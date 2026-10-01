@@ -1,0 +1,14 @@
+# @package _global_
+# Phase 13 run 3: Phase 12's strat81 run (p12_l81: full L95 troposphere, QBO on, NO gravity-wave drag) with the
+# ERA5 nudging cut off at 400 hPa instead of 150 hPa (nudging.min_pressure_hpa: u, v, T are relaxed wherever
+# p > this; tau 6 h, lowest 2 levels free, unchanged). Above ~7 km the upper troposphere, the tropopause region
+# and the wave fluxes entering the stratosphere are then the model's own instead of ERA5's.
+# Susanne, 2026-09-23: "an additional simulation in phase13 that is like L81 in phase 12 but nudges only up to
+# 400hPa". One change against p12l81_5yr; reuses the strat81 ERA5 windows (the cutoff is a run-time mask,
+# jcm.runners._nudging_inv_tau; the window hash is the grid's).
+#   EXPERIMENT=p13_l81_n400 PREFIX=p13l81n400 SCHEME=calendar YEARS=1990-1994 AGG=p13l81n400_5yr SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p12_l81
+
+nudging:
+  min_pressure_hpa: 400.0
