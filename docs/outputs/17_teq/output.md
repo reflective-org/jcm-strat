@@ -1,6 +1,6 @@
 # Phase 17 — re-optimising the JFV equilibrium temperature toward ERA5 (strat81, GPUs 0/1/2)
 
-Status: **running unattended** (tmux `strat_p17_A` / `strat_p17_B` / `strat_p17_B0`, logs `runs/p17_<track>.log`, branch
+Status: **done** 2026-10-01 06:16 PDT (all tracks; four early scores re-scored against ERA5 w* at 09:40 PDT). Was: running unattended (tmux `strat_p17_A` / `strat_p17_B` / `strat_p17_B0`, logs `runs/p17_<track>.log`, branch
 `phase17-teq`, worktree `/data/JCM_stripped/jcm-strat-phase17`). Susanne, 2026-10-01 01:00 PDT: "Yes, you can use GPU 0,1 and 2. I need
 age of air to look like that of CLaMS, and the tropical upwelling needs to match ERA5 better too." The leaderboard and the run log
 below are rewritten by the tracks after every run; nothing is pushed.
@@ -61,26 +61,26 @@ follow-up is decided once the ERA5 w* reference is in (see the run log).
 ## Leaderboard
 
 <!-- leaderboard:start -->
-12 scored run(s) as of 2026-10-01 06:16 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
+12 scored run(s) as of 2026-10-01 09:37 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
 
-**Best so far: `A2`** — mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing), iteration 2 (1998-1999 from mix10trop 1997): composite 0.550 (base 0.785); age RMSE 0.47 (base 0.44) yr, bias +0.16 (base +0.12); tropical w* 100/70/50/30/10 hPa 0.34/0.22/0.25/0.30/0.53 (base 0.35/0.24/0.29/0.33/0.47, WACCM6 0.40/0.21/0.20/0.26/0.47); u RMSE 2.7 (base 3.7) m/s, T RMSE 1.9 (base 5.4) K; `aoa150` 55 hPa tropics 1.78 (base 1.68) / 50-70 3.70 (base 3.68), 12 hPa tropics 3.67 (base 3.69) yr; cost 34 (base 34) min/yr.
+**Best so far: `A2`** — mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing), iteration 2 (1998-1999 from mix10trop 1997): composite 0.550 (base 0.716); age RMSE 0.47 (base 0.44) yr, bias +0.16 (base +0.12); tropical w* 100/70/50/30/10 hPa 0.34/0.22/0.25/0.30/0.53 (base 0.35/0.24/0.29/0.33/0.47, WACCM6 0.40/0.21/0.20/0.26/0.47); u RMSE 2.7 (base 3.7) m/s, T RMSE 1.9 (base 5.4) K; `aoa150` 55 hPa tropics 1.78 (base 1.68) / 50-70 3.70 (base 3.68), 12 hPa tropics 3.67 (base 3.69) yr; cost 34 (base 34) min/yr.
 
-Closer than the base (0.785): A2, A3, A4, B4, A_final, B3, B2, B_final, A1, B1. Further from it: B00.
+Closer than the base (0.716): A2, A3, A4, A1, B4, A_final, B3, B2, B_final, B1. Further from it: B00.
 
 | rank | run | stage | composite | age RMSE `aoa150` vs CLaMS-entry [yr] | age bias | w* log-err | u RMSE [m/s] | T RMSE [K] | w* 100/70/50/30/10 hPa [mm/s] | `aoa150` 55 hPa trop / 50-70 | `aoa150` 12 hPa trop / 50-70 | `aoa_sfc` RMSE vs CLaMS | `aoa_sfc` 55 hPa trop (CLaMS 1.33) | `aoa500` 100 hPa trop [yr] (500->100 transit) | w* 1 hPa trop / NH / SH | w* ref | ERA5 w* 100/70/50/30/10 | barrier age 55 hPa (25-35 minus 0-10) | min/yr | what |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | **A2** | A | 0.550 | 0.47 | +0.16 | 0.13 | 2.7 | 1.9 | 0.34/0.22/0.25/0.30/0.53 | 1.78 / 3.70 | 3.67 / 4.71 | 1.28 | 2.95 | 1.07 | 1.55 / -2.00 / -2.34 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.92 | 34 | mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing), iteration 2 (1998-1999 from mix10trop 1997) |
 | 2 | A3 | A | 0.556 | 0.49 | +0.18 | 0.17 | 2.6 | 1.5 | 0.33/0.21/0.23/0.28/0.54 | 1.83 / 3.72 | 3.70 / 4.73 | 1.31 | 3.01 | 1.09 | 1.81 / -1.88 / -2.24 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.89 | 34 | mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing), iteration 3 (1998-1999 from mix10trop 1997) |
 | 3 | A4 | A | 0.567 | 0.50 | +0.20 | 0.21 | 2.5 | 1.4 | 0.33/0.20/0.22/0.28/0.55 | 1.87 / 3.72 | 3.72 / 4.73 | 1.33 | 3.06 | 1.10 | 2.03 / -1.77 / -2.16 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.86 | 34 | mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing), iteration 4 (1998-1999 from mix10trop 1997) |
-| 4 | B4 | B | 0.573 | 0.50 | +0.22 | 0.19 | 2.6 | 1.5 | 0.33/0.20/0.22/0.29/0.55 | 1.88 / 3.77 | 3.74 / 4.77 | 1.33 | 3.06 | 1.10 | 2.52 / -1.65 / -2.04 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.90 | 34 | mix10trop without the Rayleigh drag, iteration 4 (1998-1999 from mix10trop 1997) |
-| 5 | A_final | A | 0.575 | 0.51 | +0.23 | 0.21 | 2.5 | 1.3 | 0.32/0.20/0.22/0.28/0.55 | 1.90 / 3.76 | 3.77 / 4.77 | 1.38 | 3.11 | 1.11 | 2.04 / -1.77 / -2.16 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.86 | 34 | mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing) with correction A4, ten years 1990-1999 from ERA5 |
-| 6 | B3 | B | 0.582 | 0.49 | +0.22 | 0.16 | 3.1 | 1.7 | 0.33/0.21/0.23/0.29/0.53 | 1.85 / 3.76 | 3.73 / 4.77 | 1.32 | 3.02 | 1.09 | 2.28 / -1.73 / -2.16 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.92 | 34 | mix10trop without the Rayleigh drag, iteration 3 (1998-1999 from mix10trop 1997) |
-| 7 | B2 | B | 0.597 | 0.48 | +0.21 | 0.13 | 3.5 | 2.0 | 0.34/0.22/0.25/0.30/0.52 | 1.81 / 3.76 | 3.73 / 4.77 | 1.30 | 2.97 | 1.08 | 1.99 / -1.92 / -2.30 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.95 | 34 | mix10trop without the Rayleigh drag, iteration 2 (1998-1999 from mix10trop 1997) |
-| 8 | B_final | B | 0.598 | 0.52 | +0.28 | 0.20 | 2.8 | 1.5 | 0.33/0.20/0.22/0.28/0.54 | 1.93 / 3.83 | 3.84 / 4.83 | 1.40 | 3.14 | 1.13 | 2.53 / -1.59 / -2.08 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.90 | 34 | mix10trop without the Rayleigh drag with correction B4, ten years 1990-1999 from ERA5 |
-| 9 | A1 | A | 0.611 | 0.46 | +0.14 | 0.16 | 2.9 | 2.8 | 0.34/0.23/0.27/0.31/0.51 | 1.73 / 3.69 | 3.66 / 4.69 | 1.24 | 2.89 | 1.05 | 1.28 / -2.15 / -2.45 | WACCM6 | —/—/—/—/— | 0.94 | 34 | mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing), iteration 1 (1998-1999 from mix10trop 1997) |
-| 10 | B1 | B | 0.678 | 0.45 | +0.17 | 0.15 | 4.2 | 3.0 | 0.34/0.23/0.27/0.31/0.50 | 1.75 / 3.73 | 3.70 / 4.74 | 1.26 | 2.90 | 1.06 | 1.64 / -2.17 / -2.49 | WACCM6 | —/—/—/—/— | 0.97 | 34 | mix10trop without the Rayleigh drag, iteration 1 (1998-1999 from mix10trop 1997) |
-| 11 | p16_mix10trop | ref | 0.785 | 0.44 | +0.12 | 0.18 | 3.7 | 5.4 | 0.35/0.24/0.29/0.33/0.47 | 1.68 / 3.68 | 3.69 / 4.69 | 1.21 | 2.82 | 1.03 | 0.99 / -2.26 / -2.57 | WACCM6 | —/—/—/—/— | 0.95 | 34 | Phase 16 mix10trop (the start state of every Phase 17 track) |
-| 12 | B00 | B0 | 0.837 | 0.44 | +0.16 | 0.18 | 4.7 | 5.5 | 0.35/0.24/0.29/0.33/0.46 | 1.70 / 3.73 | 3.73 / 4.74 | 1.23 | 2.84 | 1.04 | 1.31 / -2.23 / -2.60 | WACCM6 | —/—/—/—/— | 0.99 | 34 | mix10trop without the Rayleigh drag, NO T_e correction, iteration 0 (1998-1999 from mix10trop 1997) |
+| 4 | A1 | A | 0.569 | 0.46 | +0.14 | 0.09 | 2.9 | 2.8 | 0.34/0.23/0.27/0.31/0.51 | 1.73 / 3.69 | 3.66 / 4.69 | 1.24 | 2.89 | 1.05 | 1.28 / -2.15 / -2.45 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.94 | 34 | mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing), iteration 1 (1998-1999 from mix10trop 1997) |
+| 5 | B4 | B | 0.573 | 0.50 | +0.22 | 0.19 | 2.6 | 1.5 | 0.33/0.20/0.22/0.29/0.55 | 1.88 / 3.77 | 3.74 / 4.77 | 1.33 | 3.06 | 1.10 | 2.52 / -1.65 / -2.04 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.90 | 34 | mix10trop without the Rayleigh drag, iteration 4 (1998-1999 from mix10trop 1997) |
+| 6 | A_final | A | 0.575 | 0.51 | +0.23 | 0.21 | 2.5 | 1.3 | 0.32/0.20/0.22/0.28/0.55 | 1.90 / 3.76 | 3.77 / 4.77 | 1.38 | 3.11 | 1.11 | 2.04 / -1.77 / -2.16 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.86 | 34 | mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing) with correction A4, ten years 1990-1999 from ERA5 |
+| 7 | B3 | B | 0.582 | 0.49 | +0.22 | 0.16 | 3.1 | 1.7 | 0.33/0.21/0.23/0.29/0.53 | 1.85 / 3.76 | 3.73 / 4.77 | 1.32 | 3.02 | 1.09 | 2.28 / -1.73 / -2.16 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.92 | 34 | mix10trop without the Rayleigh drag, iteration 3 (1998-1999 from mix10trop 1997) |
+| 8 | B2 | B | 0.597 | 0.48 | +0.21 | 0.13 | 3.5 | 2.0 | 0.34/0.22/0.25/0.30/0.52 | 1.81 / 3.76 | 3.73 / 4.77 | 1.30 | 2.97 | 1.08 | 1.99 / -1.92 / -2.30 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.95 | 34 | mix10trop without the Rayleigh drag, iteration 2 (1998-1999 from mix10trop 1997) |
+| 9 | B_final | B | 0.598 | 0.52 | +0.28 | 0.20 | 2.8 | 1.5 | 0.33/0.20/0.22/0.28/0.54 | 1.93 / 3.83 | 3.84 / 4.83 | 1.40 | 3.14 | 1.13 | 2.53 / -1.59 / -2.08 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.90 | 34 | mix10trop without the Rayleigh drag with correction B4, ten years 1990-1999 from ERA5 |
+| 10 | B1 | B | 0.636 | 0.45 | +0.17 | 0.09 | 4.2 | 3.0 | 0.34/0.23/0.27/0.31/0.50 | 1.75 / 3.73 | 3.70 / 4.74 | 1.26 | 2.90 | 1.06 | 1.64 / -2.17 / -2.49 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.97 | 34 | mix10trop without the Rayleigh drag, iteration 1 (1998-1999 from mix10trop 1997) |
+| 11 | p16_mix10trop | ref | 0.716 | 0.44 | +0.12 | 0.07 | 3.7 | 5.4 | 0.35/0.24/0.29/0.33/0.47 | 1.68 / 3.68 | 3.69 / 4.69 | 1.21 | 2.82 | 1.03 | 0.99 / -2.26 / -2.57 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.95 | 34 | Phase 16 mix10trop (the start state of every Phase 17 track) |
+| 12 | B00 | B0 | 0.765 | 0.44 | +0.16 | 0.06 | 4.7 | 5.5 | 0.35/0.24/0.29/0.33/0.46 | 1.70 / 3.73 | 3.73 / 4.74 | 1.23 | 2.84 | 1.04 | 1.31 / -2.23 / -2.60 | ERA5 | 0.42/0.24/0.27/0.33/0.44 | 0.99 | 34 | mix10trop without the Rayleigh drag, NO T_e correction, iteration 0 (1998-1999 from mix10trop 1997) |
 | | *references* | | | CLaMS entry age (AGE − 0.09) | | WACCM6 | ERA5 | ERA5 | 0.40/0.21/0.20/0.26/0.47 | CLaMS 1.24 / 4.03 (WACCM entry 1.11 / 3.40) | CLaMS 3.59 / 4.47 (WACCM 2.82 / 4.18) | | | | full ECHAM 1994: +0.96 / −1.29 / −3.19 | | | CLaMS 1.57 | | |
 
 ![scores](sweep_scores.png)
@@ -90,7 +90,39 @@ Closer than the base (0.785): A2, A3, A4, B4, A_final, B3, B2, B_final, A1, B1. 
 
 ## Results
 
-_to be written when the tracks finish_
+All numbers are 1998–1999. w* is scored against the **ERA5** TEM w* of the same years (new reference). The four runs scored before the
+ERA5 files arrived (`p16_mix10trop`, `B00`, `A1`, `B1`) were re-scored at 09:40 PDT; their WACCM-scored files are in `runs/p17_old_*.json`.
+
+| run | T RMSE [K] | u RMSE [m/s] | u 10 hPa 60°S JJA (ERA5 73) | SH cap T JJA | w* 100/70/50/30/10 [mm/s] | w* log-err vs ERA5 | age RMSE vs CLaMS [yr] (bias) | tropical 55 hPa age (CLaMS entry 1.24) | barrier step 55 hPa (CLaMS 1.57) |
+|---|---|---|---|---|---|---|---|---|---|
+| **ERA5** | | | 73 | | 0.42/0.24/0.27/0.33/0.44 | | | | |
+| `p16_mix10trop` (start) | 5.4 | 3.7 | 60 | +7.1 | 0.35/0.24/0.29/0.33/0.47 | **0.07** | **0.44** (+0.12) | **1.68** | 0.95 |
+| `B00` (no drag) | 5.5 | 4.7 | 62 | +4.8 | 0.35/0.24/0.29/0.33/0.46 | 0.06 | 0.44 (+0.16) | 1.70 | 0.99 |
+| `A1` | 2.8 | 2.9 | 64 | +4.3 | 0.34/0.23/0.27/0.31/0.51 | 0.09 | 0.46 (+0.14) | 1.73 | 0.94 |
+| `A2` | 1.9 | 2.7 | 67 | +3.0 | 0.34/0.22/0.25/0.30/0.53 | 0.13 | 0.47 (+0.16) | 1.78 | 0.92 |
+| `A4` | 1.4 | 2.5 | 70 | +1.6 | 0.33/0.20/0.22/0.28/0.55 | 0.21 | 0.50 (+0.20) | 1.87 | 0.86 |
+| `A_final` (10 yr) | **1.3** | **2.5** | **70** | **+1.6** | 0.32/0.20/0.22/0.28/0.55 | 0.21 | 0.51 (+0.23) | 1.90 | 0.86 |
+| `B_final` (10 yr, no drag) | 1.5 | 2.8 | 70 | +1.6 | 0.33/0.20/0.22/0.28/0.54 | 0.20 | 0.52 (+0.28) | 1.93 | 0.90 |
+
+1. **The T_e correction does what it was built to do.** T RMSE 5.4 → 1.3 K in four iterations (converging: 2.8, 1.9, 1.5, 1.4); u RMSE
+   3.7 → 2.5 m/s; the SH polar-night jet 60 → 70 m/s (ERA5 73) and the warm SH winter cap +7.1 → +1.6 K. The ten-year runs from ERA5
+   initial conditions reproduce the iteration numbers, so the correction is not tied to the mix10trop start state.
+2. **It does not fix the transport — it makes it slightly worse, monotonically with each iteration.** Entry-age RMSE 0.44 → 0.51 yr,
+   tropical 55 hPa age 1.68 → 1.90 yr (CLaMS 1.24), and the subtropical barrier step *shrinks* 0.95 → 0.86 yr (CLaMS 1.57). With the
+   jets now close to ERA5, the barrier is leakier, not tighter. The hypothesis "the waves break in the wrong place because the
+   T_e-driven jets are wrong" is not supported in this form: correcting the zonal-mean jets does not move the mixing toward CLaMS.
+3. **The start state's upwelling already matched ERA5** (log-error 0.07; only 100 hPa is 17 % weak: 0.35 vs 0.42). The correction
+   pushes it away: weaker ascent at 100–30 hPa (70/50 hPa 0.20/0.22 vs ERA5 0.24/0.27) and stronger at 10 hPa (0.55 vs 0.44). The
+   assumption in the Method that w* is set by the wave drag alone, so T_e would only move T and u, does not hold in the tropical lower
+   stratosphere. Cooling T_e there (−3 K at 70 hPa) lowers the radiative heating the ascent has to balance, and the shallow branch
+   weakens. That is the most likely reason the ages get older.
+4. **The Rayleigh drag is no longer needed for the winds** (B vs A: same T, u within 0.3 m/s, SH vortex and cap identical). Without it the
+   ages are 0.01–0.05 yr older, so neither choice helps the age.
+
+**Verdict.** The correction is a large improvement to the temperature and wind climatology and could be kept as a file, but it trades
+against the two goals of this phase (CLaMS age, ERA5 w*). The remaining age error is in tropical ascent below 30 hPa and the subtropical
+barrier, not in the zonal-mean winds. A follow-up would apply the correction only where it does not change the tropical lower-stratosphere
+heating (outside about 30°S–30°N below 20 hPa), or target w* at 100–50 hPa directly. Susanne decides; nothing has been run for it.
 
 ## Run log
 - 2026-09-30 18:26 PDT — track A: started (mix10trop (Jucker + Rayleigh 30 d + tropical tracer mixing); GPU 0, commit 1ecb291, 4 iterations, alpha 0.7)
@@ -111,3 +143,4 @@ _to be written when the tracks finish_
 - 2026-10-01 06:14 PDT — track B: final diagnostics for B_final in `final/`
 - 2026-10-01 06:14 PDT — track B: finished
 - 2026-10-01 06:16 PDT — track A: final diagnostics for A_final in `final/`
+- 2026-10-01 06:16 PDT — track A: finished
