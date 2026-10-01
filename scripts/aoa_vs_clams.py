@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Age of air: model vs CLaMS (ERA5-driven) and WACCM6 REF-D1, zonal means and profiles.
 
-    python scripts/aoa_vs_clams.py runs/<session> <outdir> --years 2005-2009 [--label TEXT]
+    python scripts/aoa_vs_clams.py runs/<session> <outdir> --years 2005-2009 [--label TEXT] [--var aoa_sfc]
 
-Model: zonal-mean ``aoa`` (days -> years) averaged over the last ``--last-saves`` 5-day means (default 12 = 60 days).
+Model: zonal-mean ``aoa`` (days -> years; ``--var`` picks another clock, e.g. ``aoa_sfc`` or Phase 12's ``aoa500``)
+averaged over the last ``--last-saves`` 5-day means (default 12 = 60 days). With ``--var`` other than ``aoa`` the
+output files are ``<run>_<var>_aoa_*.png``.
 CLaMS: /data/CLaMS/CLaMS_v3/clams_v3.1_era5_zm_lat.zip, ``AGE`` (years) on month x press x lat,
        annual mean over the requested years. CLaMS' clock increases linearly at the Earth's
        surface, so it is the like-for-like reference for our clock (reset below 700 hPa).
@@ -40,12 +42,18 @@ WACCM = "/data/CESM2_REFD1_AOA/AoA_waccm6_refd1.04_AOA1mf_1970-2019_ba_0_100.0_c
 P0 = 1013.25
 
 
-def model_age(rundir: str, last_saves: int = 12):
+def model_age(rundir: str, last_saves: int = 12, var: str = "aoa"):
     files = sorted(glob.glob(os.path.join(rundir, "longrun_day*.nc")),
                    key=lambda p: int(re.search(r"_day(\d+)\.nc$", p).group(1)))
-    ds = xr.open_mfdataset(files, combine="nested", concat_dim="time", decode_times=False, data_vars=["aoa"])
+    # only the files that hold the last `last_saves` frames are opened (a 6-hourly 5-year archive is 185 x 3.5 GB)
+    keep, n_seen = [], 0
+    for f in reversed(files):
+        keep.insert(0, f); n_seen += xr.open_dataset(f, decode_times=False).sizes["time"]
+        if n_seen >= last_saves:
+            break
+    ds = xr.open_mfdataset(keep, combine="nested", concat_dim="time", decode_times=False, data_vars=[var])
     n = min(last_saves, ds.sizes["time"])
-    age = ds["aoa"].isel(time=slice(-n, None)).mean(("time", "lon")).values / 365.25   # (lev, lat), years
+    age = ds[var].isel(time=slice(-n, None)).mean(("time", "lon")).values / 365.25   # (lev, lat), years
     return np.asarray(ds.level) * P0, np.asarray(ds.lat), age, int(re.search(r"_day(\d+)", files[-1]).group(1))
 
 
@@ -88,19 +96,26 @@ def main() -> None:
     ap.add_argument("--second-label", default="before", help="legend/panel name of --second-run")
     ap.add_argument("--last-saves", type=int, default=12,
                     help="model saves (5-day means) to average: 12 = the last 60 days (Phases 4-8), 73 = the last year")
+    ap.add_argument("--var", default="aoa", help="clock variable: aoa (700 hPa reset), aoa150, aoa_sfc, aoa500 (Phase 12)")
+    ap.add_argument("--mark-levels", default=None, help="comma-separated pressures (hPa) drawn as dashed lines on the triptych, e.g. 500,55,30; "
+                                                       "the file gets the suffix _levels")
+    ap.add_argument("--pmax", type=float, default=300.0, help="bottom of the pressure axis in hPa (default 300; use 1000 to see the troposphere)")
     a = ap.parse_args()
+    marks = [float(v) for v in a.mark_levels.split(",")] if a.mark_levels else []
     y0, y1 = (int(s) for s in a.years.split("-")); years = list(range(y0, y1 + 1))
     run = os.path.basename(a.rundir.rstrip("/")); os.makedirs(a.outdir, exist_ok=True)
+    if a.var != "aoa":
+        run = f"{run}_{a.var}"
 
-    pm, latm, am, last_day = model_age(a.rundir, a.last_saves)
+    pm, latm, am, last_day = model_age(a.rundir, a.last_saves, a.var)
     pc, latc, ac = clams_age(years)
     pw, latw, aw = waccm_age(years)
     # (p, lat, age, panel title, legend name, line style)
-    sources = [(pm, latm, am, f"model {run}\n(last {a.last_saves} saves, ends day {last_day})", "model", "-"),
+    sources = [(pm, latm, am, f"model {run} [{a.var}]\n(last {a.last_saves} saves, ends day {last_day})", "model", "-"),
                (pc, latc, ac, f"CLaMS v3.1 / ERA5, {a.years} mean\n(surface clock)", "CLaMS", "--"),
                (pw, latw, aw, f"WACCM6 REF-D1, {a.years} mean\n(entry age, base 103 hPa)", "WACCM (entry age)", ":")]
     if a.second_run:
-        p2, lat2, a2, day2 = model_age(a.second_run, a.last_saves)
+        p2, lat2, a2, day2 = model_age(a.second_run, a.last_saves, a.var)
         sources.insert(1, (p2, lat2, a2, f"{a.second_label}: {os.path.basename(a.second_run.rstrip('/'))}\n(last {a.last_saves} saves, ends day {day2})", a.second_label, (0, (5, 2))))
     if a.paradis_clock:
         pz = xr.open_dataset(a.paradis_clock); span = f"{pz.attrs.get('start','')[:10]}..{pz.attrs.get('end','')[:10]}"
@@ -116,11 +131,14 @@ def main() -> None:
     for ax, (p, lat, age, title, _, _) in zip(axes, sources):
         cf = ax.contourf(lat, p, age, levels=levels, cmap="viridis", extend="max")
         ax.contour(lat, p, age, levels=levels[::4], colors="w", linewidths=0.5)
-        ax.set_yscale("log"); ax.set_ylim(300, 1); ax.set_title(title, fontsize=8); ax.set_xlabel("latitude")
+        ax.set_yscale("log"); ax.set_ylim(a.pmax, 1); ax.set_title(title, fontsize=8); ax.set_xlabel("latitude")
+        for lv in marks:
+            ax.axhline(lv, color="w", ls="--", lw=0.9)
+            ax.text(lat.max() - 2, lv, f"{lv:g} hPa", color="w", fontsize=7, ha="right", va="bottom")
     axes[0].set_ylabel("pressure (hPa)")
     fig.colorbar(cf, ax=axes, label="mean age (yr)", shrink=0.9)
     fig.suptitle(f"{a.label or 'Phase 4'}: age of air, zonal mean")
-    f1 = os.path.join(a.outdir, f"{run}_aoa_triptych.png"); fig.savefig(f1, dpi=130, bbox_inches="tight"); print("wrote", f1)
+    f1 = os.path.join(a.outdir, f"{run}_aoa_triptych{'_levels' if marks else ''}.png"); fig.savefig(f1, dpi=130, bbox_inches="tight"); print("wrote", f1)
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
     rows = []

@@ -217,19 +217,27 @@ class PolvaniKushnerQbo(PolvaniKushnerColumns):
     compiled step - the Phase 6 configuration sat just below that ceiling and any extra term
     pushed it over. The fix is ``XLA_PYTHON_CLIENT_MEM_FRACTION=0.92`` in ``scripts/env.sh``. The
     one-term form is kept because it is marginally cheaper and reads the fraction of year once.
-    Configure the QBO part through the ``qbo`` mapping (QboNudging's arguments).
+    Configure the QBO part through the ``qbo`` mapping (QboNudging's arguments). ``qbo: null`` switches
+    the nudging OFF (Phase 12, experiment p12_noqbo): the term is then exactly ``PolvaniKushnerColumns``.
+    Until Phase 12 ``None`` meant "QboNudging with its defaults"; no configuration relied on that (every
+    physics yaml states the mapping), and a null that silently nudged would be a trap.
     """
 
     def __init__(self, qbo: dict | None = None, **pk_kwargs) -> None:
         super().__init__(**pk_kwargs)
-        self.qbo = QboNudging(**dict(qbo or {}))
+        self.qbo = QboNudging(**dict(qbo)) if qbo is not None else None
+        if self.qbo is None:
+            logging.getLogger("jcm_strat").info("PolvaniKushnerQbo: qbo is null - QBO nudging OFF, plain Polvani-Kushner relaxation")
 
     def cache_coords(self, coords) -> None:
         super().cache_coords(coords)
-        self.qbo.cache_coords(coords)
+        if self.qbo is not None:
+            self.qbo.cache_coords(coords)
 
     def __call__(self, state: PhysicsState, diagnostics: dict, forcing, terrain):
         tend, diagnostics = super().__call__(state, diagnostics, forcing, terrain)
+        if self.qbo is None:
+            return tend, diagnostics
         solar = getattr(forcing, "solar", None) if self.qbo.use_calendar else None
         tyear = solar.tyear if solar is not None else jnp.asarray(0.0)
         du = self.qbo.tendency(state.u_wind, tyear)

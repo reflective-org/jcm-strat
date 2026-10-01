@@ -398,3 +398,72 @@ the phase's `docs/outputs/<NN_phase>/output.md` is updated before the PR is open
 2. Minimum acceptable Δz in the 18–30 km aerosol layer, needed before issue 4 starts.
 3. What counts as "realistic enough": one agreed number on age of air and one on vortex
    strength, before PR 5's run so the result is decided, not argued.
+
+# Phase 13 (planned, 2026-09-21) — radiative relaxation and gravity-wave drag for the dry model
+
+**Why.** Phase 12 (`docs/outputs/12_circulation/`) showed that the too-old stratospheric age of air belongs to the dry
+Polvani-Kushner configuration: JCM's full physics puts the tropical age on CLaMS (1.33 yr at 55 hPa) under the same ERA5
+and QBO nudging, while no dry-model change (QBO off, full L95 troposphere) moved it. The dry model's deficit is the
+near-zero tropical ascent between 50 and 20 hPa and a weak deep branch, i.e. missing wave drag above ~20 hPa
+(downward control) and a relaxation whose single 15-day time scale and fixed equilibrium profile misplace the winds that
+filter the waves. The full physics costs 11× (3.1-3.4 h/yr) and over-drives the shallow branch instead.
+
+**Susanne's choice (2026-09-21): option (c), both changes together, plus a drag-only run alongside it.** The two components,
+so each can also be run alone if the combined run needs separating:
+
+(a) **Jucker et al. (2013, J. Atmos. Sci., "Maintenance of the stratospheric structure in an idealized GCM") relaxation**
+    in place of the Held-Suarez + Polvani-Kushner *thermal relaxation*: equilibrium temperature T_e(lat, p, season) from a
+    radiative calculation with seasonal insolation and ozone, and a height-dependent relaxation time tau(p) (weeks in the
+    lower stratosphere, days near the stratopause). New relaxation term subclassing `HeldSuarezColumns` like
+    `PolvaniKushnerColumns` does, so the Held-Suarez boundary-layer friction stays. T_e and tau: from the paper's data if
+    available, otherwise reconstructed from the paper (open: ask Susanne for a pointer).
+(b) **Gravity-wave drag, both schemes** (Susanne, 2026-09-21): JCM's `HinesGwd` (non-orographic, prescribed launch
+    spectrum) AND `LottMillerSso` (orographic: sub-grid mountain waves from the T63 terrain file's orostd/orosig/orogam/
+    orothe/oropic/oroval fields, which the dry runs already load) added to the dry physics list as they are in
+    `physics/echam.yaml`. Rationale: the resolved planetary-wave source is ERA5's by construction (nudging < 150 hPa,
+    real T63 orography), so the idealized-topography route of Gerber-Polvani / Linz et al. is not needed; what the dry
+    model lacks is the SUB-GRID orographic and the non-orographic wave drag above 150 hPa, where the winds are free and the
+    schemes deposit their momentum (the nudging suppresses only Lott-Miller's low-level blocking part, which we do not
+    need). In CMIP-class models the orographic part is a third to a half of the NH-winter gravity-wave drag. Check what
+    each term needs from the state (both ran inside the full package; the dry model has no moisture physics). If a
+    scheme cannot run dry, a Rayleigh drag profile in the upper stratosphere/mesosphere is the fallback.
+
+**Unchanged from the Phase 12 control** (`p12_ctl`): ERA5 nudging of u, v, T below 150 hPa (tau 6 h, lowest 2 levels
+free), QBO nudging as its own `QboNudging` term (tau 1 d, 90-1 hPa, mean-preserving), strat63 grid and sponge, Phase 12
+tracer term (4 clocks incl. aoa500, n2o/cfc11, injections not written), 6-hourly output, Gregorian calendar, one
+calendar year per segment, 1990-1994.
+
+**Why the drag stays in (Susanne, 2026-09-21).** By downward control the ascent through 30 hPa is set by the wave drag
+above 30 hPa - in reality mostly gravity waves breaking between 30 and 80 km. The dry model has no drag there but the
+sponge in the top four levels, so the 50-20 hPa stall and the 12 hPa entry age (3.80 vs WACCM6 2.90 yr) have no forcing
+to fix them; a better relaxation changes the winds the waves propagate through but cannot supply momentum where no waves
+break. Caveat from Phase 12 run 4: the Hines scheme at its ECHAM defaults over-drives the full-physics circulation
+(70 hPa upwelling 3x WACCM6, no Arctic vortex, polar 55 hPa entry age 2.7 vs 3.7 yr). So the drag goes in as a
+**tunable experiment with acceptance criteria**, not as a fixed component; the source strength (and launch level) are
+the knobs, a prescribed Rayleigh drag profile in the upper stratosphere/mesosphere is the fallback (one tunable number,
+also the fallback if Hines cannot run without the moisture physics).
+
+**Runs, two at once (GPU 0 and 1):**
+* `p13_gwd` - **drag only**: Phase 12 control + `HinesGwd` + `LottMillerSso`. Isolates the wave-drag effect.
+* `p13_jucker_gwd` - **(c) both**: drag + the Jucker et al. relaxation. The relaxation-only effect is the difference
+  between the two runs; `p13_jucker` alone is run only if that difference needs its own check.
+Each ~30 min/yr on strat63, 5 years ~2.5 h. Smoke 5 days each, then the chains, then `scripts/phase12_compare.py`
+against `p12ctl_5yr` (tags gwd, jucker_gwd) and against `p12echam_5yr`; age of air judged by the ENTRY-AGE clock
+`aoa150` against WACCM6 REF-D1 (Phase 12 addendum: the surface clock carries a 1-2 yr tropospheric transit in the dry
+model), with `aoa500` and `aoa_sfc` shown alongside.
+
+**Acceptance (entry-age clock).** Tropical w* at 30 and 10 hPa within a factor 1.5 of WACCM6 (0.26 / 0.47 mm/s; control
+0.09 / 0.13); no 50-20 hPa stall; tropical `aoa150` at 12 hPa within 0.4 yr of WACCM6 (2.90; control 3.80) and at
+55 hPa within 0.3 yr (1.19; control 1.39, i.e. do not make it worse); polar-cap `aoa150` at 55 hPa not below WACCM6's
+3.7 yr (the full-physics failure); polar-night jets no weaker than the control's (u(60N, 10 hPa) DJF, u(60S) JJA vs
+ERA5); age above 20 hPa no longer flat at the lid value; cost <= 1.3x the control. If `p13_gwd` overshoots like the full
+physics, one retune of the Hines source strength (and/or the Lott-Miller gwd constant) before falling back to the Rayleigh
+profile; if the retune needs to know which scheme overshoots, one extra run with Lott-Miller only.
+
+**Troposphere (separate, small).** The dry troposphere mixes tracers 10x too slowly (no convection / boundary-layer
+turbulence; Phase 12 addendum). Not part of the two runs above. Options, if the surface clock itself must be right:
+reset the surface clock through the boundary layer (p > 850 hPa) instead of the lowest two layers; a dry convective
+adjustment or a prescribed vertical tracer diffusion in the troposphere. Otherwise judge the stratosphere by `aoa150`.
+
+**Record.** `docs/outputs/13_relaxation_gwd/output.md`, KEY_DECISIONS row for the relaxation choice, PDF as for Phase 12.
+Branch `phase13-relaxation-gwd` off `phase12-circulation`.

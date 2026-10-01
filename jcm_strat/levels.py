@@ -1,11 +1,17 @@
-"""Stratosphere-preserving reductions of the ECHAM L95 hybrid grid (Phase 9).
+"""Stratosphere-preserving reductions of the ECHAM L95 hybrid grid (Phase 9; strat81 added in Phase 12).
 
-L95 has 21 levels above 1 hPa, 47 between 1.08 and 159 hPa and 27 below. The two tables here
+L95 has 22 levels above 1.08 hPa, 47 between 1.08 and 159 hPa and 26 below. The tables here
 are subsets of L95's own interfaces, so every kept level *is* an L95 level and the stratosphere
 is bit-identical to L95's:
 
     strat63 = 8 (mesosphere)  + 47 (1.08-159 hPa, intact)                          + 8 (troposphere)
     strat47 = 7 (mesosphere)  + 15 (1.08-30 hPa, every other interface) + 17 (30-159 hPa, intact) + 8
+    strat81 = 8 (mesosphere)  + 47 (1.08-159 hPa, intact)                          + 26 (troposphere = all of L95's)
+
+strat81 (Phase 12) is strat63 with every L95 tropospheric layer put back: the Phase 11 circulation
+looked too weak and the thinned troposphere (8 layers below 159 hPa, the layer the ERA5 nudging
+and the wave forcing live in) is one suspect. Its stratosphere and mesosphere are strat63's, so the
+sponge numbers of p9_l63 carry over unchanged (:func:`sponge_for`).
 
 Thinned regions take every n-th L95 interface at (nearly) uniform index stride, so the layer
 thickness in log p grows by the same factor everywhere in that region.
@@ -34,7 +40,7 @@ import numpy as np
 
 _L95_NLEV = 95
 # L95 interface indices (TOA first, 0..95). 22 is the 1.08 hPa interface, 52 the 30 hPa one,
-# 69 the 159 hPa one; the L95 sponge (10 levels) ends at interface 10 (0.165 hPa).
+# 69 the 159 hPa one (26 layers below it); the L95 sponge (10 levels) ends at interface 10 (0.165 hPa).
 _I_1HPA, _I_30HPA, _I_159HPA = 22, 52, 69
 _SPONGE_BOTTOM_L95 = 10
 
@@ -57,17 +63,19 @@ def interface_indices(nlevels: int) -> np.ndarray:
     tropo = _thin(_I_159HPA, _L95_NLEV, 8)
     if nlevels == 63:
         idx = _thin(0, _I_1HPA, 8) + list(range(_I_1HPA, _I_159HPA + 1)) + tropo
+    elif nlevels == 81:      # Phase 12: strat63 with the full L95 troposphere
+        idx = _thin(0, _I_1HPA, 8) + list(range(_I_1HPA, _L95_NLEV + 1))
     elif nlevels == 47:
         idx = (_thin(0, _I_1HPA, 7) + list(range(_I_1HPA, _I_30HPA + 1, 2))
                + list(range(_I_30HPA, _I_159HPA + 1)) + tropo)
     else:
-        raise ValueError(f"no strat level table for {nlevels} levels (have 47, 63)")
+        raise ValueError(f"no strat level table for {nlevels} levels (have 47, 63, 81)")
     out = np.unique(np.asarray(idx, dtype=int))
     assert out.size == nlevels + 1, (nlevels, out.size)
     return out
 
 
-TABLES = (47, 63)
+TABLES = (47, 63, 81)
 
 
 def strat_table(nlevels: int):

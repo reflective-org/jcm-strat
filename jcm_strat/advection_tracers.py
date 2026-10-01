@@ -14,6 +14,9 @@ Tracers (all ``nondimensionalize=False``, so state, dycore and netCDF carry the 
               (KEY_DECISIONS #22).
 ``aoa_sfc``   the same clock reset only in the lowest ``sfc_layers`` model layers: the CLaMS/WACCM
               surface boundary condition.
+``aoa500``    (``ProductionTracersAoa500`` only, Phase 12) the same clock reset wherever p > 500 hPa.
+              The clock set is the class attribute ``CLOCKS``; a subclass adds a clock by extending it
+              and ``_reset_masks`` (the Phase 11 set and its checkpoints are untouched).
 ``sai``       continuous source of 1e-6 per second in the box 15S-15N, 25-55 hPa, no sink (as before).
 ``pulse_<i>``, single injections of unit amplitude: on the first step of the run (``injection: once``,
 ``pulse_<i>_box``  ``first_segment=true`` marks that segment) the field is SET to a shape S_i(lat, lon, p)
@@ -126,6 +129,8 @@ class ProductionTracers(PhysicsTerm):
     }
     _pulse_names: tuple[str, ...] = shape_names("pulse", DEFAULT_PULSES)
     _source_names: tuple[str, ...] = shape_names("src", DEFAULT_SOURCES)
+    CLOCKS: ClassVar[tuple[str, ...]] = CLOCKS                # the clock tracers this class declares
+    ENTRY_CLOCKS: ClassVar[tuple[str, ...]] = ("aoa150",)     # read WACCM's entry age above the lid as is; the others + offset
 
     def __init__(
         self,
@@ -188,7 +193,7 @@ class ProductionTracers(PhysicsTerm):
 
     @classmethod
     def required_tracers(cls) -> tuple[TracerSpec, ...]:
-        clocks = tuple(TracerSpec(n, units="day", initial_value=0.0, nondimensionalize=False) for n in CLOCKS)
+        clocks = tuple(TracerSpec(n, units="day", initial_value=0.0, nondimensionalize=False) for n in cls.CLOCKS)
         pulses = tuple(TracerSpec(n, units="1", initial_value=0.0, nondimensionalize=False) for n in cls._pulse_names)
         sources = tuple(TracerSpec(n, units="1", initial_value=0.0, nondimensionalize=False) for n in cls._source_names)
         steady = tuple(TracerSpec(n, units="1", initial_value=1.0, nondimensionalize=False) for n in STEADY)
@@ -250,6 +255,14 @@ class ProductionTracers(PhysicsTerm):
     def _pressure(self, normalized_surface_pressure):
         return self._sigma.get_value()[:, jnp.newaxis] * normalized_surface_pressure * P0_PA
 
+    def _reset_masks(self, p, sfc) -> dict:
+        """Where each clock is reset to zero: ``p`` (nlev, ncols) in Pa, ``sfc`` the lowest-layers mask."""
+        return {"aoa": p > self.aoa_reset_pa, "aoa150": p > self.aoa150_reset_pa, "aoa_sfc": sfc}
+
+    def _lid_targets(self, a_ref) -> dict:
+        """Value each clock relaxes to above the lid: WACCM's entry age, plus the tropospheric transit for clocks reset below it."""
+        return {n: a_ref if n in self.ENTRY_CLOCKS else a_ref + self.lid_clock_offset_s / DAY for n in self.CLOCKS}
+
     # ------------------------------------------------------------------ step
     def __call__(self, state: PhysicsState, diagnostics: dict, forcing, terrain):
         dt = diagnostics["_dt_seconds"]
@@ -272,10 +285,9 @@ class ProductionTracers(PhysicsTerm):
         d = {}
         # clocks: +1 day per day, reset in their boundary region, relaxed to WACCM's age above the lid
         if self.lid_pa is not None:
-            a_ref = self._aoa_ref.get_value()
-            lid_target = {"aoa": a_ref + self.lid_clock_offset_s / DAY, "aoa150": a_ref, "aoa_sfc": a_ref + self.lid_clock_offset_s / DAY}
-        reset = {"aoa": p > self.aoa_reset_pa, "aoa150": p > self.aoa150_reset_pa, "aoa_sfc": sfc}
-        for name in CLOCKS:
+            lid_target = self._lid_targets(self._aoa_ref.get_value())
+        reset = self._reset_masks(p, sfc)
+        for name in self.CLOCKS:
             q = tr[name]
             t = jnp.where(reset[name], -q / dt, 1.0 / DAY)
             d[name] = jnp.where(lid, (lid_target[name] - q) / tau, t) if self.lid_pa is not None else t
@@ -321,3 +333,27 @@ for _i, (_lat, _lon, _p) in enumerate(DEFAULT_SOURCES):
             "long_name": (f"continuous-source tracer {_i + 1}{_s}: {_SHAPE_TEXT[_s]} source, unit shape per 90 d, centred at {_lat} deg lat, "
                           f"{_lon} deg E, {_p} hPa, every step"),
         }
+
+
+class ProductionTracersAoa500(ProductionTracers):
+    """Phase 12: the Phase 11 tracer set plus ``aoa500``, a clock reset wherever p > 500 hPa.
+
+    Susanne (2026-09-16) asked for the age of air with the clock set to zero at the surface (``aoa_sfc``)
+    and at 500 hPa. A subclass rather than a fourth clock in ``ProductionTracers`` so the Phase 11
+    experiments and their checkpoints keep their tracer set. ``aoa500`` must be in ``sl_mass_fixer_exclude``
+    like the other clocks.
+    """
+    CLOCKS: ClassVar[tuple[str, ...]] = CLOCKS + ("aoa500",)
+    output_attrs: ClassVar = {
+        **ProductionTracers.output_attrs,
+        "aoa500": {"units": "day", "long_name": "age of air, clock reset below 500 hPa (Phase 12; relaxed to WACCM6 age + offset above the lid)"},
+    }
+
+    def __init__(self, aoa500_reset_pressure_hpa: float = 500.0, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.aoa500_reset_pa = float(aoa500_reset_pressure_hpa) * 100.0
+
+    def _reset_masks(self, p, sfc) -> dict:
+        masks = super()._reset_masks(p, sfc)
+        masks["aoa500"] = p > self.aoa500_reset_pa
+        return masks

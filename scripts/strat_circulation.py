@@ -82,24 +82,59 @@ def upward_mass_flux(p, psi, p_target_hpa, lat_deg, lat_max=60.0):
     return float(row.max() - row.min())
 
 
+def residual_w(p, psi, lat_deg, scale_height_m=7000.0):
+    """TEM residual vertical velocity from the residual mass streamfunction (Phase 12).
+
+    Continuity of the residual circulation in (phi, p) with Psi* as returned by :func:`tem_streamfunction`
+    (Psi* = 2 pi a cos(phi) / g * int_0^p v* dp'):  omega* = -(g / (2 pi a^2 cos(phi))) dPsi*/dphi  [Pa/s],
+    and the log-pressure vertical velocity w* = -H omega* / p  [m/s], H = 7 km. Returns w* in mm/s on
+    (p, lat); the two rows nearest the poles are masked (1/cos)."""
+    phi = np.deg2rad(lat_deg); cosphi = np.cos(phi)
+    dpsi_dphi = np.gradient(psi, phi, axis=1)
+    omega = -(G / (2 * np.pi * A_EARTH ** 2 * cosphi[None, :])) * dpsi_dphi
+    w = -scale_height_m * omega / p[:, None] * 1e3
+    w[:, np.abs(lat_deg) > 88.0] = np.nan
+    return w
+
+
+def tropical_wstar(p, w, lat_deg, p_target_hpa, lat_max=15.0):
+    """Cos-weighted mean w* (mm/s) over |lat| <= lat_max at the level nearest p_target_hpa."""
+    i = int(np.argmin(np.abs(p / 100.0 - p_target_hpa)))
+    m = (np.abs(lat_deg) <= lat_max) & np.isfinite(w[i])
+    wgt = np.cos(np.deg2rad(lat_deg[m]))
+    return float(np.sum(w[i][m] * wgt) / np.sum(wgt))
+
+
 # ----------------------------------------------------------------------------- model TEM
-def model_tem_fields(rundir):
-    """Per 5-day save: zonal means of v and theta and the zonal eddy covariance v'theta'."""
+def model_tem_fields(rundir, stride=1, with_omega=False):
+    """Per save: zonal means of v and theta and the zonal eddy covariance v'theta' (and, with ``with_omega``, the
+    zonal-mean omega). ``stride`` takes every n-th frame of a 6-hourly instantaneous archive (Phases 10-12;
+    4 = daily, 20 = every 5 days): the covariance is formed within each snapshot, so a stride only thins the
+    sample of the time mean."""
     files = sorted(glob.glob(os.path.join(rundir, "longrun_day*.nc")), key=lambda q: int(re.search(r"_day(\d+)\.nc$", q).group(1)))
-    vb, vth, thb, times = [], [], [], []
+    vb, vth, thb, omb, times = [], [], [], [], []
+    offset = 0
     for f in files:
         d = xr.open_dataset(f, decode_times=True)
+        nt = d.sizes["time"]
+        idx = np.arange((-offset) % stride, nt, stride); offset = (offset + nt) % stride
+        if idx.size == 0:
+            d.close(); continue
+        d = d.isel(time=idx)
         p_hpa = d.level.values * P0_HPA
         theta = d.temperature * (1000.0 / p_hpa)[None, :, None, None] ** KAPPA
         v = d.v_wind
         vbar = v.mean("lon"); thbar = theta.mean("lon")
         cov = ((v - vbar) * (theta - thbar)).mean("lon")
         vb.append(vbar.values); thb.append(thbar.values); vth.append(cov.values); times.append(d.time.values)
+        if with_omega:
+            omb.append(d.omega.mean("lon").values)
         d.close()
     t = np.concatenate(times)
     lat = d.lat.values if "lat" in d else xr.open_dataset(files[0]).lat.values
     mk = lambda arr: xr.DataArray(np.concatenate(arr), dims=("time", "level", "lat"), coords={"time": t, "level": p_hpa * 100.0, "lat": lat})
-    return mk(vb), mk(vth), mk(thb)
+    out = (mk(vb), mk(vth), mk(thb))
+    return out + (mk(omb),) if with_omega else out
 
 
 def waccm_tem_fields(years):

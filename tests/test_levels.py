@@ -1,4 +1,4 @@
-"""strat47 / strat63: subsets of L95 with the stratosphere intact, consistent diffusion orders and sponge (CPU)."""
+"""strat47 / strat63 / strat81: subsets of L95 with the stratosphere intact, consistent diffusion orders and sponge (CPU)."""
 import os
 
 os.environ.setdefault("JAX_PLATFORMS", "cpu")
@@ -27,6 +27,15 @@ def test_strat63_keeps_the_stratosphere_and_thins_the_rest():
     assert strat.size == 48
     assert all(np.any(np.isclose(v, p)) for v in strat)   # all 47 layers intact
     assert np.sum(p < 1.0) == 8 and np.sum(p > 160.0) == 8
+
+
+def test_strat81_is_strat63_with_the_full_l95_troposphere():
+    """Phase 12: every L95 level below 159 hPa is back; mesosphere and stratosphere are strat63's."""
+    p81, p63 = levels.pressures_hpa(81), levels.pressures_hpa(63)
+    assert np.allclose(p81[p81 <= 160.0], p63[p63 <= 160.0])            # identical above 159 hPa (8 + 47 layers)
+    assert np.allclose(p81[p81 >= 159.0], L95[L95 >= 159.0])            # the whole L95 troposphere below it
+    assert np.sum(p81 < 1.0) == 8 and np.sum(p81 > 160.0) == 26
+    assert levels.sponge_for(81) == levels.sponge_for(63)                # the p9_l63 sponge carries over
 
 
 def test_strat47_keeps_the_lower_stratosphere_at_l95_spacing():
@@ -74,8 +83,9 @@ def test_install_patches_jcm_and_leaves_echam_l47_alone_until_asked():
     ours = np.asarray(el.get_echam_levels(47).a_boundaries)
     assert ours.size == 48 and not np.array_equal(ours, echam47)
     assert np.asarray(el.get_echam_levels(63).a_boundaries).size == 64
+    assert np.asarray(el.get_echam_levels(81).a_boundaries).size == 82
     assert np.asarray(el.get_echam_levels(95).a_boundaries).size == 96     # untouched
-    assert {47, 63} <= set(jd.ECHAM_LMIDATM_LAYERS) and jr.ECHAM_LMIDATM_LAYERS is jd.ECHAM_LMIDATM_LAYERS
+    assert {47, 63, 81} <= set(jd.ECHAM_LMIDATM_LAYERS) and jr.ECHAM_LMIDATM_LAYERS is jd.ECHAM_LMIDATM_LAYERS
     assert jd.echam_lmidatm_orders(85, 63).size == 63 and jd.echam_lmidatm_orders(119, 47).size == 47
     with pytest.raises(ValueError):
         levels.install("other")
