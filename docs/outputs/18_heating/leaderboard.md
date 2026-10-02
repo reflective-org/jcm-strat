@@ -1,6 +1,6 @@
 # Phase 15 sweep leaderboard
 
-8 scored run(s) as of 2026-10-02 00:10 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
+8 scored run(s) as of 2026-10-02 01:09 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
 
 **Best so far: `p17_A4`** — Phase 17 A4 - T_e toward ERA5 T, 4 iterations (the outer correction of Phase 18): composite 0.558 (base 0.759); age RMSE 0.50 (base 0.44) yr, bias +0.20 (base +0.12); tropical w* 100/70/50/30/10 hPa 0.33/0.20/0.22/0.28/0.55 (base 0.35/0.24/0.29/0.33/0.47, WACCM6 0.40/0.21/0.20/0.26/0.47); u RMSE 2.5 (base 3.7) m/s, T RMSE 1.4 (base 5.4) K; `aoa150` 55 hPa tropics 1.87 (base 1.68) / 50-70 3.72 (base 3.68), 12 hPa tropics 3.72 (base 3.69) yr; cost 34 (base 34) min/yr.
 

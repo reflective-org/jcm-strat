@@ -41,7 +41,7 @@ there should be ERA5's heating, not its temperature.
 ## Leaderboard
 
 <!-- leaderboard:start -->
-8 scored run(s) as of 2026-10-02 00:10 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
+8 scored run(s) as of 2026-10-02 01:09 PDT. Composite = mean(age RMSE/0.5 yr, w* log-error/ln 1.5, u RMSE/5 m/s, T RMSE/5 K); lower is closer; the age term is the entry-age clock against CLaMS (AGE minus CLaMS' own 0.09 yr at 150 hPa), w* against WACCM6, u and T against ERA5 (same months).
 
 **Best so far: `p17_A4`** — Phase 17 A4 - T_e toward ERA5 T, 4 iterations (the outer correction of Phase 18): composite 0.558 (base 0.759); age RMSE 0.50 (base 0.44) yr, bias +0.20 (base +0.12); tropical w* 100/70/50/30/10 hPa 0.33/0.20/0.22/0.28/0.55 (base 0.35/0.24/0.29/0.33/0.47, WACCM6 0.40/0.21/0.20/0.26/0.47); u RMSE 2.5 (base 3.7) m/s, T RMSE 1.4 (base 5.4) K; `aoa150` 55 hPa tropics 1.87 (base 1.68) / 50-70 3.72 (base 3.68), 12 hPa tropics 3.72 (base 3.69) yr; cost 34 (base 34) min/yr.
 
@@ -76,3 +76,4 @@ _to be written when the run finishes_
 - 2026-10-01 18:03 PDT — **H4** (mix10trop + T_e correction: ERA5 heating target in the tropical lower stratosphere, ERA5 T elsewhere, iteration 4 (1998-1999 from mix10trop 1997)): [score H4] composite 0.595 = mean(age 0.97, w* 0.56, u 0.52, T 0.32); age150 RMSE vs CLaMS-entry 0.48 yr (bias +0.16); tropical w* 100/70/50/30/10: 0.31/0.18/0.22/0.29/0.59 (WACCM 0.40/0.21/0.20/0.26/0.47); barrier age 55 hPa 0.85 (CLaMS 1.57); u RMSE 2.6 m/s, T RMSE 1.6 K; 36 min/yr -> /data/JCM_stripped/jcm-strat/docs/outputs/18_heating/scores/H4.json
 - 2026-10-01 18:03 PDT — best iteration H1 (composite 0.575929472581503) -> ten years from ERA5
 - 2026-10-02 00:10 PDT — **H_final** (mix10trop + T_e correction: ERA5 heating target in the tropical lower stratosphere, ERA5 T elsewhere, correction H1, ten years 1990-1999 from ERA5): [score H_final] composite 0.570 = mean(age 0.95, w* 0.45, u 0.52, T 0.36); age150 RMSE vs CLaMS-entry 0.48 yr (bias +0.15); tropical w* 100/70/50/30/10: 0.32/0.20/0.24/0.30/0.55 (WACCM 0.40/0.21/0.20/0.26/0.47); barrier age 55 hPa 0.87 (CLaMS 1.57); u RMSE 2.6 m/s, T RMSE 1.8 K; 36 min/yr -> /data/JCM_stripped/jcm-strat/docs/outputs/18_heating/scores/H_final.json
+- 2026-10-02 01:09 PDT — final diagnostics for H_final in `final/`
