@@ -61,11 +61,16 @@ def fig_triptych(out, runs, clams):
         ax = fig.add_subplot(gs[0, j]); ax.grid(False)
         o = np.argsort(p); P, A = p[o], a[o]
         keep = (P >= 0.9) & (P <= 320)
-        cf = ax.contourf(lat, P[keep], A[keep], levels=levels, colors=SEQ[:len(levels) - 1], extend="max")
-        cs = ax.contour(lat, P[keep], A[keep], levels=levels[::2], colors="white", linewidths=0.8)
-        ax.clabel(cs, fmt="%.0f", fontsize=8, colors="white")
+        # yellow -> green -> blue: lightness falls monotonically with age (still a sequential scale, not a rainbow), and the
+        # hue change keeps neighbouring half-year bands apart, which twelve steps of one blue did not
+        cmap = plt.get_cmap("YlGnBu", len(levels) - 1)
+        cf = ax.contourf(lat, P[keep], A[keep], levels=levels, cmap=cmap, extend="max")
+        ax.contour(lat, P[keep], A[keep], levels=levels[1::2], colors=INK, linewidths=0.4, alpha=0.6)        # half years
+        cs = ax.contour(lat, P[keep], A[keep], levels=levels[::2][1:], colors=INK, linewidths=1.0)           # whole years
+        for t in ax.clabel(cs, fmt="%.0f yr", fontsize=8, colors=INK, inline_spacing=2):
+            t.set_bbox(dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.85))              # readable on the dark blues
         for pl in (55, 12):
-            ax.axhline(pl, color=INK, lw=0.7, ls=(0, (4, 3)))
+            ax.axhline(pl, color="#e34948", lw=1.0, ls=(0, (4, 3)))
         ax.set_yscale("log"); ax.set_ylim(300, 1); ax.set_xlim(-85, 85)
         ax.set_yticks([300, 100, 55, 30, 12, 5, 1]); ax.set_yticklabels(["300", "100", "55", "30", "12", "5", "1"])
         ax.set_xlabel("latitude"); ax.set_title(title, fontsize=10, color=INK)
@@ -81,7 +86,7 @@ def fig_triptych(out, runs, clams):
             ax.plot(la[m], row[m], color=c, ls=ls)
             label_end(ax, la[m][-1], row[m][-1], n.split(" (")[0], c)
         ax.set_xlim(-85, 100); ax.set_xlabel("latitude"); ax.set_ylabel("age [yr]")
-        ax.set_title(f"{pl} hPa (dashed line above)", fontsize=10, color=INK)
+        ax.set_title(f"{pl} hPa (red dashed line above)", fontsize=10, color=INK)
     ax = fig.add_subplot(gs[1, 2]); ax.axis("off")
     txt = ["Tropical (0-10°) / 50-70° age [yr]", ""]
     for pl in (55, 12):
