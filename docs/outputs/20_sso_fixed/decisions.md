@@ -46,3 +46,10 @@ re-initialisation, sponge, GPUs, pipelines, diagnostics) are in the Phase 19 log
   3. Fix chain_segments.sh so a segment whose log contains "atmosphere unhealthy" (or that ran short of
      total_time) counts as FAILED, not done - otherwise any future chain can silently splice partial years.
   4. Delete/quarantine runs/p20jhsso_19{90..96}0101 before any relaunch (the chain's skip test would reuse them).
+
+### 2026-10-07 15:14 PDT - Resolution of the 13:27 failure (set-up session)
+- Cause: jcm 3's cubic SL vertical interpolation in the dry strat81 mesosphere (not the fixed Lott-Miller, not the
+  sponge geometry): see the Phase 19 decisions.md entries 13:40-14:15 (test runs p19t_linear / p19t_sponge4).
+- Chosen: p19_jh_n400 (and so p20_jh_sso_n400) use `dycore.sl_vertical_interpolation: linear`; chain_segments.sh
+  fails a segment on a health stop; the 13:27 output moved to runs/invalid_cubic_20261007/; Phase 20 relaunched from
+  scratch at 14:30 PDT (tmux strat_p20_run, GPU 1). The comparison with 19d stays clean: both use linear.
