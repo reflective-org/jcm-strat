@@ -1,6 +1,7 @@
 # Phase 19 — jcm update (PR #1027 fixes), precision check, 19d baseline (13d physics, nudged < 400 hPa, new jcm)
 
-Status: **running** (pipeline `scripts/phase19_run.sh`, tmux `strat_p19_run`, GPU 4, launched 2026-10-07 12:02 PDT).
+Status: **running** (pipeline `scripts/phase19_run.sh`, tmux `strat_p19_run`, GPU 4; first launched 2026-10-07 12:02 PDT, relaunched
+14:30 PDT after the cubic-interpolation blow-up, see below).
 Sections 19a-19c and the precision gate are written by the set-up session; the 19d Results are filled in by the
 pipeline's write-up agent. Every decision with its options: [decisions.md](decisions.md).
 
@@ -38,9 +39,9 @@ with nudging below 400 hPa (= Phase 13c run 2 on the old jcm) to measure the upd
 3. **jcm's `dot_precision_test.py` on GPU 0**: 7 passed, including the GPU-only single-level inverse-transform regression
    test ([p19b_dot_precision_test.log](p19b_dot_precision_test.log)).
 4. **30-day gate** on the 19d spin-up month (1989-12-01 + 31 d, the 19d configuration exactly): change of the NH-SH
-   area-mean surface pressure and of the global mean from the first 6-hourly sample. **PASS**: max |dNH-SH| 2.17 hPa
-   (end -1.21), max |dglobal| 0.07 hPa (end +0.04); the old jcm with the same physics (January 1990) swings by 2.16 /
-   0.13 hPa. The bug's signature is -116 hPa in 30 days. Details: [p19_ps_gate.md](p19_ps_gate.md).
+   area-mean surface pressure and of the global mean from the first 6-hourly sample. **PASS**: max |dNH-SH| 2.00 hPa
+   (end -0.96), max |dglobal| 0.08 hPa (end +0.04) (final, linear-SL spin-up; the first, cubic spin-up gave 2.17 / 0.07);
+   the old jcm with the same physics (January 1990) swings by 2.16 / 0.13 hPa. The bug's signature is -116 hPa in 30 days. Details: [p19_ps_gate.md](p19_ps_gate.md).
 
    ![ps gate](p19_ps_gate.png)
 
@@ -56,7 +57,13 @@ decisions.md):
   the 6-hourly `longrun_day<N>.nc` chunks every diagnostic reads are written as before.
 - Sponge: jcm 3's `UpperSponge` is ECHAM's `uspnge`; all experiments use `run.sponge.levels: 1` with ECHAM's 3 h and
   enspodi 1; the old remapped strat63/strat81 sponge (4 levels, enspodi 6.73, full wind, T -> 250 K) is gone.
-  `dycore.sl_vertical_interpolation: null` (= cubic, jcm 3's default; was linear). Both echoed in every run header.
+  SL vertical interpolation: jcm 3's default is cubic (was linear). **With cubic the dry strat81 runs blow up** in the
+  upper mesosphere (0.09-0.4 hPa: |u| 190-230 m/s, T collapsing, NaN) after 10-230 days of every year, and jcm's
+  health stop exits 0, so the first 19d/20 chains silently spliced partial years (found 13:27 PDT; all that output is
+  quarantined in runs/invalid_cubic_20261007/). Test runs of 1990 from the spin-up checkpoint: the old 4-level sponge
+  geometry still blew up (day 130); **linear interpolation ran the whole year healthy**. 19d and 20 therefore use
+  `dycore.sl_vertical_interpolation: linear`; the full-physics runs (21) keep jcm's cubic. chain_segments.sh now treats
+  a health stop as a failed segment. Both settings are echoed in every run header.
 - `forcing.ozone_file: auto` now fails for the strat tables (no on-grid bundle); `analytic`, what jcm 2 used silently.
 - jcm 3's ECHAM package gained `echam_surface_exchange`; added to our full-physics term lists (Phase 21).
 - Unchanged: the tracer mass-fixer policy wrapper, Hines/Lott-Miller import paths, the L95 table (so the ERA5 window
