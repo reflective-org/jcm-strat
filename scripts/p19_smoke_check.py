@@ -32,8 +32,8 @@ def main(argv):
     log = open(os.path.join(run, "log.txt")).read()
     check(len(re.findall(r"FLOAT32_DOT_ALGORITHM=HIGHEST FAST_TRANSFORM_DOT_ALGORITHM=HIGHEST", log)) >= 2,
           "dot precision HIGHEST echoed before and after the model build")
-    check("sponge levels=1 timescale_h=None enspodi=None" in log and "sl_vertical_interpolation=None (null = cubic)" in log,
-          "jcm 3 defaults echoed (sponge levels 1 ECHAM, cubic SL)")
+    check("sponge levels=1 timescale_h=None enspodi=None" in log and re.search(r"sl_vertical_interpolation=(None|linear|cubic)", log),
+          "jcm 3 settings echoed (sponge levels 1 ECHAM, SL vertical interpolation)")
     check("target_T_K: " not in log, "no target_T_K in the config dump")
     files = sorted(glob.glob(os.path.join(run, "longrun_day*.nc")), key=lambda f: int(re.search(r"day(\d+)", f).group(1)))
     check(len(files) >= 1, f"{len(files)} chunk file(s)")

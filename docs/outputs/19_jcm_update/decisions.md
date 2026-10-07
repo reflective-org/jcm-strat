@@ -243,3 +243,22 @@ pytest on the unported tree: 82 passed, 7 failed. Breakage and fixes:
   (4) two 1990 test runs from the 19d spin-up checkpoint to find the cause (tmux strat_p19_test, GPUs 1 and 4):
   p19t_sponge4 = jcm 3's sponge over the old geometry (4 levels, enspodi 6.73, 1.5 h; still m != 0 only, no
   T target), p19t_linear = levels 1 with linear SL vertical interpolation (the old default).
+
+### 2026-10-07 14:19 PDT - Cause found; decision: linear SL vertical interpolation for the dry runs (19d, 20)
+- Tests from the 19d spin-up checkpoint, 1990 (365 d), one change each:
+  p19t_sponge4 (jcm 3 sponge over the old geometry, 4 levels, enspodi 6.73, 1.5 h): **blows up at day 130**, as before.
+  p19t_linear (sponge levels 1, `dycore.sl_vertical_interpolation=linear`): **healthy all year** (|u| <= 146 m/s,
+  T 165-318 K at every 60-day check). So the trigger is jcm 3's cubic vertical interpolation in the dry strat81
+  mesosphere, not the sponge.
+- Options: (a) linear for 19d/20 (jcm 2's scheme; the brief's "cubic" cannot be kept for the dry runs without a
+  side experiment); (b) keep cubic and add damping (more sponge, Rayleigh drag) - changes the physics against 13d
+  and the sponge test already failed; (c) stop and hand to Susanne.
+- Chosen: (a), in p19_jh_n400.yaml (p20 inherits), stated in the run header. Why: it is the old jcm's setting, so
+  19d still measures the update minus one documented knob, and it was demonstrated stable. 21a/21b keep cubic: it
+  is jcm's validated ECHAM setting and both are healthy so far (watchdog in place). Consequence for the record:
+  19d = new jcm with linear SL interpolation; the cubic water-budget fix of jcm #1005 does not apply to the dry runs
+  (which have no moist physics anyway).
+- Relaunch: all cubic-run output moved to runs/invalid_cubic_20261007/ (chains, spin-ups, smokes, gate files,
+  logs); Phases 19 and 20 relaunched from scratch (new smokes, new spin-ups, new 19b gate on the linear spin-up;
+  Phase 20 waits for it again). Follow-up for Susanne/jcm: report the cubic-interpolation mesospheric blow-up of
+  a strat81 dry configuration upstream.
