@@ -44,17 +44,18 @@ def test_l81_changes_only_the_grid(cfgs):
     ctl, l81 = cfgs["p12_ctl"], cfgs["p12_l81"]
     assert l81.grid.layers == 81 and l81.grid.spectral_truncation == 63 and l81.level_table == "strat"
     assert l81.physics == ctl.physics and l81.nudging == ctl.nudging
-    assert l81.run.sponge.levels == ctl.run.sponge.levels == 4 and l81.run.sponge.enspodi == ctl.run.sponge.enspodi
+    assert l81.run.sponge.levels == ctl.run.sponge.levels == 1 and l81.run.sponge.enspodi == ctl.run.sponge.enspodi   # jcm 3 ECHAM sponge (Phase 19)
     assert l81.run.time_step == ctl.run.time_step == 12
 
 
 def test_echam_is_the_full_package_plus_the_phase12_terms(cfgs):
     ctl, ec = cfgs["p12_ctl"], cfgs["p12_echam"]
     terms = list(ec.physics.terms)
-    assert terms[:12] == ["moist_air_state", "echam_boundary_conditions", "macv2_sp_aerosol", "simple_chemistry", "sundqvist_cloud_fraction",
+    # jcm 3 (Phase 19): the package now includes echam_surface_exchange, as jcm's own physics/echam.yaml
+    assert terms[:13] == ["moist_air_state", "echam_boundary_conditions", "macv2_sp_aerosol", "simple_chemistry", "sundqvist_cloud_fraction",
                           "rrtmgp_radiation", "tte_tke_vertical_diffusion", "echam_surface", "tiedtke_convection", "echam_1m_microphysics",
-                          "hines_gwd", "lott_miller_sso"]
-    assert terms[12:] == ["qbo_nudging", "production_tracers", "omega_diagnostic"]
+                          "echam_surface_exchange", "hines_gwd", "lott_miller_sso"]
+    assert terms[13:] == ["qbo_nudging", "production_tracers", "omega_diagnostic"]
     assert "held_suarez" not in ec.physics.terms
     q = ec.physics.terms.qbo_nudging; cq = ctl.physics.terms.held_suarez.qbo
     assert q._target_ == "jcm_strat.qbo_nudging.QboNudging"

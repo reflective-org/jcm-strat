@@ -8,7 +8,6 @@ import glob
 import numpy as np
 import pytest
 
-import jcm.model as _model
 import jcm.predictions as _predictions
 from jcm.model import Model
 from jcm.physics.composable_physics import ComposablePhysics
@@ -25,7 +24,6 @@ ERA5_GLOB = "/data/JCM_stripped/jcm-strat/cache/era5_ref/era5_zm_monthly_*.nc"
 @pytest.fixture
 def restore_patches():
     yield
-    _model.Model.__init__ = strat_main._ORIG_MODEL_INIT
     _predictions.ModelPredictions.to_xarray = strat_main._ORIG_TO_XARRAY
 
 
@@ -35,11 +33,24 @@ def _model_hs():
 
 
 def test_calendar_hook(restore_patches):
-    assert _model_hs().calendar == "365_day"                     # JCM's default, the Phase 6-9 state
+    # jcm 3 (Phase 19): one proleptic Gregorian clock; the key is checked, not patched in
     strat_main.install_calendar("gregorian")
-    assert _model_hs().calendar == "gregorian"
+    strat_main.install_calendar(None)
+    for bad in ("julian", "365_day"):
+        with pytest.raises(ValueError):
+            strat_main.install_calendar(bad)
+
+
+def test_jcm3_run_keys_and_dot_precision():
+    from omegaconf import OmegaConf
+    import jax
+    strat_main.check_jcm3_run_keys(OmegaConf.create({"run": {"start_time": "1990-01-01", "sponge": {"levels": 1}}}))
     with pytest.raises(ValueError):
-        strat_main.install_calendar("julian")
+        strat_main.check_jcm3_run_keys(OmegaConf.create({"run": {"start_date": "1990-01-01"}}))
+    with pytest.raises(ValueError):
+        strat_main.check_jcm3_run_keys(OmegaConf.create({"run": {"sponge": {"levels": 1, "target_T_K": 250.0}}}))
+    vals = strat_main.log_dot_precision()
+    assert all(v == jax.lax.Precision.HIGHEST for v in vals.values()), vals
 
 
 def test_output_drop_hook(restore_patches):

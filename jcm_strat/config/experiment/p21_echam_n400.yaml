@@ -1,0 +1,21 @@
+# @package _global_
+# Phase 21a (Susanne 2026-10-07): Phase 12 run 4 (p12_echam: full ECHAM physics, T63L95, QBO nudging term, 12-hourly
+# ERA5 target, 5-day chunks, four clocks) on the new jcm (fixed Lott-Miller, ECHAM sponge levels=1 with no target_T_K,
+# cubic SL vertical interpolation, the surface-exchange term jcm 3 composes) with the ERA5 nudging cut off at 400 hPa
+# (p12_echam: 150 hPa). One-month spin-up from 1989-12-01, discarded; 1990-1994.
+#   EXPERIMENT=p21_echam_n400 PREFIX=p21echam SCHEME=calendar YEARS=1990-1994 AGG=p21echam_5yr SAVE_INTERVAL=0.25 \
+#     EXTRA_PER_SEG='physics.terms.qbo_nudging.year={year}' SPINUP="1989-12-01 31" GPU=2 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p12_echam
+
+nudging:
+  min_pressure_hpa: 400.0
+
+dycore:
+  sl_vertical_interpolation: null
+
+run:
+  sponge:
+    levels: 1
+    timescale_h: null
+    enspodi: null

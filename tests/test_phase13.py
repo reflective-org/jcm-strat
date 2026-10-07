@@ -42,7 +42,7 @@ def test_gwd_l95_is_gwd_on_the_native_l95_grid_with_its_own_sponge(cfgs):
     g, l95 = cfgs["p13_gwd"], cfgs["p13_gwd_l95"]
     assert l95.grid.layers == 95 and l95.grid.spectral_truncation == 63 and l95.level_table is None
     assert (l95.run.sponge.levels, l95.run.sponge.enspodi) == (10, 2.0)          # L95's own sponge, not strat63's remapped one
-    assert (g.run.sponge.levels, g.run.sponge.enspodi) == (4, 6.73)
+    assert (g.run.sponge.levels, g.run.sponge.enspodi) == (1, None)        # jcm 3 ECHAM sponge via p9_l63 (Phase 19)
     assert l95.physics == g.physics and l95.nudging == g.nudging
     rest = {k: v for k, v in l95.run.items() if k != "sponge"}
     assert rest == {k: v for k, v in g.run.items() if k != "sponge"}

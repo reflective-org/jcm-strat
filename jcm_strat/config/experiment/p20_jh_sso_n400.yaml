@@ -1,0 +1,11 @@
+# @package _global_
+# Phase 20 (Susanne 2026-10-07): p19_jh_n400 (13d physics, strat81, nudging < 400 hPa, new jcm) + the FIXED Lott-Miller
+# sub-grid orographic drag (jcm PR #1027: nktopg from the grid, no land-fraction factor; terrain hf://bundles/t63/terrain.nc
+# carries orostd). Physics = strat_jucker_gwd_prod13 (Jucker + Hines launched at 634 hPa + LottMillerSso), the list of
+# Phase 13b/13c run 1, which ran the BROKEN scheme. One change against p19_jh_n400: lott_miller_sso on.
+# Ten years 1990-1999 after the discarded one-month spin-up.
+#   EXPERIMENT=p20_jh_sso_n400 PREFIX=p20jhsso SCHEME=calendar YEARS=1990-1999 AGG=p20jhsso_10yr SAVE_INTERVAL=0.25 \
+#     SPINUP="1989-12-01 31" GPU=1 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p19_jh_n400
+  - override /physics: strat_jucker_gwd_prod13

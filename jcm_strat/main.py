@@ -39,15 +39,14 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 import jcm.main as _jcm_main
-import jcm.model as _model
 import jcm.predictions as _predictions
+import jcm.runners as _runners
 from jcm.dycore.dinosaur import dycore as _dycore
 
 from jcm_strat import levels
 
 _ORIG_FIX = _dycore.DinosaurDycore._fix_nodal_tracer_mass
 _ORIG_INIT = _dycore.DinosaurDycore.__init__
-_ORIG_MODEL_INIT = _model.Model.__init__
 _ORIG_TO_XARRAY = _predictions.ModelPredictions.to_xarray
 _JCM_CONFIG_DIR = os.path.join(os.path.dirname(_jcm_main.__file__), "config")
 
@@ -98,25 +97,69 @@ def install_mass_fixer_policy(enabled: bool = True, exclude=()) -> None:
 
 
 def install_calendar(name: str | None) -> None:
-    """Make every ``Model`` use calendar ``name`` (``gregorian`` or ``365_day``).
+    """Check the ``calendar`` key against jcm's clock (Phase 19: jcm 3 has ONE real Gregorian clock).
 
-    JCM's ``Model`` defaults to ``365_day`` and neither ``build_model`` nor the run config sets it.
-    Under ``365_day`` the fraction of year is ``(days since 1970-01-01) % 365 / 365``, which for a
-    real Gregorian start date is 5-12 days ahead of the true day of year (9 d in 2005): the
-    Polvani-Kushner season and the QBO month ran that much early in Phases 6-9. ``gregorian`` gives
-    the true day of year, and exactly 0 at 00:00 on 1 January (KEY_DECISIONS, Phase 10).
+    Up to Phase 18 (jcm 2.x) ``Model`` defaulted to ``365_day``, whose fraction of year ran 5-12 days ahead
+    of the true day of year, and this hook patched ``Model.__init__`` to ``gregorian`` (KEY_DECISIONS,
+    Phase 10). jcm 3 removed the ``calendar`` argument: model time is proleptic Gregorian, with 1 January
+    at phase zero every year - exactly what ``calendar: gregorian`` asked for. The key is kept so the
+    production configs state it; any other calendar is refused rather than silently ignored.
     """
     if not name:
         return
-    if name not in ("gregorian", "365_day"):
-        raise ValueError(f"calendar={name!r}; expected gregorian or 365_day")
+    if name != "gregorian":
+        raise ValueError(f"calendar={name!r}; jcm 3 runs on the proleptic Gregorian calendar only")
+    logging.getLogger("jcm_strat").info("jcm_strat: model calendar gregorian (jcm 3's only clock)")
 
-    def patched_init(self, *args, **kwargs):
-        kwargs["calendar"] = name
-        return _ORIG_MODEL_INIT(self, *args, **kwargs)
 
-    _model.Model.__init__ = patched_init
-    logging.getLogger("jcm_strat").info("jcm_strat: model calendar %s", name)
+def check_jcm3_run_keys(cfg: DictConfig) -> None:
+    """Refuse jcm 2 run keys that jcm 3 would silently ignore, and echo the Phase 19 defaults.
+
+    ``run.start_date`` became ``run.start_time`` in jcm 3; a leftover ``start_date`` is an unknown key that
+    the runner never reads, so the run would start on 2000-01-01 against the wrong ERA5 window. The sponge,
+    the semi-Lagrangian vertical interpolation and the absence of ``target_T_K`` are echoed so every log
+    states them (Phase 19 brief).
+    """
+    run = cfg.get("run", {}) or {}
+    if "start_date" in run:
+        raise ValueError("run.start_date is a jcm 2 key that jcm 3 ignores; use run.start_time")
+    sponge = run.get("sponge", {}) or {}
+    if "target_T_K" in sponge:
+        raise ValueError("run.sponge.target_T_K was removed in jcm 3 (PR #1027); delete it")
+    interp = (cfg.get("dycore", {}) or {}).get("sl_vertical_interpolation", None)
+    msg = (f"jcm_strat: start_time={run.get('start_time', None)} sponge levels={sponge.get('levels', 0)} "
+           f"timescale_h={sponge.get('timescale_h', None)} enspodi={sponge.get('enspodi', None)} "
+           f"(null = ECHAM uspnge: 3 h, enspodi 1, m != 0 only; no target_T_K) "
+           f"dycore.sl_vertical_interpolation={interp} (null = cubic)")
+    print(msg, flush=True)
+    logging.getLogger("jcm_strat").info(msg)
+
+
+def log_dot_precision() -> dict:
+    """Echo dinosaur's float32 GPU dot algorithms (Phase 19 precision check, jcm #892).
+
+    dinosaur >= 1.5 resolves float32 einsums to bf16 emulation on GPU, which the XLA in jaxlib < 0.11.2
+    miscompiles (NH -> SH mass drift); importing ``jcm.dycore.dinosaur`` resets both to HIGHEST unless
+    something was traced first. This module imports jcm's dycore before any jcm_strat term is built, and
+    calls the workaround again (idempotent) in case an import-order change ever slips in. Both values go
+    to the run header, and a run refuses to start if either is not HIGHEST on an affected jaxlib.
+    """
+    import jax
+    import jaxlib
+    from dinosaur import jax_numpy_utils, spherical_harmonic
+    from jcm.dycore.dinosaur.dot_precision import apply_dot_precision_workaround, jaxlib_is_affected
+
+    apply_dot_precision_workaround()
+    vals = {"FLOAT32_DOT_ALGORITHM": jax_numpy_utils.FLOAT32_DOT_ALGORITHM,
+            "FAST_TRANSFORM_DOT_ALGORITHM": spherical_harmonic.FAST_TRANSFORM_DOT_ALGORITHM}
+    msg = (f"jcm_strat: dinosaur dot precision FLOAT32_DOT_ALGORITHM={vals['FLOAT32_DOT_ALGORITHM']} "
+           f"FAST_TRANSFORM_DOT_ALGORITHM={vals['FAST_TRANSFORM_DOT_ALGORITHM']} (jaxlib {jaxlib.__version__}, "
+           f"affected by the bf16 miscompile: {jaxlib_is_affected()})")
+    print(msg, flush=True)
+    logging.getLogger("jcm_strat").info(msg)
+    if jaxlib_is_affected() and any(v != jax.lax.Precision.HIGHEST for v in vals.values()):
+        raise RuntimeError(f"dinosaur float32 dots are not HIGHEST on an affected jaxlib: {vals}")
+    return vals
 
 
 def install_output_policy(drop=(), keep=()) -> None:
@@ -162,10 +205,21 @@ def main(cfg: DictConfig) -> None:
     di = cfg.get("sl_departure_iterations", None)
     install_sl_options({"departure_iterations": int(di) if di is not None else None})
     install_calendar(cfg.get("calendar", None))
+    check_jcm3_run_keys(cfg)
+    log_dot_precision()
     install_output_policy(_as_list(cfg.get("output_drop", None)), _as_list(cfg.get("output_keep", None)))
     # ``level_table: strat`` (Phase 9): serve the L95-derived strat47/strat63 hybrid tables and
     # their hyperdiffusion profiles for grid.layers 47/63 (jcm_strat/levels.py)
     levels.install(cfg.get("level_table", None))
+    # the brief asks for the dot algorithms AFTER the model is built: wrap jcm's build_model
+    _orig_build = _runners.build_model
+
+    def _build_and_log(c):
+        model = _orig_build(c)
+        log_dot_precision()
+        return model
+
+    _runners.build_model = _build_and_log
     # hand the already-composed config to jcm's task function (hydra's decorated main accepts
     # a pass-through config and then does not re-parse the command line)
     _jcm_main.main(cfg_passthrough=cfg)

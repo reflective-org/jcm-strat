@@ -62,7 +62,10 @@ def test_orders_have_one_entry_per_level_and_grade_downward(n, trunc):
 def test_sponge_matches_the_experiment_yamls():
     import yaml
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    for n, name in ((63, "p9_l63"), (47, "p9_l47")):
+    # Phase 19 (jcm 3): p9_l63 (and so strat63/strat81) carries ECHAM's single-level uspnge, not the remap
+    cfg = yaml.safe_load(open(os.path.join(here, "jcm_strat", "config", "experiment", "p9_l63.yaml")))
+    assert cfg["run"]["sponge"] == {"levels": 1, "timescale_h": None, "enspodi": None}
+    for n, name in ((47, "p9_l47"),):
         cfg = yaml.safe_load(open(os.path.join(here, "jcm_strat", "config", "experiment", f"{name}.yaml")))
         lev, ensp = levels.sponge_for(n)
         assert cfg["run"]["sponge"]["levels"] == lev

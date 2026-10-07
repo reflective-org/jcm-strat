@@ -50,6 +50,9 @@ def main(argv=None) -> int:
                     help="the experiment's run.save_interval in days (only the 'calendar' scheme checks it)")
     ap.add_argument("--days", type=int, default=None,
                     help="instead of a scheme: ONE window of this many days from 1 January of the first year (smoke tests)")
+    ap.add_argument("--start", default=None,
+                    help="with --days: the window's start date YYYY-MM-DD instead of 1 January of the first year "
+                         "(Phase 19 spin-up month: --start 1989-12-01 --days 31)")
     ap.add_argument("--dry-run", action="store_true", help="print file names and sizes only")
     ap.add_argument("--no-init", action="store_true", help="skip the initial-state slice")
     ap.add_argument("overrides", nargs="*", help="hydra overrides (after --)")
@@ -65,7 +68,8 @@ def main(argv=None) -> int:
     freq = str(cfg.nudging.get("freq", "6h"))
     per_day = {"6h": 4, "12h": 2, "1d": 1}[freq]
     years = segments.parse_years(a.years)
-    segs = ([(dt.date(years[0], 1, 1), a.days, years[0])] if a.days
+    first = dt.date.fromisoformat(a.start) if a.start else dt.date(years[0], 1, 1)
+    segs = ([(first, a.days, first.year)] if a.days
             else segments.segments(a.scheme, years, a.save_interval))
     print(f"grid {nlon}x{nlat} L{nlev} T{cfg.grid.spectral_truncation}, nudging {freq}, "
           f"{len(segs)} segments ({a.scheme}), cache {era5.cache_dir()}")
