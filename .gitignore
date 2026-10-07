@@ -6,6 +6,7 @@ scratch/
 .venv
 cache
 scratch
+runs
 env/overrides.txt
 # model output
 runs/
