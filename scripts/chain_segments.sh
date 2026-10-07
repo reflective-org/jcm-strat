@@ -90,7 +90,9 @@ for seg in "${ALLSEGS[@]}"; do
   read -r d days y kind <<< "$seg"
   if [ "${kind:-}" = spinup ]; then name="${PREFIX}_spinup_${d//-/}"; else name="${PREFIX}_${d//-/}"; fi
   rundir="$REPO/runs/$name"
-  if grep -q '\[launch\].*exit=0' "$rundir/log.txt" 2>/dev/null; then
+  # done = a clean exit AND no health stop (jcm's bail_on_unhealthy ends a run early with exit 0 - Phase 19: the dry chains
+  # spliced partial years that way)
+  if grep -q '\[launch\].*exit=0' "$rundir/log.txt" 2>/dev/null && ! grep -q "atmosphere unhealthy" "$rundir/log.txt"; then
     step "skip $name (done)"; prev="$rundir"; [ "${kind:-}" = spinup ] || first_real=0
     if [ "${kind:-}" = spinup ] && [ "${SPINUP_ONLY:-0}" = 1 ]; then step "spin-up done, SPINUP_ONLY=1 - stopping"; exit 0; fi
     continue
@@ -104,7 +106,9 @@ for seg in "${ALLSEGS[@]}"; do
   echo "[launch] $(date -Is) jcm-strat $(git -C "$REPO" rev-parse --short HEAD) chain=$PREFIX GPU=$GPU" >> "$rundir/log.txt"
   ( cd "$rundir" && python -m jcm_strat.main --config-dir "$REPO/jcm_strat/config" "+experiment=$EXPERIMENT" ++run.checkpoint_path=checkpoint.ckpt \
       "run.start_time=$d" "run.total_time=$days" "${extra[@]}" "${per[@]}" "${init[@]}" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
-  rc=$?; echo "[launch] $(date -Is) exit=$rc" >> "$rundir/log.txt"
+  rc=$?
+  if [ $rc -eq 0 ] && grep -q "atmosphere unhealthy" "$rundir/log.txt"; then rc=3; step "$name stopped on jcm's health check: $(grep -m1 'atmosphere unhealthy' "$rundir/log.txt")"; fi
+  echo "[launch] $(date -Is) exit=$rc" >> "$rundir/log.txt"
   step "done $name exit=$rc"
   [ $rc -eq 0 ] || { step "segment $name FAILED - stopping"; exit 1; }
   [ "${kind:-}" = spinup ] || first_real=0

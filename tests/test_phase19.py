@@ -26,7 +26,8 @@ def test_jcm3_defaults_are_stated(cfgs, e):
     c = cfgs[e]
     assert c.run.sponge.levels == 1 and c.run.sponge.timescale_h is None and c.run.sponge.enspodi is None
     assert "target_T_K" not in c.run.sponge
-    assert c.dycore.sl_vertical_interpolation is None
+    # the dry strat81 runs need jcm 2's linear SL vertical interpolation (cubic blew up, Phase 19 incident); ECHAM keeps cubic
+    assert c.dycore.sl_vertical_interpolation == ("linear" if e in ("p19_jh_n400", "p20_jh_sso_n400") else None)
     assert "start_date" not in c.run and c.run.monthly_means is False and c.run.save_chunks is True
     assert c.run.save_interval == 0.25 and c.run.output_averages is False and c.calendar == "gregorian"
     assert {"aoa", "aoa150", "aoa_sfc", "aoa500", "n2o", "cfc11"} <= set(c.sl_mass_fixer_exclude)
