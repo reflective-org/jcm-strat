@@ -56,7 +56,7 @@ def main(argv):
     if restart:
         check(float(a0.max()) <= 0.25 + 0.02, f"restart: clocks restarted on 1990-01-01 (aoa_sfc max at 06 UTC {a0.max():.3f} d, below the lid)")
     a_end = ds["aoa_sfc"].isel(time=-1).values[below_lid]
-    check(float(a_end.max()) <= 5.1 and float(a_end.min()) >= -1e-3, f"aoa_sfc after {ds.time.size / 4:g} d in [0, 5.1] below the lid ({a_end.min():.3f}..{a_end.max():.3f})")
+    check(float(a_end.max()) <= 5.5 and float(a_end.min()) >= -1e-3, f"aoa_sfc after {ds.time.size / 4:g} d in [0, 5.5] below 10 hPa (lid air mixes down a little) ({a_end.min():.3f}..{a_end.max():.3f})")
     if "lott_miller_sso" in log:
         m = re.findall(r"nktopg\D{0,20}(\d+)", log)
         print(f"INFO  Lott-Miller in the physics; nktopg mentions in the log: {m[:3]}")
