@@ -223,3 +223,42 @@ pytest on the unported tree: 82 passed, 7 failed. Breakage and fixes:
 - PASS: new jcm max |change NH-SH ps| 2.17 hPa (end -1.21), global mean max 0.07 hPa (end +0.04) over the
   31-day spin-up; the old jcm (same physics, January 1990): 2.16 / 0.13 hPa. Same natural swing, no drift.
   docs/outputs/19_jcm_update/p19_ps_gate.md/.png.
+
+### 2026-10-07 13:39 PDT - INCIDENT: the dry chains (19d, 20) blow up on the new jcm; the chains spliced partial years
+- Found by the Phase 20 failure agent (13:27 PDT; its log in jcm-strat-phase20 docs/outputs/20_sso_fixed/decisions.md):
+  every p19jhn400 / p20jhsso segment hit jcm's health stop ("atmosphere unhealthy", T NaN or q/T limits) after
+  10-230 days; `bail_on_unhealthy` ends the run with exit 0, so chain_segments.sh counted it as a finished year
+  and started the next from the last healthy checkpoint. All p19jhn400_1990-1994 and p20jhsso_1990-1995 output is
+  invalid. The 31-day spin-ups and the 19b gate were healthy (the blow-up comes later; the gate stands).
+- Where: 19d 1990, frame by frame (longrun_day140): fine until 1990-05-18; then |u| 190-230 m/s and T collapsing
+  (Tmin 73 K, then 4 K) at 0.09-0.4 hPa, Tmax 350-420 K at 0.155 hPa, NaN on 1990-05-21 - an upper-mesospheric
+  instability in the sponge region. The full-physics runs (21a/21b, same sponge) are healthy through day 165.
+- Reading: the old 4-level full-wind sponge (+ T -> 250 K) held the dry strat81 mesosphere; jcm 3's ECHAM uspnge
+  (top level only, m != 0 only, 3 h) does not. ECHAM's own config relies on Hines (full spectrum) for the
+  mesospheric jets; the dry config's mesosphere is the Jucker relaxation + Hines launched at 634 hPa only.
+- Actions now: (1) stopped strat_p19_run (it was computing diagnostics on invalid output; nothing committed from
+  it); (2) chain_segments.sh now counts a health stop as a FAILED segment (rc 3) and a segment with one in its log
+  as not done (atomic replace); (3) the running Phase 21 chains still use the old script in memory, so a watchdog
+  (tmux strat_p21_watch, runs/p21_watchdog.sh) stops Phase 21 if any p21 segment reports a health stop;
+  (4) two 1990 test runs from the 19d spin-up checkpoint to find the cause (tmux strat_p19_test, GPUs 1 and 4):
+  p19t_sponge4 = jcm 3's sponge over the old geometry (4 levels, enspodi 6.73, 1.5 h; still m != 0 only, no
+  T target), p19t_linear = levels 1 with linear SL vertical interpolation (the old default).
+
+### 2026-10-07 14:19 PDT - Cause found; decision: linear SL vertical interpolation for the dry runs (19d, 20)
+- Tests from the 19d spin-up checkpoint, 1990 (365 d), one change each:
+  p19t_sponge4 (jcm 3 sponge over the old geometry, 4 levels, enspodi 6.73, 1.5 h): **blows up at day 130**, as before.
+  p19t_linear (sponge levels 1, `dycore.sl_vertical_interpolation=linear`): **healthy all year** (|u| <= 146 m/s,
+  T 165-318 K at every 60-day check). So the trigger is jcm 3's cubic vertical interpolation in the dry strat81
+  mesosphere, not the sponge.
+- Options: (a) linear for 19d/20 (jcm 2's scheme; the brief's "cubic" cannot be kept for the dry runs without a
+  side experiment); (b) keep cubic and add damping (more sponge, Rayleigh drag) - changes the physics against 13d
+  and the sponge test already failed; (c) stop and hand to Susanne.
+- Chosen: (a), in p19_jh_n400.yaml (p20 inherits), stated in the run header. Why: it is the old jcm's setting, so
+  19d still measures the update minus one documented knob, and it was demonstrated stable. 21a/21b keep cubic: it
+  is jcm's validated ECHAM setting and both are healthy so far (watchdog in place). Consequence for the record:
+  19d = new jcm with linear SL interpolation; the cubic water-budget fix of jcm #1005 does not apply to the dry runs
+  (which have no moist physics anyway).
+- Relaunch: all cubic-run output moved to runs/invalid_cubic_20261007/ (chains, spin-ups, smokes, gate files,
+  logs); Phases 19 and 20 relaunched from scratch (new smokes, new spin-ups, new 19b gate on the linear spin-up;
+  Phase 20 waits for it again). Follow-up for Susanne/jcm: report the cubic-interpolation mesospheric blow-up of
+  a strat81 dry configuration upstream.

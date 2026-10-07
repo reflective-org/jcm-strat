@@ -3,7 +3,9 @@
 # physics/strat_jucker_hines_prod13.yaml) on strat81 with the ERA5 nudging cut off at 400 hPa - i.e. Phase 13c run 2
 # (p13_jucker_hines_n400, OLD jcm 849893be) - on the NEW jcm (35dc1997, dinosaur 1.5.0) with jcm 3's defaults:
 #   * run.sponge.levels 1, ECHAM uspnge (3 h, m != 0 only), no target_T_K (p9_l63 carries it for the whole chain);
-#   * dycore.sl_vertical_interpolation null = cubic (stated here so the config dump shows it).
+#   * dycore.sl_vertical_interpolation LINEAR (jcm 2's scheme), NOT jcm 3's cubic default: with cubic the dry strat81
+#     configuration blows up in the upper mesosphere (0.09-0.4 hPa) after 10-230 days of every year; linear ran the
+#     same 1990 healthy (2026-10-07 test runs p19t_linear / p19t_sponge4, docs/outputs/19_jcm_update/decisions.md).
 # Purpose: the effect of the jcm update alone. One-month spin-up from ERA5 on 1989-12-01, discarded
 # (chain_segments.sh SPINUP), then 1990-1994 with the tracers initialised on 1990-01-01.
 #   EXPERIMENT=p19_jh_n400 PREFIX=p19jhn400 SCHEME=calendar YEARS=1990-1994 AGG=p19jhn400_5yr SAVE_INTERVAL=0.25 \
@@ -12,7 +14,7 @@ defaults:
   - /experiment/p13_jucker_hines_n400
 
 dycore:
-  sl_vertical_interpolation: null
+  sl_vertical_interpolation: linear
 
 run:
   sponge:
