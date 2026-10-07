@@ -58,12 +58,14 @@ export CUDA_VISIBLE_DEVICES="$GPU"
 LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"
 step() { echo "[chain] $(date -Is) $*" | tee -a "$LOG"; }
 
-if nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
+# LINK_ONLY=1 (Phase 19): every segment is already finished and only an aggregate is (re)linked - no GPU needed, so the
+# busy/visible checks are skipped (Phase 14's "GPU=1 trick" for a 5-year aggregate collided with another run's GPU)
+if [ "${LINK_ONLY:-0}" != 1 ] && nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
   step "refusing: GPU $GPU is busy"; exit 1
 fi
 # JAX falls back to the CPU silently when the host has no /dev/nvidia* nodes (they vanish at every reboot of this
 # node: the driver is a container, nothing recreates them). A CPU chain runs 100x slower and looks normal.
-if ! python -c "import jax, sys; sys.exit(0 if any(d.platform == 'gpu' for d in jax.devices()) else 1)" 2>/dev/null; then
+if [ "${LINK_ONLY:-0}" != 1 ] && ! python -c "import jax, sys; sys.exit(0 if any(d.platform == 'gpu' for d in jax.devices()) else 1)" 2>/dev/null; then
   step "refusing: JAX sees no GPU (missing /dev/nvidia*? recreate the device nodes, see docs/outputs/11_lid_tracers/output.md)"; exit 1
 fi
 # the time step must divide the save interval (JCM truncates silently); default 12 min
@@ -93,6 +95,7 @@ for seg in "${ALLSEGS[@]}"; do
     if [ "${kind:-}" = spinup ] && [ "${SPINUP_ONLY:-0}" = 1 ]; then step "spin-up done, SPINUP_ONLY=1 - stopping"; exit 0; fi
     continue
   fi
+  [ "${LINK_ONLY:-0}" = 1 ] && { step "LINK_ONLY=1 but $name is not finished - stopping"; exit 1; }
   mkdir -p "$rundir"
   init=(); if [ -n "$prev" ]; then init=(init=from_state "init.file=$prev/checkpoint.ckpt"); fi
   per=(); if [ -n "$EXTRA_PER_SEG" ]; then read -r -a per <<< "${EXTRA_PER_SEG//\{year\}/$y}"; fi

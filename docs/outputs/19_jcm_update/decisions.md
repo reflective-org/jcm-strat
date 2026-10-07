@@ -142,3 +142,66 @@ pytest on the unported tree: 82 passed, 7 failed. Breakage and fixes:
 - Chosen: keep jcm 3's behaviour; it is part of "the effect of the jcm update alone" that 19d
   measures, and changing the initial state would be a side experiment. Recorded as a
   difference to old runs in output.md.
+
+### 2026-10-07 11:57 PDT - Smokes: what failed and how it was fixed
+- First round (commit 6d3ba46): the full-physics smokes (p21_echam_n400 GPU 2, p21_free GPU 3) ran; the two dry ones
+  (p19/p20) died at build: jcm 3's `forcing.ozone_file: auto` now fetches an on-grid ozone bundle eagerly and
+  hf://bundles/t63_l81/ozone_pd.nc does not exist (jcm 2 fell back to the analytic profile silently - the old run
+  provenance says "ozone_source: analytic (auto found no packaged match)"). Options: (a) build an L81 ozone file;
+  (b) `forcing.ozone_file: analytic`, i.e. exactly what the old runs used; the dry physics never reads ozone.
+  Chosen (b), in p9_l63 (inherited by every strat63/strat81 experiment).
+- My smoke checker's thresholds were too tight (ps up to 1102 hPa occurs in the old p12echam smoke too; the
+  1 hPa tracer lid's values reach ~2-3 hPa within 5 days in old and new runs alike). Loosened to ps < 1120 hPa
+  and the clock check below 10 hPa. All four smokes PASS; restart smoke (p19 from the p19 smoke checkpoint,
+  first_segment=true): the 06 UTC clock is 0.250 d below 10 hPa -> re-initialisation works.
+- Observation (not acted on): with jcm 3's ECHAM sponge (top level only, m != 0 only) the full-physics
+  mesospheric winds are stronger: max |u| ~150 m/s at 0.03-0.04 hPa after 5 days vs ~90 m/s on the old jcm
+  (its 10-level full-wind sponge). This is jcm's documented effect of the sponge change ("the stratospheric
+  and mesospheric zonal-mean winds strengthen"); the brief prescribes levels=1. Watched by jcm's per-chunk
+  health check; listed under follow-ups.
+- Old vs new 5-day DJF tropical w* in the full-physics smoke (stride 1, 5 days, noisy): 100 hPa 1.43 -> 0.45
+  mm/s - a first hint of the fixed Lott-Miller's effect; the chains will tell.
+
+### 2026-10-07 11:57 PDT - GPU assignment
+- GPU 0 has been held since ~10:50 PDT by another of Susanne's jobs (/home/susanne/cesm_jax/validation/
+  phase6_multiyear.py, 10 GB, 99 %). Options: wait for GPU 0 / use the spare GPU 4 for 19d.
+- Chosen: 19d on GPU 4 (the brief: "GPU 4 is spare: use it only if one of the above must be restarted while its
+  GPU is busy" - 19d cannot start on its GPU, which is the same situation). 20 on GPU 1, 21a on GPU 2, 21b on
+  GPU 3, as planned. Every pipeline waits (wait_gpu) rather than fails if its GPU is busy.
+
+### 2026-10-07 11:57 PDT - Precision gate (19b item 4): which 30-day run, which thresholds
+- Options for the run: (a) a separate 30-day 19d run; (b) the 19d spin-up month itself (31 days of exactly the
+  19d config, 1989-12-01 from ERA5). Chosen (b): same config and length, no extra GPU time, and the gate then
+  sits before the 5-year chain (chain_segments.sh SPINUP_ONLY=1, gate, then the chain). Phases 20/21 run their
+  own spin-ups and then wait for runs/p19b_gate.PASS (or stop on .FAIL).
+- Metric: with terrain and nudging the NH-SH area-mean ps is not zero (orography, season), so the gate is on
+  its CHANGE from the first 6-hourly sample, plus the change of the global mean. Thresholds |dA| < 5 hPa,
+  |dG| < 0.5 hPa. Why 5: the OLD jcm (p13jhn400, same physics, January 1990) swings by up to 2.2 hPa
+  (global mean +0.13 hPa) - natural NH-SH mass exchange; the bug is -116 hPa in 30 d. The old run is
+  drawn alongside for context (a different month, so not a difference).
+
+### 2026-10-07 11:57 PDT - Diagnostics and comparisons chosen
+- All TEM diagnostics at stride 1 (phase12_compare.py --stride 1, mesosphere_wstar.py --stride 1,
+  sweep_score.py uses every frame). Ages over the last 60 days (240 frames), as before.
+- 19d: `update` = old p13jhn400 first 5 yr (links day <= 1826 of p13jhn400_10yr into runs/old_p13jhn400_5yr)
+  -> p19jhn400_5yr; `vs13d` = p13jh_5yr -> 19d; aoa_vs_clams (3 clocks, old alongside); mesosphere 1994;
+  sweep_score of both (u/T vs ERA5; w* vs WACCM because ERA5 TEM exists only for 1996-2001 on disk).
+- 20: THE comparison `sso5_vs_19d` (p19jhn400_5yr -> p20jhsso_5yr, same code); 10 yr vs the old 13c run 1
+  (broken LM), 13c run 2 (no LM), 13d; sweep_score of the 10-yr runs over 1998-99 = ERA5 TEM w* and upward
+  mass flux ("mass flux vs ERA5"); spin-up adjustment = scripts/p20_spinup_adjust.py (daily global
+  relative angular momentum and 300 hPa zonal-mean u at 25-50N/S, 19d vs 20, through December 1989 and
+  January 1990).
+- 21: `echam_rerun` (old p12echam_5yr -> 21a), `free_rerun10`/`free_rerun5` (old p14free -> 21b), and with
+  Phase 20 alongside `echam_vs_p20`, `free_vs_p20`; aoa_vs_clams; sweep_score; mesosphere.
+- Not done (keep it simple): no PDF reports (not in the brief), no new reference fetches.
+
+### 2026-10-07 11:57 PDT - Pipelines and agents
+- scripts/phase19_run.sh (tmux strat_p19_run, GPU 4), phase20_run.sh (strat_p20_run, GPU 1),
+  phase21_run.sh (strat_p21_run, GPUs 2+3; 21a and 21b chains in parallel, each followed by its own
+  diagnostics). Shared helpers scripts/p19_lib.sh. Each: pytest -> smoke (skipped if passed) -> spin-up ->
+  gate -> chain -> diagnostics -> commit metrics/plots -> headless write-up agent
+  (scripts/p19_prompts/writeup_pNN.md + common_rules.md, copied to runs/pNN_writeup_prompt.md). Any failure
+  -> failure agent (scripts/p19_prompts/failure.md): diagnose, fix if clearly mechanical, relaunch ONCE with
+  RELAUNCHED=1, otherwise record and stop. A failed precision gate is a science stop (no relaunch).
+- chain_segments.sh gained LINK_ONLY=1 (aggregate relinking without the GPU checks; Phase 14's watcher
+  failed on exactly that) for the 5-yr aggregates of the 10-yr chains.

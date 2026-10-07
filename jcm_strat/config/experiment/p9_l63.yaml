@@ -20,3 +20,9 @@ run:
     levels: 1
     timescale_h: null
     enspodi: null
+
+# jcm 3 (Phase 19): forcing.ozone_file=auto now fetches an on-grid ozone bundle eagerly and fails for the strat
+# tables (no hf://bundles/t63_l63|l81/ozone_pd.nc); jcm 2 fell back to the analytic profile silently, and the dry
+# physics never reads ozone. State the old behaviour explicitly.
+forcing:
+  ozone_file: analytic
