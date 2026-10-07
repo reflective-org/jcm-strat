@@ -63,3 +63,15 @@ def test_p21b_is_free_running(cfgs):
     assert c.nudging.enabled is False and "qbo_nudging" not in c.physics.terms
     assert {"hines_gwd", "lott_miller_sso", "echam_surface_exchange"} <= set(c.physics.terms)
     assert c.physics == cfgs["p14_free"].physics and c.grid.layers == 95
+
+
+def test_chain_initialises_tracers_for_phase_20_and_21_experiments():
+    """chain_segments.sh adds first_segment=true on the first real segment for p10_*/p1x/p2x experiments (Phase 19 fix:
+    the old pattern p1[1-9]* missed p20_*/p21_*, whose tracers would never have been initialised)."""
+    import re
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    src = open(os.path.join(here, "scripts", "chain_segments.sh")).read()
+    pat = re.search(r'case "\$EXPERIMENT" in ([^)]*)\) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true"', src).group(1)
+    import fnmatch
+    for e in ("p19_jh_n400", "p20_jh_sso_n400", "p21_echam_n400", "p21_free"):
+        assert any(fnmatch.fnmatch(e, g) for g in pat.split("|")), e

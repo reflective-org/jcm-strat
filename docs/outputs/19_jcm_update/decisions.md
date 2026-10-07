@@ -205,3 +205,21 @@ pytest on the unported tree: 82 passed, 7 failed. Breakage and fixes:
   RELAUNCHED=1, otherwise record and stop. A failed precision gate is a science stop (no relaunch).
 - chain_segments.sh gained LINK_ONLY=1 (aggregate relinking without the GPU checks; Phase 14's watcher
   failed on exactly that) for the 5-yr aggregates of the 10-yr chains.
+
+### 2026-10-07 12:15 PDT - Bug caught at launch: tracer initialisation flag for p20_*/p21_*
+- chain_segments.sh adds `first_segment=true` to the first segment only for experiments matching
+  `p10_*|p1[1-9]*` (Phase 10-18 naming). p20_jh_sso_n400, p21_echam_n400 and p21_free do not match, so their
+  1990 segments would have run with first_segment=false: no pulses, no WACCM n2o/cfc11 state, and the clocks
+  would have kept the spin-up month's age. Seen in the chain headers ("first-seg: none") right after launch.
+- Options: (a) stop the pipelines and relaunch with FIRST_SEG_EXTRA set explicitly; (b) widen the pattern to
+  `p2[0-9]*` with an atomic replace of the script (mv of a new file: the running spin-up chains keep the old
+  inode, never an in-place edit), before any 1990 segment starts.
+- Chosen (b), done 12:14 PDT; the Phase 19b gate passed one minute later and both 1990 segments (p19jhn400,
+  p20jhsso) started with `physics.terms.production_tracers.first_segment=true` (checked in their chain logs).
+  21a/21b were still in their spin-ups and will read the fixed script for 1990. Regression test added
+  (tests/test_phase19.py::test_chain_initialises_tracers_for_phase_20_and_21_experiments).
+
+### 2026-10-07 12:15 PDT - 19b gate result
+- PASS: new jcm max |change NH-SH ps| 2.17 hPa (end -1.21), global mean max 0.07 hPa (end +0.04) over the
+  31-day spin-up; the old jcm (same physics, January 1990): 2.16 / 0.13 hPa. Same natural swing, no drift.
+  docs/outputs/19_jcm_update/p19_ps_gate.md/.png.
