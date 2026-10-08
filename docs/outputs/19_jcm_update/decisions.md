@@ -291,3 +291,17 @@ pytest on the unported tree: 82 passed, 7 failed. Breakage and fixes:
 - Data: L95 6-h nudging windows 1990-1994 were cached (c39313fe, from Phase 12); December 1989 (3 GB) and 1995-1999
   (155 GB) are prefetched by runs/p19_l95_relaunch.sh (tmux preproc_p19_l95), which relaunches both pipelines
   (19 on GPU 4, 20 on GPU 1) as soon as December 1989 is cached. The 19b gate reruns on the L95 spin-up.
+
+### 2026-10-07 22:52 PDT - Write-up agent: choices made in output.md
+- Existing output.md text that described 19d as strat81 + linear and the linear-spin-up gate: options (a) rewrite it,
+  (b) keep it and add "superseded" notes with the final L95 + cubic facts. Chosen (b): the prompt says keep what is there,
+  and the history (cubic blow-up -> linear -> L95 cubic) is part of the record.
+- Acceptance criteria: options (a) Phase 13 criteria (WACCM6 w*, aoa150 entry age 1.19 / 2.90 +- 0.4 / >= 3.6, mesosphere
+  vs ECHAM, cost <= 35 min/yr), (b) new criteria. Chosen (a), so the row compares with the 13c/13d tables directly; w* now at
+  stride 1 for all columns (13d from vs13d_metrics.md, old p13jhn400 from update_metrics.md).
+- Which numbers to quote: w*, mass flux and ages from update_metrics.md / vs13d_metrics.md (full 5 yr, ages last 240 frames);
+  u/T from scores/*.json (sweep_score's window = last two years 1993-1994; its w* differs slightly from the 5-yr means).
+- Attribution: the age change (0.4-1.4 yr younger with unchanged w*) is NOT attributed to the jcm update: 19d also changes
+  grid (strat81 -> L95) and SL interpolation (linear -> cubic). Named cubic interpolation and the better-resolved lid region as
+  the suspects; the superseded new-jcm strat81 + linear chain is listed as the run that would split it, not analysed (per the
+  prompt). No new analysis or runs started.
