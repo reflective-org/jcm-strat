@@ -42,3 +42,22 @@ re-initialisation, sponge, GPUs, pipelines, diagnostics) are in the Phase 19 log
   The pipeline's stale failed log runs/p21_compare_free_vs_p20.log and runs/p21_mesosphere.log are superseded by
   runs/p21_compare_free_vs_p20_5yr.log and runs/p21_mesosphere_rerun.log. The write-up should cite free_vs_p20_5yr and
   say it is 5 yr.
+
+### 2026-10-08 13:06 PDT - Write-up agent: choices made in output.md
+- **Phase 14's "downward w*" against the stride-1 rerun.** Question: the Phase 14 record says −0.05/−0.22/−0.28 mm/s at
+  100/70/50 hPa, but free_rerun10 reads the same p14free_10yr as +0.17/+0.10/+0.01. Options: (a) quote only the stride-1
+  numbers; (b) quote both and say the original was stride 4; (c) treat the difference as a script change and not comment.
+  Chosen: (b). Phase 14's free10_metrics.md says "every 4th 6-hourly frame", and Phase 15 found stride 4 tide-biased, so the
+  discrepancy is explained and is itself part of the answer to question (ii). The age-based part of the Phase 14 finding
+  (equatorial age maximum) does not depend on sampling and is kept as real.
+- **Separating cutoff vs code for question (i).** No 2×2 exists (only old/150 and new/400 nudged runs). Options: (a) say
+  "cannot be separated" and stop; (b) use the free pair (code change only, no nudging) as the code effect and attribute the
+  residual to the cutoff, labelled as an estimate that assumes additivity; (c) use Phase 13c (dry, cutoff only, old jcm) as
+  the cutoff effect. Chosen: (b) with (c) as supporting evidence, and state explicitly which quantities stay ambiguous
+  (12 hPa tropical age, extratropical 55 hPa age). Why: it uses only runs that exist and makes the assumption visible.
+- **era5_check/.** Susanne's own 21a-vs-ERA5 check (tmux eval_p21a_era5) was still running at write-up time; its first two
+  PNGs were already committed by the pipeline. Options: interpret it fully / mention it descriptively / ignore it. Chosen:
+  describe what the committed PNGs show (weak vortices, equatorial u near 1 hPa) and leave the interpretation to her. Its
+  in-progress outputs are not committed by me.
+- **"Phase 19-21 plan complete" in STATUS.md.** Phase 20 has no output.md (stopped in 1997, awaiting Susanne's decisions),
+  so the plan is NOT reported complete; Phases 19 and 21 are.
