@@ -77,3 +77,18 @@ def test_chain_initialises_tracers_for_phase_20_and_21_experiments():
     import fnmatch
     for e in ("p19_jh_n400", "p20_jh_sso_n400", "p21_echam_n400", "p21_free"):
         assert any(fnmatch.fnmatch(e, g) for g in pat.split("|")), e
+
+
+def test_p20_ignores_only_the_humidity_health_criterion(cfgs, monkeypatch):
+    assert cfgs["p20_jh_sso_n400"].health_ignore_q_max is True
+    assert not cfgs["p19_jh_n400"].get("health_ignore_q_max", False)
+    import jcm.diagnostics as diag
+    from jcm_strat.main import install_health_policy
+    fake = {"q": (False, {"ok": False, "reasons": ["q_max=104.7 g/kg (> 100)"]}),
+            "qT": (False, {"ok": False, "reasons": ["q_max=150.0 g/kg (> 100)", "T_min=84K (< 100K)"]})}
+    monkeypatch.setattr(diag, "check_health", lambda ds, i, d: fake[ds])
+    install_health_policy(True)
+    ok, rep = diag.check_health("q", 0, 60.0)
+    assert ok and rep["ok"] and rep["reasons"] == []
+    ok, rep = diag.check_health("qT", 0, 60.0)
+    assert not ok and rep["reasons"] == ["T_min=84K (< 100K)"]

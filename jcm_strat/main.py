@@ -194,8 +194,38 @@ def _as_list(raw):
     return list(OmegaConf.to_container(raw)) if OmegaConf.is_config(raw) else list(raw)
 
 
+def install_health_policy(ignore_q_max: bool) -> None:
+    """``health_ignore_q_max: true`` (Phase 20, Susanne 2026-10-07): jcm's chunk health check stops a run when
+    q_max > 100 g/kg. In the dry configurations q is a near-passive tracer, and the fixed Lott-Miller drives a
+    surface q spike over the SE Himalaya; treat that one criterion as non-fatal (logged per chunk) and keep every
+    other check (T NaN, T < 100 K, T > 500 K). jcm.runners imports check_health from jcm.diagnostics at call time,
+    so patching the module attribute is enough. Revisit: reflective-org/jcm-strat#62."""
+    msg = f"jcm_strat: health_ignore_q_max={bool(ignore_q_max)} (true = q_max > 100 g/kg is logged, not fatal)"
+    print(msg)
+    logging.getLogger("jcm_strat").info(msg)
+    if not ignore_q_max:
+        return
+    import jcm.diagnostics as _diag
+    _orig = _diag.check_health
+
+    def _check(ds, chunk_idx, elapsed_days):
+        ok, report = _orig(ds, chunk_idx, elapsed_days)
+        reasons = list(report.get("reasons", []))
+        q_only = [r for r in reasons if r.startswith("q_max=")]
+        if q_only:
+            print(f"  health_ignore_q_max: not fatal: {q_only}")
+            rest = [r for r in reasons if not r.startswith("q_max=")]
+            report["reasons"] = rest
+            ok = not rest
+            report["ok"] = ok
+        return ok, report
+
+    _diag.check_health = _check
+
+
 @hydra.main(version_base=None, config_path=_JCM_CONFIG_DIR, config_name="config")
 def main(cfg: DictConfig) -> None:
+    install_health_policy(bool(cfg.get("health_ignore_q_max", False)))
     enabled = bool(cfg.get("sl_mass_fixer", True))
     raw = cfg.get("sl_mass_fixer_exclude", None)
     # a config without the key (e.g. the full-ECHAM reference) yields a plain default, not a
