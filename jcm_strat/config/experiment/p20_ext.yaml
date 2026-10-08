@@ -1,0 +1,12 @@
+# @package _global_
+# Phase 20 extension (Susanne 2026-10-08): p20_jh_sso_n400 continued 1997-2011 with the Phase 11a production tracers
+# WRITTEN. The physics, nudging, grid and tracer term are p20_jh_sso_n400's, unchanged, so the extension restarts from the
+# 1990-1996 checkpoints; the tracers it writes are the ones injected once on 1990-01-01 (Susanne: keep the 1990 tracers,
+# no re-injection) - pulses/box twins/sources/SAI with no sink anywhere (11a, chosen over 11b on 2026-09-16).
+# Only output_drop changes: the nine moist_air_state diagnostics stay dropped, the 19 injection tracers are written
+# 6-hourly (Susanne: all 17+2 tracers 6-hourly; ~180 GB per model year after compaction).
+#   scripts/p20_extend.sh (rescues a health stop by rerunning from the last healthy checkpoint at run.time_step=6)
+defaults:
+  - /experiment/p20_jh_sso_n400
+
+output_drop: [air_density, height_full, height_half, layer_thickness, pressure_full, pressure_half, pressure_thickness, relative_humidity, surface_pressure]
