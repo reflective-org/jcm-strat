@@ -82,3 +82,13 @@ re-initialisation, sponge, GPUs, pipelines, diagnostics) are in the Phase 19 log
      (13d/19d) and drop Phase 20.
   3. Before any relaunch move runs/p20jhsso_19900101 aside (it is incomplete; the spin-up can be reused).
   GPU 1 is now idle. strat_p19_run (19d, GPU 4) and Phase 21 are unaffected and keep running.
+
+### 2026-10-07 19:25 PDT - Susanne: treat humidity as unimportant for now; relaunch (supervising session)
+- Susanne chose option "treat humidity as unimportant" from the 19:04 list, with a GitHub issue to come back to it:
+  reflective-org/jcm-strat#62.
+- Implementation: `health_ignore_q_max: true` in p20_jh_sso_n400.yaml; `jcm_strat/main.py::install_health_policy` wraps
+  `jcm.diagnostics.check_health`: q_max > 100 g/kg is printed per chunk ("health_ignore_q_max: not fatal") and every
+  temperature check stays fatal. Echoed in the run header. 19d/21 unaffected (flag false). Test in tests/test_phase19.py.
+- Options not taken: cap q or add a q sink (changes the model state); tune SSO / smooth orography (science change).
+- Relaunch: failed segment moved to runs/failed_q_20261007/p20jhsso_19900101; smoke, spin-up and 19b gate reused.
+- Watch for: q growing without bound -> a later T NaN (would still stop the run).
