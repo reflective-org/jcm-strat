@@ -22,3 +22,8 @@ Then:
 2. PROGRESS.md row for Phase 20. 3. Commit in /data/JCM_stripped/jcm-strat-phase20 (no push).
 4. Memory file phase20-sso-fixed.md (+ one MEMORY.md line), linked to [[jcm-pr1027-sso-bug]] and
    [[phase19-jcm-update]]. 5. STATUS.md entry and top block.
+
+NOTE (2026-10-07 19:25 PDT): Phase 20 runs with `health_ignore_q_max: true` (Susanne: treat humidity as unimportant for
+now; issue reflective-org/jcm-strat#62). In the record: (1) report the q_max per chunk over the 10 years (grep
+"health_ignore_q_max: not fatal" and "Humidity:" in runs/p20jhsso_19*/log.txt) and where it sits; (2) state plainly
+that the exemption is on and that #62 is open; (3) put "revisit #62" at the top of the Open questions / next steps.
