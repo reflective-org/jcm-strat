@@ -24,3 +24,9 @@ Then:
    metadata type project; body with the key numbers and where things are; link [[jcm-pr1027-sso-bug]],
    [[phase13c-n400]], [[phase13d-jucker-hines]]) and make sure MEMORY.md has exactly one line for it.
 5. Append a STATUS.md entry and refresh its top block.
+
+NOTE (2026-10-07 18:30 PDT, Susanne's decision): 19d and Phase 20 were rerun on the FULL T63L95 grid with cubic SL
+vertical interpolation (strat81 + cubic blew up; L95 + cubic ran 1990 healthy in runs/p19t_l95cubic). So 19d vs the
+old p13jhn400 now differs in BOTH the jcm version AND the grid (strat81 -> L95, 8 -> 22 mesospheric layers); say so
+wherever you attribute a change to "the jcm update". The superseded strat81 + linear chains are in
+runs/superseded_strat81_linear_20261007/ (valid runs, not analysed; mention them as available, nothing more).

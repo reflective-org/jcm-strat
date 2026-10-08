@@ -47,7 +47,7 @@ step "chain finished -> runs/$AGG, runs/$AGG5"
 export JAX_PLATFORMS=cpu
 dfail=0
 for y in $(seq 1990 1999); do
-  python scripts/throughput.py "runs/${PREFIX}_${y}0101" --label "P20 jh + fixed LM n400 $y" --grid T63L81 --csv "$OUT/throughput_p20.csv" 2>/dev/null | grep "throughput\|end-to-end" >> "$LOG"
+  python scripts/throughput.py "runs/${PREFIX}_${y}0101" --label "P20 jh + fixed LM n400 $y" --grid T63L95 --csv "$OUT/throughput_p20.csv" 2>/dev/null | grep "throughput\|end-to-end" >> "$LOG"
 done
 cmp() { local tag=$1 b=$2 a=$3 l=$4 bl=$5 al=$6
   python scripts/phase12_compare.py --before "$b" --after "$a" --tag "$tag" --label "$l" --before-label "$bl" --after-label "$al" --stride 1 \
@@ -75,7 +75,7 @@ grep -l Traceback runs/p20_aoa_*.log runs/p20_score_*.log >> "$LOG" 2>/dev/null 
 step "waiting for the Phase 19d chain (runs/p19jhn400_5yr)"
 wait_chain p19jhn400 72; rc=$?
 if [ $rc -eq 0 ]; then
-  cmp sso5_vs_19d runs/p19jhn400_5yr "runs/$AGG5" "13d physics, strat81, n400, new jcm, 1990-1994: without (19d) -> with the fixed Lott-Miller (20)" \
+  cmp sso5_vs_19d runs/p19jhn400_5yr "runs/$AGG5" "13d physics, L95 cubic, n400, new jcm, 1990-1994: without (19d) -> with the fixed Lott-Miller (20)" \
     "19d (no SSO)" "20 (fixed Lott-Miller)" || dfail=1
   for v in aoa150 aoa_sfc; do
     python scripts/aoa_vs_clams.py "runs/$AGG5" "$OUT" --years 2005-2009 --last-saves 240 --var "$v" --second-run runs/p19jhn400_5yr --second-label "19d no SSO" \

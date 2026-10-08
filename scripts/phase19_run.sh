@@ -57,12 +57,12 @@ export JAX_PLATFORMS=cpu
 dfail=0
 link_first_days "$P13/p13jhn400_10yr" runs/old_p13jhn400_5yr 1826 >> "$LOG" 2>&1
 for y in 1990 1991 1992 1993 1994; do
-  python scripts/throughput.py "runs/${PREFIX}_${y}0101" --label "P19d jh n400 new jcm $y" --grid T63L81 --csv "$OUT/throughput_p19.csv" 2>/dev/null | grep "throughput\|end-to-end" >> "$LOG"
+  python scripts/throughput.py "runs/${PREFIX}_${y}0101" --label "P19d jh n400 new jcm $y" --grid T63L95 --csv "$OUT/throughput_p19.csv" 2>/dev/null | grep "throughput\|end-to-end" >> "$LOG"
 done
 cmp() { local tag=$1 b=$2 a=$3 l=$4 bl=$5 al=$6
   python scripts/phase12_compare.py --before "$b" --after "$a" --tag "$tag" --label "$l" --before-label "$bl" --after-label "$al" --stride 1 \
     --clocks aoa_sfc aoa500 aoa150 --out "$OUT" > "runs/p19_compare_$tag.log" 2>&1; local r=$?; step "compare $tag exit=$r"; return $r; }
-cmp update runs/old_p13jhn400_5yr "runs/$AGG" "Jucker + Hines, strat81, nudged < 400 hPa, 1990-1994: OLD jcm 849893be -> NEW jcm 35dc1997 (stride 1)" \
+cmp update runs/old_p13jhn400_5yr "runs/$AGG" "Jucker + Hines, nudged < 400 hPa, 1990-1994: OLD jcm 849893be strat81 -> NEW jcm 35dc1997 L95 cubic (stride 1)" \
   "old jcm (p13jhn400, first 5 yr)" "new jcm (p19jhn400)" & p1=$!
 cmp vs13d "$P13/p13jh_5yr" "runs/$AGG" "13d (Jucker + Hines, nudged < 150 hPa, old jcm) vs 19d (nudged < 400 hPa, new jcm), 1990-1994 (stride 1)" \
   "13d p13jh (old jcm, < 150 hPa)" "19d p19jhn400 (new jcm, < 400 hPa)" & p2=$!

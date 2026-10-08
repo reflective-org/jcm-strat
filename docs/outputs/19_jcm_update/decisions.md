@@ -262,3 +262,28 @@ pytest on the unported tree: 82 passed, 7 failed. Breakage and fixes:
   logs); Phases 19 and 20 relaunched from scratch (new smokes, new spin-ups, new 19b gate on the linear spin-up;
   Phase 20 waits for it again). Follow-up for Susanne/jcm: report the cubic-interpolation mesospheric blow-up of
   a strat81 dry configuration upstream.
+
+### 2026-10-07 16:40 PDT - Test asked by Susanne: cubic SL on the FULL L95 grid (22 mesospheric layers) does NOT blow up
+- Run by the supervising session (not the agent), GPU 5 (Susanne allowed it for this test): `runs/p19t_l95cubic.sh` ->
+  `runs/p19t_l95cubic/`. = the failing config (p19_jh_n400: Jucker + Hines, n400, sponge levels 1) with
+  `grid=echam_t63_l95_hybrid level_table=null dycore.sl_vertical_interpolation=null` (cubic); 1990, 365 d from ERA5
+  1990-01-01 (no spin-up: no 6-h L95 Dec-1989 window).
+- Result: healthy all year, no health stop; top 22 layers max|u| 89 m/s, T 203-337 K (day 140: 75 m/s, 210-313 K).
+  strat81 + cubic blew up in all 11 segments tried (10-230 d); strat81 + linear peaked at |u| 146 m/s.
+- Reading: the blow-up needs cubic interpolation AND strat81's thinned mesosphere (8 thick layers above 1.08 hPa,
+  interfaces ~0.035/0.073/0.111/0.198/0.333/0.458/0.714 hPa). Not changed for 19d/20 (they stay strat81 + linear).
+
+### 2026-10-07 18:30 PDT - Susanne: 19d and 20 on the FULL L95 grid with cubic (supersedes the 14:19 linear decision)
+- Susanne, after the p19t_l95cubic result: "19d and 20 should be on L95 as well with the cubic".
+- Done by the supervising session: stopped strat_p19_run (19d strat81+linear chain had finished 1990-1994, diagnostics
+  not yet run), strat_p20_run (p20 strat81+linear mid-chain) and the original agent (strat_p19_agent, idle-waiting);
+  Phase 21 untouched. strat81+linear output (chains, spin-ups, smokes, gate, logs, throughput csv) moved to
+  runs/superseded_strat81_linear_20261007/ - valid runs, kept, not analysed.
+- p19_jh_n400.yaml: `override /grid: echam_t63_l95_hybrid`, `level_table: null`, `dycore.sl_vertical_interpolation: null`
+  (cubic); p20_jh_sso_n400 inherits. tests/test_phase19.py now asserts L95 + cubic for every Phase 19-21 run.
+  Pipeline labels T63L81 -> T63L95; write-up prompts told that 19d vs old 13c now changes the grid too.
+- Consequence: 19d no longer isolates "the jcm update alone" - it is jcm update + strat81 -> L95. 20 vs 19d (THE
+  comparison for the fixed Lott-Miller) is unaffected: same grid, same code.
+- Data: L95 6-h nudging windows 1990-1994 were cached (c39313fe, from Phase 12); December 1989 (3 GB) and 1995-1999
+  (155 GB) are prefetched by runs/p19_l95_relaunch.sh (tmux preproc_p19_l95), which relaunches both pipelines
+  (19 on GPU 4, 20 on GPU 1) as soon as December 1989 is cached. The 19b gate reruns on the L95 spin-up.

@@ -1,4 +1,4 @@
-You are the write-up agent for jcm-strat Phase 20 (dry 13d physics + FIXED Lott-Miller SSO, strat81,
+You are the write-up agent for jcm-strat Phase 20 (dry 13d physics + FIXED Lott-Miller SSO, full T63L95 grid with cubic SL interpolation (Susanne 2026-10-07; strat81 + cubic blew up, see Phase 19 decisions.md),
 nudging < 400 hPa, new jcm, 10 yr 1990-1999 after a one-month spin-up). The pipeline
 /data/JCM_stripped/jcm-strat-phase19/scripts/phase20_run.sh has just finished. Runs live in
 /data/JCM_stripped/jcm-strat-phase19/runs (p20jhsso_*); the record lives in the worktree

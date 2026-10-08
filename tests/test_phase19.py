@@ -26,17 +26,18 @@ def test_jcm3_defaults_are_stated(cfgs, e):
     c = cfgs[e]
     assert c.run.sponge.levels == 1 and c.run.sponge.timescale_h is None and c.run.sponge.enspodi is None
     assert "target_T_K" not in c.run.sponge
-    # the dry strat81 runs need jcm 2's linear SL vertical interpolation (cubic blew up, Phase 19 incident); ECHAM keeps cubic
-    assert c.dycore.sl_vertical_interpolation == ("linear" if e in ("p19_jh_n400", "p20_jh_sso_n400") else None)
+    # every Phase 19-21 run uses jcm 3's cubic SL vertical interpolation on the full L95 grid (cubic blew up only on strat81)
+    assert c.dycore.sl_vertical_interpolation is None and c.grid.layers == 95 and c.level_table is None
     assert "start_date" not in c.run and c.run.monthly_means is False and c.run.save_chunks is True
     assert c.run.save_interval == 0.25 and c.run.output_averages is False and c.calendar == "gregorian"
     assert {"aoa", "aoa150", "aoa_sfc", "aoa500", "n2o", "cfc11"} <= set(c.sl_mass_fixer_exclude)
 
 
-def test_p19_is_13c_run2_on_the_new_jcm(cfgs):
+def test_p19_is_13c_run2_on_the_new_jcm_and_l95(cfgs):
     old, new = cfgs["p13_jucker_hines_n400"], cfgs["p19_jh_n400"]
-    assert new.physics == old.physics and new.nudging == old.nudging and new.grid == old.grid
-    assert new.nudging.min_pressure_hpa == 400.0 and new.grid.layers == 81 and new.level_table == "strat"
+    # same physics and nudging as 13c run 2; the grid is the full L95 (Susanne 2026-10-07), 13c ran on strat81
+    assert new.physics == old.physics and new.nudging == old.nudging
+    assert new.nudging.min_pressure_hpa == 400.0 and new.grid.layers == 95 and new.level_table is None
     assert "lott_miller_sso" not in new.physics.terms and "hines_gwd" in new.physics.terms
     assert new.output_drop == old.output_drop
 
