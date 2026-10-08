@@ -92,3 +92,37 @@ re-initialisation, sponge, GPUs, pipelines, diagnostics) are in the Phase 19 log
 - Options not taken: cap q or add a q sink (changes the model state); tune SSO / smooth orography (science change).
 - Relaunch: failed segment moved to runs/failed_q_20261007/p20jhsso_19900101; smoke, spin-up and 19b gate reused.
 - Watch for: q growing without bound -> a later T NaN (would still stop the run).
+
+### 2026-10-07 23:52 PDT - Failure agent: 1997 segment blew up near the surface east of the Tibetan Plateau (T 58-746 K)
+- What failed: pipeline `phase20_run.sh` (relaunched 19:20 PDT, commit 1d8e4a7, GPU 1, RELAUNCHED=0). Segments 1990-1996
+  finished healthy (exit 0, compacted). Segment p20jhsso_19970101 stopped on jcm's health check at day 360
+  (`T_min=58K (< 100K)`, `T_max=746K (> 500K)`), exit 3, 23:50 PDT; chain stopped correctly. Its checkpoint stays at
+  day 350 (1997-12-17); 1998-1999 not run; the 10-yr diagnostics and write-up did not run.
+- Diagnosis (6-h output, longrun_day340/350/360.nc): no NaN. Up to 1997-12-19 18Z everything is normal (T_max 330-355 K
+  on the lowest level over Arctic land, T_min a slow drift 180 -> 154 K at the Antarctic surface, within what 19d also
+  shows; 19d and earlier p20 years reach T 147-150 / 357-392 K too). Then from 1997-12-20 00Z a local runaway at
+  sigma 0.98 (lowest levels), 106.9E 30.8N (Sichuan Basin, east flank of the Tibetan Plateau): T_max 406 -> 639 K in
+  24 h, peaking 780 K; a cold partner two grid points east at 114.4E 30.8N falls to 25 K. A one-to-two-point
+  hot/cold dipole that grows for a week = a grid-scale numerical instability, not a meteorological event. It sits in
+  the same SE-Tibet sector as the issue #62 humidity spikes. Humidity was NOT large at the time (chunk q_max 2.4 g/kg;
+  1997 max 19 g/kg), but the exempted q spikes recurred in every year 1990-1996 (q_max 105, 149, 58, 33, 162, 39,
+  110 g/kg; 19d without SSO: <= 6 g/kg). 19d (same config, no Lott-Miller) ran 1990-1994 with no such event.
+  So the fixed Lott-Miller SSO over the steep SE-Tibet orography is again the prime suspect; the temperature checks
+  that the #62 exemption left fatal caught it, as intended.
+- Options: (a) relaunch unchanged (the model is deterministic from the 1996 checkpoint: it would fail again at the
+  same day after ~30 min of GPU 1); (b) loosen the temperature thresholds (forbidden, and the state is unphysical);
+  (c) SSO limiter / orography smoothing / shorter time step / restart with a perturbation (science or config change -
+  not mine to make); (d) do not relaunch, record, hand to Susanne.
+- Chosen: (d). Why: a reproducible physical/numerical instability tied to the term this phase tests; RELAUNCHED=0 only
+  covers mechanical causes. Nothing moved or deleted; runs/p20jhsso_19970101 left in place as evidence.
+- For Susanne to decide:
+  1. Whether to use what exists: 1990-1996 are complete and healthy. THE comparison of this phase (sso5_vs_19d, 5 yr)
+     needs only 1990-1994, so the 5-yr aggregate + diagnostics + write-up could run unchanged in scope; only the
+     10-yr / ERA5 1998-99 score part is lost. That needs a go and a pipeline variant that stops the chain at 1996 (or
+     1994) - not done here.
+  2. Whether the fixed Lott-Miller needs a stabiliser before production use (tendency cap, implicit/limited drag,
+     orography smoothing over SE Tibet, smaller dt) - with #62 this is now the second symptom in the same place.
+     Suggested diagnostic: rerun 1997-12-07 .. 12-21 from runs/p20jhsso_19970101/checkpoint.ckpt (day 350) with 6-h
+     SSO u/v/T tendencies at 100-115E, 25-35N.
+  3. Before any relaunch of the chain, move runs/p20jhsso_19970101 aside (it is incomplete).
+  GPU 1 is idle. Phase 21 (strat_p21_run, GPUs 2/3) is unaffected.
