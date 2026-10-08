@@ -53,3 +53,32 @@ re-initialisation, sponge, GPUs, pipelines, diagnostics) are in the Phase 19 log
 - Chosen: p19_jh_n400 (and so p20_jh_sso_n400) use `dycore.sl_vertical_interpolation: linear`; chain_segments.sh
   fails a segment on a health stop; the 13:27 output moved to runs/invalid_cubic_20261007/; Phase 20 relaunched from
   scratch at 14:30 PDT (tmux strat_p20_run, GPU 1). The comparison with 19d stays clean: both use linear.
+
+### 2026-10-07 19:04 PDT - Failure agent: L95 + cubic run stopped at 1990 day 60 (q_max 104.7 g/kg)
+- What failed: pipeline `phase20_run.sh` (relaunched 18:16 PDT, commit ca392cf, GPU 1, RELAUNCHED=0). Smoke PASS,
+  spin-up p20jhsso_spinup_19891201 healthy (q_max 22 -> 7 g/kg, the same as 19d's spin-up), 19b gate PASS, then segment
+  p20jhsso_19900101 stopped on jcm's health check at day 60 (`q_max=104.7 g/kg (> 100)`), exit 3, chain stopped
+  correctly (the chain health-stop fix worked; no partial year spliced). Checkpoint stays at day 50.
+- Diagnosis: no NaN, T 193-331 K, |u| < 150 m/s - a local moisture spike, not a general blow-up. Chunk q_max:
+  6.3, 22.6, 6.7, 21.8, 79.8, 104.7 g/kg (days 10-60). In the 6-h output the maximum is on the LOWEST model level
+  (sigma 0.983) at the southeastern edge of the Tibetan plateau / Himalaya: 89.7 g/kg at 99.4E 25.2N (day 50 file),
+  173 g/kg at 97.5E 28.9N (day 60 file). The 19d baseline (identical config WITHOUT lott_miller_sso, same jcm, L95
+  cubic) is at q_max 3.6-5.8 g/kg through day 110 of 1990. The only difference is the fixed Lott-Miller SSO term, so
+  the cause is the SSO drag (with the fixed 100x factor) over the steepest orography interacting with the
+  near-surface moisture (likely a grid-point convergence / dry-model water positivity issue at the surface). This is
+  scientific, not mechanical.
+- Options: (a) relaunch unchanged (deterministic: it would fail again at day 60); (b) loosen the q_max health
+  threshold (forbidden: changing a threshold to make it pass); (c) change SSO settings / time step / humidity
+  handling (forbidden for this agent: physics/config science); (d) do not relaunch, record, hand to Susanne.
+- Chosen: (d). Why: a reproducible physical instability tied to the one physics term this phase tests; nothing I
+  may change fixes it, and a relaunch would only burn GPU 1 for an hour to fail again.
+- For Susanne to decide:
+  1. Whether the fixed Lott-Miller is unstable on L95 at this time step over the Himalaya, or whether humidity in the
+     dry configuration just needs a cap/sink (in a dry run q is near-passive; a 100 g/kg surface value may not
+     matter for the strat circulation, but the health check is binding). Suggested test: rerun 1990 from the
+     spin-up checkpoint with daily output for days 30-60 and look at SSO u/v tendencies and omega at 95-100E,
+     25-30N; compare with the old-jcm 13c/13d runs that had the (unfixed) Lott-Miller.
+  2. Options then: smaller SSO time-step/implicit limiter, SSO tendency cap, orography smoothing, or keep SSO off
+     (13d/19d) and drop Phase 20.
+  3. Before any relaunch move runs/p20jhsso_19900101 aside (it is incomplete; the spin-up can be reused).
+  GPU 1 is now idle. strat_p19_run (19d, GPU 4) and Phase 21 are unaffected and keep running.
