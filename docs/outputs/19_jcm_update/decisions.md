@@ -268,8 +268,12 @@ pytest on the unported tree: 82 passed, 7 failed. Breakage and fixes:
   `runs/p19t_l95cubic/`. = the failing config (p19_jh_n400: Jucker + Hines, n400, sponge levels 1) with
   `grid=echam_t63_l95_hybrid level_table=null dycore.sl_vertical_interpolation=null` (cubic); 1990, 365 d from ERA5
   1990-01-01 (no spin-up: no 6-h L95 Dec-1989 window).
-- Result: healthy all year, no health stop; top 22 layers max|u| 89 m/s, T 203-337 K (day 140: 75 m/s, 210-313 K).
-  strat81 + cubic blew up in all 11 segments tried (10-230 d); strat81 + linear peaked at |u| 146 m/s.
+- Result: healthy all year, no health stop. CORRECTED 19:10 PDT (the first numbers, 89 m/s and 203-337 K, were the LOWEST
+  22 layers - the level index runs surface -> top): top 22 layers (< 1.01 hPa) max|u| 204 m/s, T 149-397 K over the
+  year (day 140: 184 m/s, 169-370 K; day 180: 204 m/s, 157-388 K). That is close to the values the strat81 + cubic runs
+  showed just before they went NaN (|u| 190-230 m/s, T up to 350-420 K) - healthy for one year, but not comfortably.
+  strat81 + cubic blew up in all 11 segments tried (10-230 d); strat81 + linear (p19t_linear), top 22 layers: max|u|
+  181 m/s, T 158-325 K (on strat81 the top 22 layers reach down to ~5 hPa, so not like for like).
 - Reading: the blow-up needs cubic interpolation AND strat81's thinned mesosphere (8 thick layers above 1.08 hPa,
   interfaces ~0.035/0.073/0.111/0.198/0.333/0.458/0.714 hPa). Not changed for 19d/20 (they stay strat81 + linear).
 

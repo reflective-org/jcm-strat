@@ -14,7 +14,7 @@ defaults:
 
 # Susanne 2026-10-07 18:10 PDT: 19d and 20 run on the FULL L95 grid (22 mesospheric layers, not strat81's 8) with jcm 3's
 # cubic SL vertical interpolation. strat81 + cubic blew up in every segment; L95 + cubic ran 1990 healthy
-# (runs/p19t_l95cubic, max|u| 89 m/s above 1 hPa). The strat81 + linear chains are in runs/superseded_strat81_linear_20261007/.
+# (runs/p19t_l95cubic; above 1 hPa max|u| 204 m/s, T 149-397 K - stable for a year, not by a wide margin). The strat81 + linear chains are in runs/superseded_strat81_linear_20261007/.
 level_table: null
 dycore:
   sl_vertical_interpolation: null
