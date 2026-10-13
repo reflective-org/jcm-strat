@@ -27,13 +27,18 @@ last_ok_day() { grep -oE 'Day [0-9]+ \([0-9.]+ yr\) \| OK' "$1/log.txt" | tail -
 rescue() {     # $1 = runs/<PREFIX>_<YYYY>0101 stopped on a health check
   local seg="$1" y; y="$(basename "$seg" | sed -E 's/.*_([0-9]{4})0101$/\1/')"
   local part1="${seg}_part1" r="${seg}_rescue"
-  [ -e "$part1" ] && { say "FAIL: $y already had a rescue and stopped again - not retrying"; return 1; }
-  local D; D="$(last_ok_day "$seg")"; [ -n "$D" ] || { say "FAIL: no healthy chunk in $seg"; return 1; }
+  local src="$seg"
+  if [ -e "$part1" ]; then
+    # a rescue that was interrupted (node reboot) left part1 and no rebuilt $seg: redo the rescue from part1
+    [ -e "$seg" ] && { say "FAIL: $y already had a rescue and stopped again - not retrying"; return 1; }
+    src="$part1"; say "resuming the interrupted rescue of $y from $part1"
+  fi
+  local D; D="$(last_ok_day "$src")"; [ -n "$D" ] || { say "FAIL: no healthy chunk in $src"; return 1; }
   local ndays start rem
   ndays=$(python3 -c "import datetime as d; print((d.date($y+1,1,1)-d.date($y,1,1)).days)")
   start=$(python3 -c "import datetime as d; print(d.date($y,1,1)+d.timedelta(days=$D))"); rem=$(( ndays - D ))
   say "rescue $y: last healthy day $D ($start), rerun $rem d at run.time_step=$RESCUE_DT from its checkpoint"
-  mv "$seg" "$part1"; rm -rf "$r"; mkdir -p "$r"
+  [ "$src" = "$part1" ] || mv "$seg" "$part1"; rm -rf "$r"; mkdir -p "$r"
   echo "[launch] $(date -Is) rescue of $part1 from day $D at dt=$RESCUE_DT GPU=$GPU" >> "$r/log.txt"
   ( cd "$r" && python -m jcm_strat.main --config-dir "$REPO/jcm_strat/config" "+experiment=$EXP" ++run.checkpoint_path=checkpoint.ckpt \
       "run.start_time=$start" "run.total_time=$rem" "run.time_step=$RESCUE_DT" "physics.terms.held_suarez.qbo.year=$y" \
@@ -64,6 +69,7 @@ for y in $(seq 1997 "$Y_LAST"); do
   if grep -q '\[launch\].*exit=0' "$seg/log.txt" 2>/dev/null && ! grep -q "atmosphere unhealthy" "$seg/log.txt"; then continue; fi
   # 1997 already stopped on the health check (2026-10-07): rescue it directly instead of rerunning the whole year
   if [ -d "$seg" ] && grep -q "atmosphere unhealthy" "$seg/log.txt" 2>/dev/null; then rescue "$seg" || exit 1; continue; fi
+  if [ ! -e "$seg" ] && [ -d "${seg}_part1" ]; then rescue "$seg" || exit 1; continue; fi
   free=$(df -BG --output=avail /data | tail -1 | tr -dc 0-9)
   [ "$free" -ge "$MIN_FREE_GB" ] || { say "FAIL: only ${free} GB free on /data (< $MIN_FREE_GB) before $y - stopping"; exit 1; }
   say "year $y (free ${free} GB)"
