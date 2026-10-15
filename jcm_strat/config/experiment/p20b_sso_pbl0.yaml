@@ -1,0 +1,11 @@
+# @package _global_
+# Phase 20b (Susanne 2026-10-15): Phase 20 (dry 13d + fixed Lott-Miller, n400, L95 + cubic) with the bottom two levels
+# NUDGED as well (pbl_levels 2 -> 0). Phase 20 blew up near the surface east of Tibet on 1997-12-20; 19d (no Lott-Miller)
+# and 21a/21b (full physics + Lott-Miller) did not, so the un-nudged bottom levels of the dry model - where jcm's default
+# pbl_levels: 2 leaves nothing but the dynamics and the Lott-Miller drag, there being no boundary layer - are the suspect.
+# Nothing else changes; Lott-Miller still launches its waves from the (now ERA5-held) low-level flow and breaks them aloft.
+defaults:
+  - /experiment/p20_jh_sso_n400
+
+nudging:
+  pbl_levels: 0
