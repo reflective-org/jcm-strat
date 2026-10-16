@@ -1,0 +1,10 @@
+# @package _global_
+# Phase 20b extension (Susanne 2026-10-15): p20b_sso_pbl0 continued 1999-2009 (20 years in total) with the Phase 11a
+# production tracers WRITTEN. Physics, nudging (bottom levels included) and tracers are p20b_sso_pbl0's, so the extension
+# restarts from its 1998 checkpoint; the tracers are the ones injected once on 1990-01-01 (no re-injection). Only
+# output_drop changes, exactly as in p20_ext: the nine moist_air_state diagnostics stay dropped, the injection tracers
+# are written 6-hourly from 1999 on.
+defaults:
+  - /experiment/p20b_sso_pbl0
+
+output_drop: [air_density, height_full, height_half, layer_thickness, pressure_full, pressure_half, pressure_thickness, relative_humidity, surface_pressure]
