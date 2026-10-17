@@ -10,3 +10,6 @@
 - 2026-10-16 19:29 PDT - **C** [score] C2: u_ls_ext 5.18 m/s, u50_ext 4.18, u_up_ext 9.19, T_ls 1.73 K, jet50 N 15@53 (ERA5 17@59), S 43@-59 (ERA5 47@-57), cap T50 N +0.8 S +1.6 K, w_logerr 0.438, age150 {trop: 1.22, n50_70: 3.52, s50_70: 3.12}
 - 2026-10-16 20:22 PDT - **B5** [score] B51: u_ls_ext 5.51 m/s, u50_ext 4.10, u_up_ext 9.32, T_ls 4.64 K, jet50 N 19@59 (ERA5 17@59), S 46@-57 (ERA5 47@-57), cap T50 N -3.5 S -0.8 K, w_logerr 0.069, age150 {trop: 0.97, n50_70: 3.26, s50_70: 3.08}
 - 2026-10-16 20:23 PDT - **A** [score] A3: u_ls_ext 7.06 m/s, u50_ext 6.00, u_up_ext 10.14, T_ls 4.38 K, jet50 N 11@57 (ERA5 17@59), S 41@-61 (ERA5 47@-57), cap T50 N +0.6 S +0.7 K, w_logerr 0.113, age150 {trop: 1.11, n50_70: 3.78, s50_70: 3.51}
+- 2026-10-16 20:23 PDT - **A** converged after iteration 3
+- 2026-10-16 20:23 PDT - **AL** started: as A, but the correction reaches down to 400 hPa (lowermost extratropical stratosphere; total-blend mode) (MODE=zonal LAT=25 35 PR=1 400 SMOOTH=1 ALPHA=default CMODE=total OVR=none; GPU 0)
+- 2026-10-16 20:26 PDT - **C** [score] C3: u_ls_ext 4.12 m/s, u50_ext 3.31, u_up_ext 8.31, T_ls 1.37 K, jet50 N 17@53 (ERA5 17@59), S 45@-57 (ERA5 47@-57), cap T50 N +0.9 S +0.6 K, w_logerr 0.622, age150 {trop: 1.19, n50_70: 3.34, s50_70: 2.71}

@@ -4,6 +4,7 @@ u_ls_ext = RMSE of monthly zonal-mean u, 100-10 hPa, |lat| >= 30 (the ranking me
 
 | run | u_ls_ext | u50_ext | u_up_ext | T_ls | jet50 N | jet50 S | jet10 N | jet10 S | cap T50 N / S | w_logerr | age150 trop / 50-70N / 50-70S | description |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
+| C3 | 4.12 | 3.31 | 8.31 | 1.37 | 17@53 (17@59) | 45@-57 (47@-57) | 20@62 (26@62) | 71@-59 (76@-57) | +0.9 / +0.6 | 0.622 | 1.19 / 3.34 / 2.71 | Chang 2006 / Mooring & Linz iteration (zonal mean): pointwise, all latitudes, 400-1 hPa, alpha 2/3, no smoothing, iteration 3 |
 | C2 | 5.18 | 4.18 | 9.19 | 1.73 | 15@53 (17@59) | 43@-59 (47@-57) | 18@62 (26@62) | 67@-59 (76@-57) | +0.8 / +1.6 | 0.438 | 1.22 / 3.52 / 3.12 | Chang 2006 / Mooring & Linz iteration (zonal mean): pointwise, all latitudes, 400-1 hPa, alpha 2/3, no smoothing, iteration 2 |
 | B51 | 5.51 | 4.10 | 9.32 | 4.64 | 19@59 (17@59) | 46@-57 (47@-57) | 30@64 (26@62) | 72@-59 (76@-57) | -3.5 / -0.8 | 0.069 | 0.97 / 3.26 / 3.08 | as A + polar-cap relaxation time <= 5 d poleward of 60 deg (blend from 50), iteration 1 |
 | B50 | 6.19 | 4.84 | 10.15 | 5.36 | 23@57 (17@59) | 48@-55 (47@-57) | 33@62 (26@62) | 71@-59 (76@-57) | -8.1 / -2.5 | 0.113 | 0.94 / 3.11 / 3.02 | as A + polar-cap relaxation time <= 5 d poleward of 60 deg (blend from 50), iteration 0 |
