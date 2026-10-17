@@ -21,3 +21,6 @@
 - 2026-10-16 22:21 PDT - **C** [score] C5: u_ls_ext 3.48 m/s, u50_ext 2.85, u_up_ext 6.77, T_ls 1.10 K, jet50 N 19@53 (ERA5 17@59), S 47@-57 (ERA5 47@-57), cap T50 N +0.0 S -0.5 K, w_logerr 1.268, age150 {trop: 1.21, n50_70: 3.26, s50_70: 2.55}
 - 2026-10-16 23:18 PDT - **B5** [score] B54: u_ls_ext 5.48 m/s, u50_ext 4.39, u_up_ext 9.32, T_ls 4.21 K, jet50 N 15@59 (ERA5 17@59), S 45@-59 (ERA5 47@-57), cap T50 N +0.3 S +0.1 K, w_logerr 0.101, age150 {trop: 1.0, n50_70: 3.43, s50_70: 3.1}
 - 2026-10-16 23:18 PDT - **B5** converged after iteration 4
+- 2026-10-16 23:18 PDT - **B5** finished
+- 2026-10-16 23:18 PDT - **B_final** started: 1990-2009 with B52
+- 2026-10-16 23:19 PDT - **AL** [score] AL3: u_ls_ext 4.64 m/s, u50_ext 3.08, u_up_ext 9.57, T_ls 4.19 K, jet50 N 14@51 (ERA5 17@59), S 44@-57 (ERA5 47@-57), cap T50 N +2.1 S +0.5 K, w_logerr 0.065, age150 {trop: 0.95, n50_70: 3.22, s50_70: 3.0}
