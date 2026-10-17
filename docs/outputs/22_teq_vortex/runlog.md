@@ -45,3 +45,7 @@
 - 2026-10-17 05:11 PDT - **C3** [score] C36: u_ls_ext 3.61 m/s, u50_ext 2.94, u_up_ext 6.31, T_ls 1.08 K, jet50 N 20@57 (ERA5 17@59), S 47@-55 (ERA5 47@-57), cap T50 N -0.8 S -0.8 K, w_logerr None, age150 {trop: 1.29, n50_70: 3.27, s50_70: 2.64}
 - 2026-10-17 06:11 PDT - **C3** [score] C37: u_ls_ext 3.49 m/s, u50_ext 2.83, u_up_ext 6.12, T_ls 1.03 K, jet50 N 19@55 (ERA5 17@59), S 46@-55 (ERA5 47@-57), cap T50 N -0.6 S -0.5 K, w_logerr None, age150 {trop: 1.3, n50_70: 3.23, s50_70: 2.62}
 - 2026-10-17 07:12 PDT - **C3** [score] C38: u_ls_ext 3.52 m/s, u50_ext 2.87, u_up_ext 6.33, T_ls 1.04 K, jet50 N 19@55 (ERA5 17@59), S 46@-55 (ERA5 47@-57), cap T50 N -0.6 S -0.5 K, w_logerr None, age150 {trop: 1.32, n50_70: 3.2, s50_70: 2.65}
+- 2026-10-17 07:12 PDT - **C3** finished
+- 2026-10-17 07:12 PDT - **C3_final** started: 1990-2009 with C37
+- 2026-10-17 09:28 PDT - **A_final** [score] A_final: u_ls_ext 7.07 m/s, u50_ext 5.78, u_up_ext 10.47, T_ls 4.50 K, jet50 N 11@53 (ERA5 17@59), S 41@-59 (ERA5 47@-57), cap T50 N +0.1 S +1.0 K, w_logerr 0.108, age150 {trop: 1.12, n50_70: 3.77, s50_70: 3.55}
+- 2026-10-17 09:41 PDT - **A_final** diagnostics in `final/A_final/`
