@@ -24,3 +24,4 @@
 - 2026-10-16 23:18 PDT - **B5** finished
 - 2026-10-16 23:18 PDT - **B_final** started: 1990-2009 with B52
 - 2026-10-16 23:19 PDT - **AL** [score] AL3: u_ls_ext 4.64 m/s, u50_ext 3.08, u_up_ext 9.57, T_ls 4.19 K, jet50 N 14@51 (ERA5 17@59), S 44@-57 (ERA5 47@-57), cap T50 N +2.1 S +0.5 K, w_logerr 0.065, age150 {trop: 0.95, n50_70: 3.22, s50_70: 3.0}
+- 2026-10-16 23:21 PDT - **C** [score] C6: u_ls_ext 3.50 m/s, u50_ext 2.91, u_up_ext 6.64, T_ls 1.10 K, jet50 N 19@55 (ERA5 17@59), S 47@-55 (ERA5 47@-57), cap T50 N -0.7 S -0.8 K, w_logerr None, age150 {trop: 1.23, n50_70: 3.26, s50_70: 2.61}
