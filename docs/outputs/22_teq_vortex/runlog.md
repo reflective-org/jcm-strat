@@ -35,3 +35,4 @@
 - 2026-10-17 03:09 PDT - **AL** [score] AL7: u_ls_ext 3.84 m/s, u50_ext 2.57, u_up_ext 8.05, T_ls 3.92 K, jet50 N 19@59 (ERA5 17@59), S 46@-57 (ERA5 47@-57), cap T50 N +0.0 S -0.1 K, w_logerr 0.067, age150 {trop: 0.93, n50_70: 3.11, s50_70: 2.74}
 - 2026-10-17 03:14 PDT - **C3** [score] C34: u_ls_ext 3.74 m/s, u50_ext 3.06, u_up_ext 6.34, T_ls 1.17 K, jet50 N 19@57 (ERA5 17@59), S 46@-57 (ERA5 47@-57), cap T50 N -0.3 S -0.2 K, w_logerr 0.907, age150 {trop: 1.23, n50_70: 3.27, s50_70: 2.6}
 - 2026-10-17 04:06 PDT - **AL** [score] AL8: u_ls_ext 3.88 m/s, u50_ext 2.57, u_up_ext 8.29, T_ls 3.89 K, jet50 N 18@59 (ERA5 17@59), S 47@-57 (ERA5 47@-57), cap T50 N +0.4 S -0.1 K, w_logerr 0.072, age150 {trop: 0.92, n50_70: 3.11, s50_70: 2.71}
+- 2026-10-17 04:07 PDT - **AL** converged after iteration 8
