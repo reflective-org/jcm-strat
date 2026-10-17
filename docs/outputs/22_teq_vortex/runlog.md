@@ -4,3 +4,4 @@
 - 2026-10-16 18:31 PDT - **B** [score] B0: u_ls_ext 6.89 m/s, u50_ext 5.11, u_up_ext 11.18, T_ls 5.17 K, jet50 N 16@53 (ERA5 17@59), S 45@-57 (ERA5 47@-57), cap T50 N -2.4 S +0.6 K, w_logerr 0.091, age150 {trop: 1.01, n50_70: 3.31, s50_70: 3.28}
 - 2026-10-16 18:31 PDT - **B5** started: as A + polar-cap relaxation time <= 5 d poleward of 60 deg (blend from 50) (MODE=zonal LAT=25 35 PR=1 100 SMOOTH=1 ALPHA=default CMODE=jfv OVR=++physics.terms.held_suarez.tau_polar_days=5; GPU 1)
 - 2026-10-16 18:31 PDT - **A** [score] A1: u_ls_ext 7.08 m/s, u50_ext 5.66, u_up_ext 9.90, T_ls 4.66 K, jet50 N 12@51 (ERA5 17@59), S 40@-59 (ERA5 47@-57), cap T50 N -0.5 S +1.5 K, w_logerr 0.093, age150 {trop: 1.11, n50_70: 3.71, s50_70: 3.53}
+- 2026-10-16 18:32 PDT - **C** [score] C1: u_ls_ext 6.26 m/s, u50_ext 5.23, u_up_ext 9.45, T_ls 2.53 K, jet50 N 14@55 (ERA5 17@59), S 41@-59 (ERA5 47@-57), cap T50 N -0.7 S +1.9 K, w_logerr 0.271, age150 {trop: 1.18, n50_70: 3.71, s50_70: 3.64}
