@@ -12,8 +12,8 @@ SAME months, and the cumulative additive correction to T_eq becomes
 * ``--mode zonal`` (Phase 17 on p20b): zonal means; ERA5 = cache/era5_ref/era5_zm_monthly_<year>.nc interpolated in log p onto the
   model's reference levels; S = Phase 17's 1-2-1 smoothing (twice in latitude, once periodic in month) with ``--smooth``.
 * ``--mode chang3d`` (Chang 2006, as used by Wu & Reichler 2018 and Mooring & Linz): the full 3-D monthly mean T(month, lev, lat,
-  lon) against ERA5's 3-D monthly mean from the nudging cache cache/era5/wb2_192x96_l95_*_6h_u-v-T.nc (already on the model grid
-  and L95 levels; the cache is stored top level first), pointwise, no smoothing; Chang/Wu-Reichler's step is alpha = 2/3.
+  lon) against ERA5's 3-D monthly mean (CDS monthly means 1-500 hPa, cache/era5_ref/era5_t3d_monthly_<y>.nc), pointwise, no
+  smoothing; Chang/Wu-Reichler's step is alpha = 2/3.
 
 W is the region mask on the INCREMENT (the previous correction is kept everywhere): 1 for p_ref in ``--p-range`` (hPa) and
 |lat| >= ``--lat-mask``[1], 0 for |lat| <= ``--lat-mask``[0] (sin^2 taper; ``--lat-mask 0 0`` = all latitudes); above the
@@ -33,7 +33,6 @@ import strat_compare as sc        # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ERA5_ZM = "/data/JCM_stripped/jcm-strat/cache/era5_ref/era5_zm_monthly_{y}.nc"
-ERA5_3D = os.path.join(REPO, "cache", "era5", "wb2_192x96_l95_*_{y0}-12-31_{y1}-01-03_6h_u-v-T.nc")
 
 
 def run_files(rundir):
@@ -84,20 +83,31 @@ def era5_zonal(keys, p_ref, lat):
     return out
 
 
-def era5_3d(keys):
-    """ERA5 monthly-mean 3-D T on the model grid/levels from the nudging cache: (lev surface-first, lat, lon) per key."""
+ERA5_T3D = os.path.join(REPO, "cache", "era5_ref", "era5_t3d_monthly_{y}.nc")
+
+
+def era5_3d(keys, p_ref, lat, lon):
+    """ERA5 monthly-mean 3-D T on the model grid and reference levels, (lev surface-first, lat, lon) per key, from the CDS monthly
+    means 1-500 hPa (scripts/fetch_era5_t3d_monthly.py; the WeatherBench2 nudging cache cannot be used: 13 levels, clamped above
+    50 hPa). Bilinear in lat/lon, linear in log p, clamped outside 1-500 hPa (the update mask is zero there)."""
     out = {}
     for y in sorted({k[0] for k in keys}):
-        fs = glob.glob(ERA5_3D.format(y0=y - 1, y1=y + 1))
-        if not fs:
-            raise SystemExit(f"no ERA5 nudging cache file for {y} ({ERA5_3D.format(y0=y - 1, y1=y + 1)})")
-        ds = xr.open_dataset(fs[0], decode_times=True)
+        f = ERA5_T3D.format(y=y)
+        if not os.path.exists(f):
+            raise SystemExit(f"missing {f} (scripts/fetch_era5_t3d_monthly.py)")
+        ds = xr.open_dataset(f, decode_times=True)
+        ren = {c: n for c, n in (("valid_time", "time"), ("pressure_level", "plev"), ("latitude", "lat"), ("longitude", "lon")) if c in ds.dims or c in ds.coords}
+        ds = ds.rename(ren).sortby("lat").sortby("plev")
+        t = ds["t"] if "t" in ds else ds["temperature"]
+        t = xr.concat([t, t.isel(lon=0).assign_coords(lon=360.0)], "lon")                # periodic edge for interpolation
+        t = t.interp(lat=lat, lon=lon)
+        lp = np.log(ds.plev.values.astype(float)); lpo = np.log(np.clip(p_ref, np.exp(lp[0]), np.exp(lp[-1])))
         for m in range(1, 13):
             if (y, m) not in keys:
                 continue
-            sel = (ds.time.dt.year == y) & (ds.time.dt.month == m)
-            T = ds["T"].sel(time=sel).mean("time").transpose("lev", "lat", "lon").values.astype("f8")
-            out[(y, m)] = T[::-1]                                   # cache is top-first; model output is surface-first
+            a = t.sel(time=t.time.dt.month == m).isel(time=0).transpose("plev", "lat", "lon").values.astype("f8")
+            j = np.clip(np.searchsorted(lp, lpo) - 1, 0, lp.size - 2); w = np.clip((lpo - lp[j]) / (lp[j + 1] - lp[j]), 0, 1)
+            out[(y, m)] = (1 - w)[:, None, None] * a[j] + w[:, None, None] * a[j + 1]       # (lev, lat, lon)
         ds.close()
     return out
 
@@ -138,7 +148,7 @@ def main():
     t0, t1 = np.datetime64(a.t0), np.datetime64(a.t1)
     mm, p_ref, lat, lon = model_monthly(a.rundir, t0, t1, three)
     keys = list(mm)
-    ref = era5_3d(keys) if three else era5_zonal(keys, p_ref, lat)
+    ref = era5_3d(keys, p_ref, lat, lon) if three else era5_zonal(keys, p_ref, lat)
     # calendar-month means of the error over the window
     shp = mm[keys[0]].shape
     err = np.zeros((12,) + shp); n = np.zeros(12)
