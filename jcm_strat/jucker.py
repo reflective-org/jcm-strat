@@ -40,6 +40,8 @@ import jcm.constants as jcm_constants
 from jcm.dycore.dinosaur.dycore import physics_specs_from_constants
 from jcm.physics_interface import PhysicsState, PhysicsTendency
 
+from jcm.physics.coords_util import column_lat_lon
+
 from jcm_strat.held_suarez_columns import HeldSuarezColumns
 from jcm_strat.polvani_kushner import P0_PA
 from jcm_strat.qbo_nudging import PolvaniKushnerQbo
@@ -59,13 +61,41 @@ def load_jfv_table(path: str = DEFAULT_DATA):
 
 
 def load_te_correction(path: str):
-    """Phase 17 T_e correction file -> (p_hpa ascending, lat_deg ascending, dte[12, np, nlat] K)."""
+    """T_e correction file -> (p_hpa ascending, lat_deg ascending, dte, lon_deg or None).
+
+    ``dte`` is [12, np, nlat] K (Phase 17, zonally uniform) or, with a ``lon`` dimension, [12, np, nlat, nlon] K
+    (Phase 22: the Chang 2006 / Mooring & Linz 3-D iteration on the model's own grid)."""
     import xarray as xr
     with xr.open_dataset(path, decode_times=False) as d:
         d = d.sortby("pfull").sortby("lat")
-        if d.dte.shape[0] != 12:
-            raise ValueError(f"{path}: dte must have 12 months first, got {d.dte.shape}")
-        return np.asarray(d.pfull.values, float), np.asarray(d.lat.values, float), np.asarray(d.dte.values, float)
+        has_lon = "lon" in d.dte.dims
+        if has_lon:
+            d = d.sortby("lon")
+        dims = ("month", "pfull", "lat") + (("lon",) if has_lon else ())
+        dte = d.dte.transpose(*dims)
+        if dte.shape[0] != 12:
+            raise ValueError(f"{path}: dte must have 12 months first, got {dte.shape}")
+        return (np.asarray(d.pfull.values, float), np.asarray(d.lat.values, float), np.asarray(dte.values, float),
+                np.asarray(d.lon.values, float) if has_lon else None)
+
+
+def correction_on_columns(path, p_out_hpa, lat_cols_deg, lon_cols_deg):
+    """The correction of ``path`` on (12, nlev, ncols): log-p interpolation; a 3-D file is read at the nearest file
+    latitude/longitude of each column (it is written on the model's own grid, so that is the column itself)."""
+    c_p, c_lat, dte, c_lon = load_te_correction(path)
+    if c_lon is None:
+        return interpolate_table(dte, c_p, c_lat, p_out_hpa, lat_cols_deg)
+    ilat = np.abs(np.asarray(lat_cols_deg)[:, None] - c_lat[None, :]).argmin(1)
+    dl = np.abs((np.asarray(lon_cols_deg)[:, None] - c_lon[None, :] + 180.0) % 360.0 - 180.0)
+    ilon = dl.argmin(1)
+    cols = dte[:, :, ilat, ilon]                                                 # (12, np, ncols)
+    lp, lpo = np.log(c_p), np.log(np.asarray(p_out_hpa, float))
+    out = np.empty((12, lpo.size, cols.shape[2]))
+    for m in range(12):
+        for k_out, x in enumerate(lpo):                                          # linear in log p, clamped at the ends
+            j = int(np.clip(np.searchsorted(lp, x) - 1, 0, lp.size - 2)); w = float(np.clip((x - lp[j]) / (lp[j + 1] - lp[j]), 0.0, 1.0))
+            out[m, k_out] = (1.0 - w) * cols[m, j] + w * cols[m, j + 1]
+    return out
 
 
 def interpolate_table(field, p_hpa, lat_deg, p_out_hpa, lat_out_deg):
@@ -84,6 +114,7 @@ class JuckerColumns(PolvaniKushnerQbo):
 
     def __init__(self, data_file: str = DEFAULT_DATA, p_bd_hpa: float = 100.0, p_hs_hpa: float = 250.0,
                  tau_scale: float = 1.0, tau_max_days: float | None = None, te_correction_file: str | None = None,
+                 te_correction_mode: str = "jfv", tau_polar_days: float | None = None, tau_polar_lat_deg: tuple = (50.0, 60.0),
                  **pk_kwargs) -> None:
         super().__init__(**pk_kwargs)
         # Phase 17: an additive correction dT_e(month, p, lat) in K on the JFV T_e (scripts/teq_correction.py writes it from the
@@ -91,6 +122,20 @@ class JuckerColumns(PolvaniKushnerQbo):
         self.te_correction_file = None if te_correction_file in (None, "", "null") else str(te_correction_file)
         if self.te_correction_file is not None and not os.path.exists(self.te_correction_file):
             raise FileNotFoundError(self.te_correction_file)
+        # Phase 22: ``te_correction_mode: total`` adds the correction to the BLENDED T_eq on every level (the file then carries it
+        # down through the JFV/Held-Suarez blend, 100-250 hPa, to the nudged levels; zero where the file is zero), instead of to the
+        # JFV T_e only (``jfv``, Phase 17: below 100 hPa it fades with the blend and is gone at 250 hPa).
+        if te_correction_mode not in ("jfv", "total"):
+            raise ValueError(f"te_correction_mode={te_correction_mode!r}; expected 'jfv' or 'total'")
+        self.te_correction_mode = str(te_correction_mode)
+        # Phase 22: a shorter relaxation time over the polar caps (Susanne 2026-10-16): above p_bd and poleward of
+        # tau_polar_lat_deg[1] the rate is max(1/tau_JFV, 1/tau_polar_days), cos^2-blended from tau_polar_lat_deg[0]; null = JFV.
+        if tau_polar_days is not None and not float(tau_polar_days) > 0.0:
+            raise ValueError("tau_polar_days must be positive or null")
+        self.tau_polar_days = None if tau_polar_days is None else float(tau_polar_days)
+        self.tau_polar_lat_deg = tuple(float(v) for v in tau_polar_lat_deg)
+        if not self.tau_polar_lat_deg[1] > self.tau_polar_lat_deg[0]:
+            raise ValueError("tau_polar_lat_deg must be (taper start, full) with full > start")
         # Phase 15 sweep knobs on the JFV relaxation TIME only (T_e untouched): ``tau_scale`` multiplies tau(month, p, lat)
         # everywhere above p_bd (0.5 = twice as fast); ``tau_max_days`` caps it (15 = the lower stratosphere, where JFV
         # has 12-39 d, relaxes as fast as Polvani-Kushner's 15 d; the 4-10 d of the upper stratosphere are unchanged).
@@ -122,18 +167,30 @@ class JuckerColumns(PolvaniKushnerQbo):
         p_ref_hpa = np.asarray(self._sigma.get_value()) * P0_PA / 100.0          # (nlev,)
         lat_cols = np.rad2deg(np.asarray(self._lat.get_value()))                   # (ncols,)
         te_k = interpolate_table(te, p_hpa, lat_deg, p_ref_hpa, lat_cols)
+        dte_total = np.zeros((12,) + te_k.shape[1:])
         if self.te_correction_file is not None:
-            c_p, c_lat, dte = load_te_correction(self.te_correction_file)
-            dte_k = interpolate_table(dte, c_p, c_lat, p_ref_hpa, lat_cols)
-            _log.info("JuckerColumns: T_e correction %s: %+.1f .. %+.1f K above p_bd", self.te_correction_file,
-                      dte_k[:, p_ref_hpa <= self.p_bd_pa / 100].min(), dte_k[:, p_ref_hpa <= self.p_bd_pa / 100].max())
-            te_k = te_k + dte_k
+            _, lon_r = column_lat_lon(coords.horizontal)
+            dte_k = correction_on_columns(self.te_correction_file, p_ref_hpa, lat_cols, np.rad2deg(np.asarray(lon_r)))
+            _log.info("JuckerColumns: T_e correction %s (mode %s, %s): %+.1f .. %+.1f K above p_bd, %+.1f .. %+.1f K at 100-400 hPa",
+                      self.te_correction_file, self.te_correction_mode, "3-D" if load_te_correction(self.te_correction_file)[3] is not None else "zonal",
+                      dte_k[:, p_ref_hpa <= self.p_bd_pa / 100].min(), dte_k[:, p_ref_hpa <= self.p_bd_pa / 100].max(),
+                      dte_k[:, (p_ref_hpa > 100) & (p_ref_hpa <= 400)].min(), dte_k[:, (p_ref_hpa > 100) & (p_ref_hpa <= 400)].max())
+            if self.te_correction_mode == "jfv":
+                te_k = te_k + dte_k
+            else:
+                dte_total = dte_k
         te_tab = te_k * self._k_per_nondim
         tau_s = interpolate_table(tau, p_hpa, lat_deg, p_ref_hpa, lat_cols) * self.tau_scale
         if self.tau_max_days is not None:
             tau_s = np.minimum(tau_s, self.tau_max_days * 86400.0)
+        if self.tau_polar_days is not None:
+            a0, a1 = self.tau_polar_lat_deg; al = np.abs(lat_cols)
+            wpol = np.where(al >= a1, 1.0, np.where(al <= a0, 0.0, np.sin(0.5 * np.pi * (al - a0) / (a1 - a0)) ** 2))   # (ncols,)
+            tau_s = (1.0 - wpol) * tau_s + wpol * np.minimum(tau_s, self.tau_polar_days * 86400.0)
+            _log.info("JuckerColumns: polar-cap tau <= %.1f d poleward of %.0f deg (blend from %.0f deg)", self.tau_polar_days, a1, a0)
         k_tab = self._k_per_inv_second / tau_s
         self._te_tab = nnx.Variable(jnp.asarray(te_tab))                           # (12, nlev, ncols), model T units
+        self._dte_total = nnx.Variable(jnp.asarray(dte_total * self._k_per_nondim))  # (12, nlev, ncols); zero unless mode total
         self._k_tab = nnx.Variable(jnp.asarray(k_tab))                             # (12, nlev, ncols), model 1/time units
         self._nodes = nnx.Variable(jnp.asarray(month_nodes))                       # (14,) fractions of year, periodic ends
         p_ref = np.asarray(self._sigma.get_value()) * P0_PA
@@ -165,7 +222,7 @@ class JuckerColumns(PolvaniKushnerQbo):
     def _equilibrium_temperature(self, normalized_surface_pressure, tyear=0.0):
         t_hs = super()._equilibrium_temperature(normalized_surface_pressure, tyear)   # PK: Held-Suarez where p >= p_T
         beta = self._beta.get_value()
-        return beta * self._jfv(self._te_tab.get_value(), tyear) + (1.0 - beta) * t_hs
+        return beta * self._jfv(self._te_tab.get_value(), tyear) + (1.0 - beta) * t_hs + self._jfv(self._dte_total.get_value(), tyear)
 
     def _kt_jucker(self, tyear):
         k_hs = HeldSuarezColumns._kt(self)                                         # (nlev, ncols)
