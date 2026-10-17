@@ -67,6 +67,12 @@ run_iter() {  # <i> <correction file or empty>
 printf "MODE=%q\nLAT=%q\nPR=%q\nSMOOTH=%q\nALPHA=%q\nCMODE=%q\nOVR=%q\nDESC=%q\n" "$MODE" "$LAT" "$PR" "$SMOOTH" "$ALPHA" "$CMODE" "$OVR" "$DESC" > "$REPO/runs/p22_track_$T.env"
 step "start: $DESC | MODE=$MODE LAT=$LAT PR=$PR SMOOTH=$SMOOTH ALPHA=${ALPHA:-default} CMODE=$CMODE OVR=${OVR:-none} NITER=$NITER GPU=$GPU commit $(git rev-parse --short HEAD), $(left_min) min to deadline"
 note "started: $DESC (MODE=$MODE LAT=$LAT PR=$PR SMOOTH=$SMOOTH ALPHA=${ALPHA:-default} CMODE=$CMODE OVR=${OVR:-none}; GPU $GPU)"
+if [ "$MODE" = chang3d ]; then      # the 3-D target (CDS monthly means) may still be downloading
+  n=0; until ls cache/era5_ref/era5_t3d_monthly_2005.nc cache/era5_ref/era5_t3d_monthly_2006.nc cache/era5_ref/era5_t3d_monthly_2007.nc >/dev/null 2>&1; do
+    [ $n -eq 0 ] && step "waiting for the ERA5 3-D monthly means (tmux preproc_era5_t3d, runs/fetch_era5_t3d.log)"; n=$((n + 1))
+    [ "$n" -gt 72 ] && { step "ERA5 3-D data not there after 6 h - giving up"; note "**skipped**: no ERA5 3-D data"; exit 1; }; sleep 300
+  done
+fi
 # iteration 0
 if [ -n "$OVR" ]; then run_iter 0 "" || exit 1; src0="p22_${T}0_agg"; score0="${T}0"
 else src0="p20bt_20yr"; score0="P20b_base"; [ -s "$SC/P20b_base.json" ] || score P20b_base p20bt_20yr "P20b (p20bt) itself, no correction"; fi
