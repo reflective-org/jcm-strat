@@ -1,0 +1,4 @@
+- 2026-10-16 17:23 PDT - **A** started: Phase 17 correction on P20b, extratropics only (zero at |lat|<=25, full >=35), 100-1 hPa, smoothed, alpha 0.7 (MODE=zonal LAT=25 35 PR=1 100 SMOOTH=1 ALPHA=default CMODE=jfv OVR=none; GPU 0)
+- 2026-10-16 17:23 PDT - **B** started: as A + polar-cap relaxation time <= 10 d poleward of 60 deg (blend from 50) (MODE=zonal LAT=25 35 PR=1 100 SMOOTH=1 ALPHA=default CMODE=jfv OVR=++physics.terms.held_suarez.tau_polar_days=10; GPU 1)
+- 2026-10-16 17:23 PDT - **C** started: Chang 2006 / Mooring & Linz iteration (zonal mean): pointwise, all latitudes, 400-1 hPa, alpha 2/3, no smoothing (MODE=zonal LAT=0 0 PR=1 400 SMOOTH=0 ALPHA=0.6667 CMODE=total OVR=none; GPU 2)
+- 2026-10-16 18:31 PDT - **B** [score] B0: u_ls_ext 6.89 m/s, u50_ext 5.11, u_up_ext 11.18, T_ls 5.17 K, jet50 N 16@53 (ERA5 17@59), S 45@-57 (ERA5 47@-57), cap T50 N -2.4 S +0.6 K, w_logerr 0.091, age150 {trop: 1.01, n50_70: 3.31, s50_70: 3.28}
