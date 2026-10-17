@@ -39,3 +39,5 @@
 - 2026-10-17 04:07 PDT - **AL** finished
 - 2026-10-17 04:07 PDT - **A_final** started: 1990-2009 with A2
 - 2026-10-17 04:12 PDT - **C3** [score] C35: u_ls_ext 3.53 m/s, u50_ext 2.92, u_up_ext 6.33, T_ls 1.08 K, jet50 N 19@55 (ERA5 17@59), S 47@-55 (ERA5 47@-57), cap T50 N -0.2 S -0.5 K, w_logerr 1.593, age150 {trop: 1.25, n50_70: 3.22, s50_70: 2.63}
+- 2026-10-17 04:34 PDT - **B_final** [score] B_final: u_ls_ext 7.09 m/s, u50_ext 5.57, u_up_ext 10.71, T_ls 4.50 K, jet50 N 12@59 (ERA5 17@59), S 41@-59 (ERA5 47@-57), cap T50 N +2.4 S +3.3 K, w_logerr 0.11, age150 {trop: 1.05, n50_70: 3.67, s50_70: 3.43}
+- 2026-10-17 04:47 PDT - **B_final** diagnostics in `final/B_final/`
