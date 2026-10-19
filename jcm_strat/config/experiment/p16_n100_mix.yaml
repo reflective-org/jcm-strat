@@ -1,0 +1,6 @@
+# @package _global_
+# Phase 16: p16_n100 (Phase 15's n100, no Rayleigh drag) plus tropospheric vertical tracer mixing (physics/strat16_jucker_mix.yaml).
+#   EXPERIMENT=p16_n100_mix PREFIX=p16_n100mix10 SCHEME=calendar YEARS=1990-1999 AGG=p16_n100mix10_10yr SAVE_INTERVAL=0.25 GPU=2 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p16_n100
+  - override /physics: strat16_jucker_mix

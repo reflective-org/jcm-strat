@@ -1,0 +1,59 @@
+# Phase 16 physics group `strat16_jucker_ray_mix` = `strat15_jucker_ray` (Phase 15) plus `tropo_tracer_mixing` (jcm_strat.tracer_mixing.TropoTracerMixing):
+# vertical diffusion of every tracer in the troposphere as the stand-in for convective tracer transport - the dry troposphere
+# takes ~1.7 yr from 500 to 100 hPa in the tropics (ECHAM 0.16), which is the whole surface-clock excess against CLaMS.
+# Winds and temperature untouched; the term is placed before production_tracers (order does not matter: tendencies add).
+vectorize_columns: true
+checkpoint_terms: true
+
+terms:
+  held_suarez:
+    _target_: jcm_strat.jucker.JuckerColumns
+    p_bd_hpa: 100.0            # JFV2013 T_e / tau above this pressure
+    p_hs_hpa: 250.0            # Held-Suarez (PK troposphere) below this; linear blend between (JFV hs_forcing.f90 defaults)
+    tau_scale: 1.0             # Phase 15 knob: multiplies the JFV relaxation time above p_bd (0.5 = twice as fast)
+    tau_max_days: null         # Phase 15 knob: caps the JFV relaxation time (15 = lower stratosphere as fast as PK)
+    gamma_k_per_km: 4.0
+    p_tropopause_hpa: 100.0
+    phi0_deg: 50.0
+    delta_phi_deg: 10.0
+    epsilon_k: 10.0
+    season_offset: 0.5
+    p_vortex_top_hpa: 3.0
+    tau_strat_days: 15.0
+    qbo:
+      era5_glob: /data/JCM_stripped/jcm-strat/cache/era5_ref/era5_zm_monthly_*.nc
+      year: 2005
+      tau_days: 1.0
+      mean_preserving: true
+      lat_full_deg: 15.0
+      lat_zero_deg: 25.0
+      p_bot_hpa: 90.0
+      p_top_hpa: 1.0
+  rayleigh_drag:
+    _target_: jcm_strat.rayleigh.RayleighDragProfile
+    p_bot_hpa: 30.0            # no drag at and below this pressure
+    p_top_hpa: 1.0             # full drag 1/tau_days at and above this pressure; log-p ramp between
+    tau_days: 10.0             # Phase 15 knob: the drag timescale at the top of the ramp
+    power: 1.0                 # 1 = linear ramp in log p; 2 = concentrated near p_top
+    zonal_mean_only: false     # true = drag the zonal-mean wind only (eddies untouched)
+  tropo_tracer_mixing:
+    _target_: jcm_strat.tracer_mixing.TropoTracerMixing
+    k_m2_s: 10.0               # Phase 16 knob: tropospheric vertical tracer diffusivity, m^2/s (0 = off; <= 50 stable at dt 12 min)
+    p_top_hpa: 100.0           # no mixing at and above this pressure
+    p_full_hpa: 200.0          # full strength at and below this pressure; linear ramp between
+    lat_max_deg: null          # null = every latitude; a number confines the mixing to the tropics (cos^2 taper)
+  production_tracers:
+    _target_: jcm_strat.advection_tracers.ProductionTracersAoa500
+    aoa500_reset_pressure_hpa: 500.0   # Phase 12: fourth clock, reset below 500 hPa
+    injection: once             # pulses injected once at the start of the run
+    first_segment: false        # chain_segments.sh sets true on segment 1: inject the pulses and the WACCM N2O/CFC-11 state
+    pulse_sigma_deg: 12.0       # Gaussian sigma = box cap radius
+    pulse_sigma_decades: 0.25   # Gaussian sigma = box half-thickness in log10 p
+    source_timescale_days: 90.0
+    surface_sink: false         # Phase 10 had absorption in the lowest two layers
+    lid_p_hpa: 1.0              # tracer lid: relax above this pressure (kept since Phase 13: Susanne 2026-09-23)
+    lid_tau_days: 1.0
+    lid_clock_offset_days: 110.0   # ~0.3 yr: surface clocks (aoa, aoa_sfc) read WACCM's entry age plus the tropospheric transit
+    lid_sink_injections: false  # A: pulses / sources / sai have no sink anywhere
+  omega_diagnostic:
+    _target_: jcm.physics.diagnostics.omega.OmegaDiagnostic

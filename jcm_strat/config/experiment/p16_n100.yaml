@@ -1,0 +1,9 @@
+# @package _global_
+# Phase 16 second base = the Phase 15 run `n100` (the winner without the idealised Rayleigh drag): p15_base + ERA5 nudging up to
+# 100 hPa. Segments 1990-1994 exist (runs/p15_n100_YYYY0101, linked as runs/p16_n100_10_YYYY0101).
+#   EXPERIMENT=p16_n100 PREFIX=p16_n100 SCHEME=calendar YEARS=1990-1999 AGG=p16_n100_10yr SAVE_INTERVAL=0.25 GPU=2 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p15_base
+
+nudging:
+  min_pressure_hpa: 100.0

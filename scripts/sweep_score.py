@@ -232,10 +232,10 @@ def score(rundir, window_years, age_days):
         am = on_grid(age[clock], p_hpa, lat, pc, latc)
         rm, bias = weighted_rmse(am - (ac - off), latc, latmask)
         out[f"age_rmse_{clock}"] = rm; out[f"age_bias_{clock}"] = bias
-        for lv, tag in ((55.0, "55"), (12.0, "12")):
+        for lv, tag in ((55.0, "55"), (12.0, "12"), (100.0, "100")):
             row = at_level(p_hpa, age[clock], lv)
             out[f"age_{clock}_{tag}_tropics"] = band(lat, row, 0, 10); out[f"age_{clock}_{tag}_5070"] = band(lat, row, 50, 70)
-    for lv, tag in ((55.0, "55"), (12.0, "12")):
+    for lv, tag in ((55.0, "55"), (12.0, "12"), (100.0, "100")):
         rc = at_level(pc, ac, lv); rw = at_level(pwa, awa, lv)
         out[f"age_clams_{tag}_tropics"] = band(latc, rc, 0, 10); out[f"age_clams_{tag}_5070"] = band(latc, rc, 50, 70)
         out[f"age_waccm_{tag}_tropics"] = band(latwa, rw, 0, 10); out[f"age_waccm_{tag}_5070"] = band(latwa, rw, 50, 70)

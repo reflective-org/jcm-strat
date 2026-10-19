@@ -1,0 +1,12 @@
+# @package _global_
+# Phase 16: p16_base (Phase 15 winner ray30+n100) plus tropospheric vertical tracer mixing (physics/strat16_jucker_ray_mix.yaml,
+# K 10 m^2/s below 100 hPa by default; the sweep overrides physics.terms.tropo_tracer_mixing.k_m2_s / lat_max_deg).
+#   EXPERIMENT=p16_base_mix PREFIX=p16_mix10 SCHEME=calendar YEARS=1990-1999 AGG=p16_mix10_10yr SAVE_INTERVAL=0.25 GPU=0 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p16_base
+  - override /physics: strat16_jucker_ray_mix
+
+physics:
+  terms:
+    rayleigh_drag:
+      tau_days: 30.0
