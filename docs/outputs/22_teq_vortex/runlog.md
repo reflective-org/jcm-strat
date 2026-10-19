@@ -54,3 +54,5 @@
 - 2026-10-17 10:17 PDT - **B5_final** diagnostics in `final/B5_final/`
 - 2026-10-17 12:33 PDT - **C3_final** [score] C3_final: u_ls_ext 3.52 m/s, u50_ext 2.85, u_up_ext 6.52, T_ls 1.06 K, jet50 N 19@55 (ERA5 17@59), S 46@-55 (ERA5 47@-57), cap T50 N -0.6 S -0.5 K, w_logerr None, age150 {trop: 1.3, n50_70: 3.1, s50_70: 2.51}
 - 2026-10-17 12:46 PDT - **C3_final** diagnostics in `final/C3_final/`
+- 2026-10-17 12:46 PDT - **C_final** started: 1990-2009 with C5
+- 2026-10-17 13:05 PDT - **AL_final** (at 2003) and **C_final** (at 1991) died mid-segment: /data disk quota exceeded; partial run dirs deleted 2026-10-19, not relaunched (deadline passed)
