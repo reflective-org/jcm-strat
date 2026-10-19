@@ -60,10 +60,12 @@ One H100, T63L95. Stepping excludes JIT compile and output writing; end-to-end i
 | Phase 8b: + QBO nudging to 1 hPa (T63L95) | 12 min | 3,900 / 1,890 | 5.6 min / 11.6 min | 0.23 s |
 | Phase 9: same on strat63 (T63, 63 levels, stratosphere intact) — recommended | 12 min | 5,374 / 1,750 | 4.1 min / 12.5 min | 0.17 s |
 | Phase 10: strat63 production — 15 tracers, omega, 6-hourly instantaneous output (output-bound) | 12 min | 4,760 / 860 | 4.6 min / 26 min | 0.20 s |
+| Phase 11: same with 24 tracers (unit-amplitude Gaussian + box twins, no surface sink, 1 hPa tracer lid); two chains at once on GPUs 0 and 1 | 12 min | 4,180 / 750 | 5.2 min / 29 min | 0.22 s |
 | Phase 9: same on strat47 (T63, 47 levels) | 12 min | 6,228 / 1,948 | 3.5 min / 11.2 min | 0.14 s |
 | Phase 9: same at T85L95 (dt 9) | 9 min | 1,636 / 847 | 13.4 min / 26 min | 0.55 s |
 | Phase 9: same at T119L95, the 1° grid (dt 6) | 6 min | 557 / 403 | 39 min / 54 min | 1.6 s |
 | Phase 10 | production tracer set, 6-h instantaneous output, QBO tau 1 d | strat63 | 12 | 4,760 (e2e 860) | 6 | p10_2005-2009 review chain (`p10rev_5yr`); 1990-2019 chain `p10_30yr` running | 2026-09-11 |
+| Phase 11 | tracer lid above 1 hPa (WACCM targets), 24 tracers, no surface sink; A no sink / B lid sink | strat63 | 12 | 4,180 (e2e 750) | 7 | `p11a_5yr`, `p11b_5yr` 1990-1994; extension to 2019 pending | 2026-09-16 |
 
 (e2e = end-to-end incl. compile and output writing.) Reference from upstream (A100-40GB, `docs/source/design/dinosaur_sl_jam_configuration.md` in
 JCM): T63L47 full science 115 days/hr at dt=15 min; T63L95 full science 52 days/hr.

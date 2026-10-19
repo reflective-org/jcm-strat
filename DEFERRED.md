@@ -75,3 +75,12 @@ of [PLANS.md](PLANS.md) is complete. Ordered by value.
 | The once-only pulses are a nearly homogeneous, slowly draining background after 1-3 years but keep costing a field each in every frame (5 × 4.6 MB). | feature | Drop them from the archive after the fact, or make the tracer list of the output time-dependent, if the 30-year volume matters. |
 | The mean-mixing-ratio "burden" of a conserved tracer moves by 1e-4-1e-3 between frames although the fixer conserves mass exactly, because the air-mass weighting (dp from p_s) moves. | note | `pulse_diagnostics.py` reports the largest within-cycle rise instead of a monotone check. |
 | Phases 6-9 ran their seasonal and QBO forcing 5-12 days early (JCM's `365_day` calendar, KEY_DECISIONS #34). | note | Not re-run: the shift is small against the 15-day Polvani-Kushner relaxation and the monthly QBO target; recorded so the comparison Phase 10 vs Phase 9 is read with it in mind. |
+
+## Found in Phase 11
+
+| item | kind | remedy |
+|---|---|---|
+| The model mesosphere does not circulate: no gravity-wave drag above the Rayleigh sponge, so air above ~1 hPa is never replaced (age = run length after 30 yr in Phase 10). Phase 11 prescribes the tracers there (KEY_DECISIONS #39) instead of fixing the dynamics. | physics | A parameterised or prescribed mesospheric drag (Rayleigh profile or a simple GWD) that closes the deep branch; measure with the clock lid switched off (`lid_p_hpa: null`). Issue to file. |
+| The "0.8 yr too old at 55 hPa" of Phase 9 was a spin-up artefact: a 5-year clock cannot exceed 5 yr, and the 30-year run kept ageing. Every 5-year age-of-air number in Phases 4-9 is a lower bound. | note | Judge age of air on chains long enough for the clock to equilibrate (the Phase 11 lid should make ~10 yr sufficient; check the 5-yr vs 30-yr values when the extension runs). |
+| Phase 10 `p10_30yr` (2.7 TB) and the Phase 10 record's uncommitted analysis (aoa vs CLaMS figures, pulse_evolution figures/gifs, output.md additions in the phase10 worktree) | housekeeping | Keep the run until the Phase 11 30-year run is reviewed; commit the record without the 73 MB of gifs, or with them if Susanne wants them tracked. |
+

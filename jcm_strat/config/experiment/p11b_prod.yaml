@@ -1,0 +1,12 @@
+# @package _global_
+# Phase 11 experiment B: p11a_prod with the lid sink for the injected tracers - above 1 hPa the pulses,
+# sources and sai are relaxed to zero (tau 1 d) as well, so the mesosphere is their only sink.
+#   EXPERIMENT=p11b_prod PREFIX=p11b SCHEME=calendar YEARS=1990-1994 AGG=p11b_5yr SAVE_INTERVAL=0.25 GPU=1 \
+#     tmux new-session -d -s p11b_chain 'bash scripts/chain_segments.sh'
+defaults:
+  - /experiment/p11a_prod
+
+physics:
+  terms:
+    production_tracers:
+      lid_sink_injections: true

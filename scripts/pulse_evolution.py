@@ -13,12 +13,12 @@ the tracer's own injection level and the site is marked):
                                           to day 60, every 3 d to day 180, every 10 d to day 365; the
                                           colour scale is logarithmic and fixed over the animation (four
                                           decades below the largest value in it) so decay stays visible
-  <outdir>/<run>_tracers_evolution.gif    all nine maps side by side, same frames, own scale each
+  <outdir>/<run>_tracers_evolution.gif    all pulse and source maps side by side, same frames, own scale each
   <outdir>/<run>_<tracer>_vertical.png    the vertical structure over the first two years, every 5 d: time-pressure
                                           sections of the mass-weighted global mean and of the zonal mean within
                                           10 deg of the injection latitude (log colour, four decades), with the
                                           mass-centroid pressure overlaid; line profiles at fixed days
-  <outdir>/<run>_tracers_vertical.png     all nine tracers: centroid pressure and vertical spread (std of log10 p,
+  <outdir>/<run>_tracers_vertical.png     all pulse and source tracers: centroid pressure and vertical spread (std of log10 p,
                                           mass-weighted) against time - the descent / ascent of each blob
   <outdir>/<run>_tracer_mass.png          total global tracer mass (mixing ratio x layer air mass, summed over the
                                           globe, in kg) over the whole run for the pulses (as a fraction of the
@@ -57,8 +57,9 @@ from pulse_diagnostics import analytic_target  # noqa: E402
 EARTH_AREA_OVER_G = 4 * np.pi * 6.371e6 ** 2 / 9.80665      # m2 s2/m: sum(q dp w) * this = kg of tracer (q a mass mixing ratio)
 MASS_DAYS = np.concatenate([np.arange(0, 730, 10.0), np.arange(730, 11000, 30.0)])
 
-PULSES = tuple(f"pulse_{i}" for i in range(1, 6))
-SOURCES = tuple(f"src_{i}" for i in range(1, 5))
+SHAPES = ("", "_box")                                  # Gaussian and sharp-edged twin (jcm_strat/advection_tracers.py)
+PULSES = tuple(f"pulse_{i}{s}" for i in range(1, 6) for s in SHAPES)
+SOURCES = tuple(f"src_{i}{s}" for i in range(1, 5) for s in SHAPES)
 MASS_TRACERS = PULSES + SOURCES + ("sai", "n2o", "cfc11")
 PANEL_DAYS = {"pulse": (0, 5, 20, 60, 180, 365), "src": (5, 20, 60, 180, 365, 1825)}
 VERT_DAYS = np.arange(0, 730.01, 5.0); VERT_PROFILE_DAYS = (0, 5, 20, 60, 180, 365, 730)
@@ -91,8 +92,8 @@ def start_date(rundir):
 
 
 def site(name, term):
-    kind, i = name.split("_"); i = int(i) - 1
-    return (term.pulses if kind == "pulse" else term.sources)[i]          # (lat, lon, p hPa, amp)
+    parts = name.split("_"); kind, i = parts[0], int(parts[1]) - 1
+    return (term.pulses if kind == "pulse" else term.sources)[i]          # (lat, lon, p hPa); unit amplitude
 
 
 def read_frames(index, days, tracers, reduce=None):
@@ -121,7 +122,7 @@ def daystr(day, t0):
 
 def draw_pair(axm, axz, q, klev, lat, lon, p_nom, s, title, norm=None, vmax=None):
     """map at the injection level and zonal mean of one field; returns the two mappables."""
-    lat0, lon0, p0, _ = s
+    lat0, lon0, p0 = s[:3]
     if norm is None:
         m1 = axm.pcolormesh(lon, lat, q[klev].T, vmin=0, vmax=vmax if vmax else max(q[klev].max(), 1e-6), cmap=CMAP, shading="auto")
     else:
@@ -142,8 +143,8 @@ def panel_figure(name, data, when, s, klev, lat, lon, p_nom, label, t0, out):
     for c in range(n):
         m1, m2 = draw_pair(axes[0, c], axes[1, c], data[c], klev, lat, lon, p_nom, s, f"{name} at {p_nom[klev]:.0f} hPa, {daystr(when[c], t0)}")
         fig.colorbar(m1, ax=axes[0, c]); fig.colorbar(m2, ax=axes[1, c])
-    kind = "pulse injected once at t0" if name.startswith("pulse") else "continuous source (A*G / 90 d per step)"
-    fig.suptitle(f"{label}: {name} - {kind} at {s[0]:.0f}N {s[1]:.0f}E {s[2]:.0f} hPa, amplitude {s[3]}"); fig.tight_layout()
+    kind = "pulse injected once at t0" if name.startswith("pulse") else "continuous source (S / 90 d per step)"
+    fig.suptitle(f"{label}: {name} - {kind} at {s[0]:.0f}N {s[1]:.0f}E {s[2]:.0f} hPa"); fig.tight_layout()
     fig.savefig(out, dpi=120); plt.close(fig); print("wrote", out, flush=True)
 
 
@@ -165,7 +166,7 @@ def tracer_gif(name, data, when, s, klev, lat, lon, p_nom, label, t0, out):
         m1, m2 = draw_pair(axes[0], axes[1], q, klev, lat, lon, p_nom, s, f"{name} at {p_nom[klev]:.0f} hPa, {daystr(day, t0)}", norm=norm)
         ticks = mticker.LogLocator(base=10)
         fig.colorbar(m1, ax=axes[0], ticks=ticks); fig.colorbar(m2, ax=axes[1], ticks=ticks, format=mticker.LogFormatterSciNotation())
-        fig.suptitle(f"{label}: {name} ({s[0]:.0f}N {s[1]:.0f}E {s[2]:.0f} hPa, amplitude {s[3]}); log colour scale, fixed", fontsize=10); fig.tight_layout()
+        fig.suptitle(f"{label}: {name} ({s[0]:.0f}N {s[1]:.0f}E {s[2]:.0f} hPa); log colour scale, fixed", fontsize=10); fig.tight_layout()
         images.append(fig_to_image(fig)); plt.close(fig)
     save_gif(images, out)
 
@@ -176,11 +177,11 @@ def overview_gif(names, data, when, sites, klevs, lat, lon, p_nom, label, t0, ou
         vmax = max(q[klevs[k]].max() for q in data[k]); norms[k] = mcolors.LogNorm(vmin=vmax * 1e-4, vmax=vmax)
     images = []
     for f in range(len(when)):
-        fig, axes = plt.subplots(3, 3, figsize=(13, 8.5), dpi=80)
+        ncol = int(np.ceil(len(names) / 3)); fig, axes = plt.subplots(3, ncol, figsize=(4.3 * ncol, 8.5), dpi=80)
         for ax, k in zip(axes.flat, names):
             q = data[k][f]; s = sites[k]
             ax.pcolormesh(lon, lat, np.maximum(q[klevs[k]].T, norms[k].vmin), norm=norms[k], cmap=CMAP, shading="auto")
-            ax.plot(s[1], s[0], "c+", ms=9, mew=1.5); ax.set_title(f"{k} at {p_nom[klevs[k]]:.0f} hPa (amp {s[3]}, max here {norms[k].vmax:.2g})", fontsize=9)
+            ax.plot(s[1], s[0], "c+", ms=9, mew=1.5); ax.set_title(f"{k} at {p_nom[klevs[k]]:.0f} hPa (max here {norms[k].vmax:.2g})", fontsize=9)
             ax.set_xticks([0, 90, 180, 270, 360]); ax.set_yticks([-60, -30, 0, 30, 60])
         fig.suptitle(f"{label}: pulse and source tracers at their injection levels, {daystr(when[f], t0)}; log scale, four decades below each tracer's largest value", fontsize=10)
         fig.tight_layout(); images.append(fig_to_image(fig)); plt.close(fig)
@@ -225,9 +226,8 @@ def mass_series(index, days, tracers, nlev, nproc=16):
 
 
 def source_rate(name, term, lat, lon, p_nom, nsp0):
-    """Emitted mass per day of a continuous source: the blob A G times the term's rate (1 / 90 d)."""
-    kind_term = type("T", (), {"pulses": term.sources, "sigma_h": term.sigma_h, "sigma_z": term.sigma_z})
-    G = analytic_target(name, lat, lon, p_nom * nsp0.mean(), kind_term)
+    """Emitted mass per day of a continuous source: the shape S times the term's rate (1 / 90 d)."""
+    G = analytic_target(name, lat, lon, p_nom * nsp0.mean(), term)          # analytic_target knows pulses from sources and box from Gaussian
     wgt = layer_dp(p_nom.size, nsp0) * gauss_weights(lat)[None, None, :] * EARTH_AREA_OVER_G / lon.size
     return float((G * wgt).sum()) * float(term.source_rate) * 86400.0
 
@@ -260,7 +260,7 @@ def mass_figure(M, tday, names, term, sites, lat, lon, p_nom, nsp0, label, t0, o
     if has_sai:
         (ln,) = ax.plot(yr, M["sai"], "--", label="sai (box source, no sink)")
         S = M["sai"][-1] / (tday[-1] - tday[0]); lines.append(f"| sai | {S:.3e} (mean over the run) | {M['sai'][np.argmin(np.abs(yr - 1))]:.3e} | {M['sai'][np.argmin(np.abs(yr - 5))]:.3e} | {M['sai'][-1]:.3e} | no sink |")
-    ax.set_yscale("log"); ax.set_title("sources: total mass (kg); dotted = cumulative emission, the gap is what the surface removed", fontsize=10); ax.legend(fontsize=8)
+    ax.set_yscale("log"); ax.set_title("sources: total mass (kg); dotted = cumulative emission, the gap is what the sinks removed (none in Phase 11 run A)", fontsize=10); ax.legend(fontsize=8)
     ax = axes[1, 1]
     for k in steady:
         ax.plot(yr, M[k] / M[k][0], label=f"{k} (M0 {M[k][0]:.3e} kg)")
@@ -312,7 +312,7 @@ def vertical_figure(name, red, when, s, lat, p_nom, label, out):
     ax.set_xscale("log"); ax.set_xlim(band.max() * 1e-5, band.max() * 2); ax.set_yscale("log"); ax.set_ylim(1000, 0.1); ax.axhline(s[2], color="c", ls=":", lw=1)
     ax.set_title(f"profiles of the band mean", fontsize=10); ax.set_xlabel("mixing ratio"); ax.legend(fontsize=8)
     kind = "pulse injected once at t0" if name.startswith("pulse") else "continuous source"
-    fig.suptitle(f"{label}: {name} - {kind} at {s[0]:.0f}N {s[1]:.0f}E {s[2]:.0f} hPa, amplitude {s[3]}: vertical structure, first {when[-1]:.0f} days (mass-weighted, so the centroid starts below the injection level)"); fig.tight_layout()
+    fig.suptitle(f"{label}: {name} - {kind} at {s[0]:.0f}N {s[1]:.0f}E {s[2]:.0f} hPa: vertical structure, first {when[-1]:.0f} days (mass-weighted, so the centroid starts below the injection level)"); fig.tight_layout()
     fig.savefig(out, dpi=120); plt.close(fig); print("wrote", out, flush=True)
 
 

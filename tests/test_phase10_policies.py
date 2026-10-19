@@ -52,8 +52,8 @@ def test_output_drop_hook(restore_patches):
 def test_qbo_target_year_must_exist():
     QboNudging(era5_glob=ERA5_GLOB, year=2005)                  # cached
     with pytest.raises(FileNotFoundError):
-        QboNudging(era5_glob=ERA5_GLOB, year=1999)
-    QboNudging(era5_glob=ERA5_GLOB, year=1999, use_calendar=False)   # tests with a frozen target still work
+        QboNudging(era5_glob=ERA5_GLOB, year=1950)     # no CDS target that far back (1989-2020 on disk since Phase 10)
+    QboNudging(era5_glob=ERA5_GLOB, year=1950, use_calendar=False)   # tests with a frozen target still work
 
 
 def test_calendar_segments():
