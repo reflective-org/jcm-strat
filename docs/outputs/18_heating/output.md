@@ -77,3 +77,4 @@ _to be written when the run finishes_
 - 2026-10-01 18:03 PDT — best iteration H1 (composite 0.575929472581503) -> ten years from ERA5
 - 2026-10-02 00:10 PDT — **H_final** (mix10trop + T_e correction: ERA5 heating target in the tropical lower stratosphere, ERA5 T elsewhere, correction H1, ten years 1990-1999 from ERA5): [score H_final] composite 0.570 = mean(age 0.95, w* 0.45, u 0.52, T 0.36); age150 RMSE vs CLaMS-entry 0.48 yr (bias +0.15); tropical w* 100/70/50/30/10: 0.32/0.20/0.24/0.30/0.55 (WACCM 0.40/0.21/0.20/0.26/0.47); barrier age 55 hPa 0.87 (CLaMS 1.57); u RMSE 2.6 m/s, T RMSE 1.8 K; 36 min/yr -> /data/JCM_stripped/jcm-strat/docs/outputs/18_heating/scores/H_final.json
 - 2026-10-02 01:09 PDT — final diagnostics for H_final in `final/`
+- 2026-10-02 01:09 PDT — finished
