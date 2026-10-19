@@ -630,3 +630,12 @@ correction ten years from ERA5. Tracks (`scripts/phase17_run.sh A|B|B0`, tmux `s
 Rayleigh drag (GPU 1), B0 = without the drag, no correction (GPU 2). New ERA5 w* reference from CDS 6-hourly v, T
 (`scripts/fetch_era5_tem.py`) replaces WACCM6 in the score once present; new subtropical barrier age. Budget 24 h per track; nothing
 pushed. Branch `phase17-teq` off `phase16-mixing`, worktree `jcm-strat-phase17`. Record `docs/outputs/17_teq/output.md`.
+
+# Phase 18 (2026-10-01, Susanne) — ERA5 diabatic heating as the T_e target in the tropical lower stratosphere
+
+"can you set this up what you just laid out and run it? Use GPU 0". Phase 17's temperature-only target cut the 70 hPa heating at
+15-25 deg to under half of ERA5's (older ages, weaker shallow branch). New: `teq_correction.py --heating-target` drives the model's
+Newtonian heating (T_e - T)/tau to ERA5's THETA_DOT_TOT (CLaMS v3 ERA5 files, 2000-2014 climatology) inside |lat| < 30, 100-30 hPa
+(tapers to 40 deg / 15 hPa), ERA5 temperature outside (start: Phase 17's A4). Four 1998-1999 iterations from mix10trop's 1997 state,
+then the best ten years from ERA5. Score adds seasonal w* and mass flux vs ERA5 (`--w-metric full`). GPU 0, tmux `strat_p18`,
+budget 20 h. Branch `phase18-heating` (main checkout, no new worktree). Record `docs/outputs/18_heating/output.md`.

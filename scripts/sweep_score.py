@@ -48,6 +48,7 @@ WACCM_YEARS = list(range(1996, 2015))
 # normalisation of the composite: "acceptable" size of each error (PLANS Phase 13 acceptance)
 NORM = dict(age=0.5, w=np.log(1.5), u=5.0, T=5.0)
 W_FLOOR, W_CAP = 0.02, np.log(10.0)
+W_METRIC = "annual"      # set by --w-metric; "full" = Phase 18 (seasons + mass flux, vs ERA5)
 
 
 def _files(rundir):
@@ -245,6 +246,17 @@ def score(rundir, window_years, age_days):
             e_terms.append(min(abs(np.log(max(a, W_FLOOR) / max(b, W_FLOOR))), W_CAP))
         out["w_logerr_waccm"] = out["w_logerr"]; out["w_logerr_era5"] = float(np.mean(e_terms)); out["w_ref"] = "ERA5"
         out["w_logerr"] = out["w_logerr_era5"]
+        # Phase 18: the annual 15S-15N w* hides the width of the upwelling region and the seasons; w_logerr_full = mean |ln ratio|
+        # over annual / DJF / JJA of w* at the five levels AND of the upward mass flux at 100/70/30/10 hPa (the turnaround latitudes)
+        f_terms = []
+        for s_ in SEASONS:
+            for lv in W_LEVELS:
+                f_terms.append(min(abs(np.log(max(out[f"wstar_{s_}_{lv:g}"], W_FLOOR) / max(out[f"wstar_era5_{s_}_{lv:g}"], W_FLOOR))), W_CAP))
+            for lv in FLUX_LEVELS:
+                f_terms.append(min(abs(np.log(max(out[f"flux_{s_}_{lv:g}"], 0.1) / max(out[f"flux_era5_{s_}_{lv:g}"], 0.1))), W_CAP))
+        out["w_logerr_full"] = float(np.mean(f_terms))
+        if W_METRIC == "full":
+            out["w_logerr"] = out["w_logerr_full"]; out["w_ref"] = "ERA5 full"
         pe, lae, _, we = eref["annual"]; trope = np.abs(lae) <= 15; wgte = np.cos(np.deg2rad(lae[trope]))
         out["profile_era5_p"] = [float(x) for x in pe]
         out["profile_era5_wstar_tropics"] = [float(np.nansum(we[k, trope] * wgte) / np.sum(wgte)) for k in range(pe.size)]
@@ -334,7 +346,11 @@ def main():
     ap.add_argument("rundir"); ap.add_argument("--name", required=True); ap.add_argument("--out", required=True)
     ap.add_argument("--desc", default=""); ap.add_argument("--stage", default="")
     ap.add_argument("--window-years", type=float, default=2.0); ap.add_argument("--age-days", type=float, default=60.0)
+    ap.add_argument("--w-metric", choices=("annual", "full"), default="annual",
+                    help="w* term of the composite: annual 15S-15N w* (Phases 15-17) or full = + DJF/JJA + mass flux (Phase 18)")
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
+    global W_METRIC
+    W_METRIC = a.w_metric
     res = score(a.rundir, a.window_years, a.age_days)
     res.update({"name": a.name, "rundir": os.path.abspath(a.rundir), "desc": a.desc, "stage": a.stage,
                 "scored_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")})
