@@ -1,6 +1,6 @@
 # Phase 18 — T_e correction with ERA5's diabatic heating as the tropical target (strat81, GPU 0)
 
-Status: **finished** 2026-10-02 01:09 PDT (H_final diagnostics in `final/`); results not yet written up.
+Status: **finished, did not work** (runs ended 2026-10-02 01:09 PDT; results written 2026-10-19).
 Susanne, 2026-10-01: "I need age of air to look like that of CLaMS, and the tropical upwelling needs to match ERA5 better too" ...
 "can you set this up what you just laid out and run it? Use GPU 0". Nothing is pushed by the pipeline.
 
@@ -64,9 +64,20 @@ Closer than the base (0.759): p17_A4, p17_A2, H_final, H1, H2, H3, H4. Further f
 ![age](sweep_age_profiles.png)
 <!-- leaderboard:end -->
 
-## Results
+## Results (written 2026-10-19)
 
-_to be written when the run finishes_
+**Conclusion: the heating target did not work.** It did not bring the age closer to CLaMS or w* closer to ERA5, and no H run
+beats Phase 17's `A4` (composite 0.558) or `A2` (0.559): H_final 0.570, H1 0.576, H4 0.595.
+
+* Everything H gains over the start (`mix10trop`, 0.759) is Phase 17's temperature correction outside the mask (u 3.7 -> 2.6 m/s,
+  T 5.4 -> 1.8 K in H_final). The tropical heating target itself adds nothing.
+* Age and w* end up worse than the uncorrected start: age RMSE 0.44 -> 0.48 yr (bias +0.12 -> +0.15), w* log-error 0.14 -> 0.18,
+  barrier step 0.95 -> 0.87 yr (CLaMS 1.57). In H_final the 70-30 hPa tropical ascent weakens toward WACCM (70 hPa 0.251 -> 0.211,
+  WACCM 0.211) but the 10 hPa ascent strengthens (0.451 -> 0.538, WACCM 0.469).
+* Iterating moves away from ERA5: w* log-error 0.18 (H1) -> 0.23 (H4), with the tropical w* at 1 hPa growing 2.05 -> 2.55 mm/s.
+* The best iteration was the first (H1), and its ten-year H_final reproduces it (composite 0.576 vs 0.570).
+
+Not carried forward: Phase 19 moved to the new jcm (fixed Lott-Miller), and Phase 22 returned to temperature-based T_e corrections on P20b.
 
 ## Run log
 - 2026-10-01 11:34 PDT — started (GPU 0, commit 678dd06, 4 iterations, alpha 0.7)
