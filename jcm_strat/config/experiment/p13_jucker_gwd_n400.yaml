@@ -1,0 +1,15 @@
+# @package _global_
+# Phase 13c run 1 (Susanne 2026-09-24): p13_jucker_gwd (strat81, Jucker relaxation, Hines + Lott-Miller drag) with the ERA5
+# nudging cut off at 400 hPa instead of 150 (as p13_l81_n400), TEN years 1990-1999. Two changes against p13juckergwd_5yr
+# (cutoff, length); one against p13_jucker_hines_n400 (Lott-Miller on/off).
+# output_drop additionally removes the nine moist_air_state diagnostics (air_density, height_*, pressure_*, layer/pressure
+# thickness, relative_humidity, surface_pressure) that the drag lists wrote in Phases 13/13b: 31 GB/yr of the 96 GB/yr, never
+# analysed (the diagnostics read u, v, T, omega and the clocks).
+#   EXPERIMENT=p13_jucker_gwd_n400 PREFIX=p13jgn400 SCHEME=calendar YEARS=1990-1999 AGG=p13jgn400_10yr SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p13_jucker_gwd
+
+nudging:
+  min_pressure_hpa: 400.0
+
+output_drop: [sai, pulse_1, pulse_1_box, pulse_2, pulse_2_box, pulse_3, pulse_3_box, pulse_4, pulse_4_box, pulse_5, pulse_5_box, src_1, src_1_box, src_2, src_2_box, src_3, src_3_box, src_4, src_4_box, air_density, height_full, height_half, layer_thickness, pressure_full, pressure_half, pressure_thickness, relative_humidity, surface_pressure]
