@@ -1,0 +1,17 @@
+# @package _global_
+# Phase 12 experiment 1: p12_ctl with the QBO nudging switched OFF (physics/strat_pk_prod12_noqbo.yaml:
+# ``qbo: null`` makes PolvaniKushnerQbo the plain Polvani-Kushner relaxation). Grid strat63, everything else
+# as p12_ctl. The null is repeated here because p10_prod's body merges ``qbo.tau_days: 1.0`` onto the physics
+# group after the group is chosen; this experiment's body merges last and wins (tests/test_phase12.py). Purpose: w* (TEM residual vertical velocity) and age of air before (p11a_5yr / p12ctl_5yr, QBO on)
+# and after (this run). The per-segment override qbo.year does not exist here, so the chain runs with
+# EXTRA_PER_SEG="" :
+#   EXTRA_PER_SEG="" EXPERIMENT=p12_noqbo PREFIX=p12noqbo SCHEME=calendar YEARS=1990-1994 AGG=p12noqbo_5yr \
+#     SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p12_ctl
+  - override /physics: strat_pk_prod12_noqbo
+
+physics:
+  terms:
+    held_suarez:
+      qbo: null

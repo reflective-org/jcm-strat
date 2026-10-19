@@ -1,0 +1,65 @@
+# Phase 12 full-physics reference WITH the clocks: JCM's complete ECHAM package (physics/echam.yaml at the pinned
+# JCM: RRTMGP radiation, Tiedtke convection, Sundqvist clouds + 1-moment microphysics, TTE/TKE vertical diffusion,
+# ECHAM surface, Hines + Lott-Miller gravity-wave drag, MACv2-SP aerosol, simple chemistry) plus the three Phase 12
+# additions, appended in this order:
+#   * qbo_nudging: the SAME QBO nudging as every production run since Phase 8 (QboNudging as its own term, the
+#     maths the combined PolvaniKushnerQbo term uses; tau 1 d, mean-preserving monthly ERA5 target, |lat| < 25,
+#     90-1 hPa), so the only difference to p12_ctl above 150 hPa is the physics package and not the tropical winds;
+#     `year` is set per segment: EXTRA_PER_SEG="physics.terms.qbo_nudging.year={year}";
+#   * production_tracers: the Phase 12 tracer set (four clocks incl. aoa500, n2o/cfc11, injections; tracer lid), as p12_ctl;
+#   * omega_diagnostic last, so the dycore fields it reads are on the column layout.
+# Susanne, 2026-09-18: "Do the full physics 5 year run with the clocks" - is the age of air too old in JCM's own
+# physics too, or only in the dry Polvani-Kushner model?
+vectorize_columns: true
+checkpoint_terms: true
+
+terms:
+  moist_air_state:
+    _target_: jcm.physics.diagnostics.moist_air_state.MoistAirColumnState
+  echam_boundary_conditions:
+    _target_: jcm.physics.forcing.echam_boundary_conditions.EchamBoundaryConditions
+  macv2_sp_aerosol:
+    _target_: jcm.physics.aerosol.Macv2SpAerosol
+  simple_chemistry:
+    _target_: jcm.physics.chemistry.SimpleChemistry
+  sundqvist_cloud_fraction:
+    _target_: jcm.physics.clouds.sundqvist.SundqvistCloudFraction
+  rrtmgp_radiation:
+    _target_: jcm.physics.radiation.rrtmgp.RRTMGPRadiation
+  tte_tke_vertical_diffusion:
+    _target_: jcm.physics.vertical_diffusion.tte_tke.TteTkeVerticalDiffusion
+  echam_surface:
+    _target_: jcm.physics.surface.echam.surface_physics.EchamSurface
+  tiedtke_convection:
+    _target_: jcm.physics.convection.tiedtke_nordeng.TiedtkeConvection
+  echam_1m_microphysics:
+    _target_: jcm.physics.clouds.echam_1m.Echam1MMicrophysics
+  hines_gwd:
+    _target_: jcm.physics.gravity_waves.hines.HinesGwd
+  lott_miller_sso:
+    _target_: jcm.physics.gravity_waves.sso.LottMillerSso
+  qbo_nudging:
+    _target_: jcm_strat.qbo_nudging.QboNudging
+    era5_glob: /data/JCM_stripped/jcm-strat/cache/era5_ref/era5_zm_monthly_*.nc
+    year: 2005
+    tau_days: 1.0
+    mean_preserving: true
+    lat_full_deg: 15.0
+    lat_zero_deg: 25.0
+    p_bot_hpa: 90.0
+    p_top_hpa: 1.0
+  production_tracers:
+    _target_: jcm_strat.advection_tracers.ProductionTracersAoa500
+    aoa500_reset_pressure_hpa: 500.0
+    injection: once
+    first_segment: false        # chain_segments.sh sets true on segment 1
+    pulse_sigma_deg: 12.0
+    pulse_sigma_decades: 0.25
+    source_timescale_days: 90.0
+    surface_sink: false
+    lid_p_hpa: 1.0
+    lid_tau_days: 1.0
+    lid_clock_offset_days: 110.0
+    lid_sink_injections: false
+  omega_diagnostic:
+    _target_: jcm.physics.diagnostics.omega.OmegaDiagnostic

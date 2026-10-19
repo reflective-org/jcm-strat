@@ -1,0 +1,43 @@
+# Phase 12 physics: strat_pk_qbo_prod11 (Phase 11: Polvani-Kushner stratosphere, QBO nudging tau 1 d to 1 hPa,
+# revised production tracers, tracer lid) with ONE addition: the clock ``aoa500`` (reset wherever p > 500 hPa),
+# via ``ProductionTracersAoa500``. Susanne (2026-09-16): age of air with the clock at zero at the surface and
+# at 500 hPa. Everything else is Phase 11 run A (no sink anywhere for the injections).
+# Every value is stated so a log is self-describing.
+vectorize_columns: true
+checkpoint_terms: true
+
+terms:
+  held_suarez:
+    _target_: jcm_strat.qbo_nudging.PolvaniKushnerQbo
+    gamma_k_per_km: 4.0
+    p_tropopause_hpa: 100.0
+    phi0_deg: 50.0
+    delta_phi_deg: 10.0
+    epsilon_k: 10.0
+    season_offset: 0.5
+    p_vortex_top_hpa: 3.0
+    tau_strat_days: 15.0
+    qbo:
+      era5_glob: /data/JCM_stripped/jcm-strat/cache/era5_ref/era5_zm_monthly_*.nc
+      year: 2005
+      tau_days: 1.0
+      mean_preserving: true
+      lat_full_deg: 15.0
+      lat_zero_deg: 25.0
+      p_bot_hpa: 90.0
+      p_top_hpa: 1.0
+  production_tracers:
+    _target_: jcm_strat.advection_tracers.ProductionTracersAoa500
+    aoa500_reset_pressure_hpa: 500.0   # Phase 12: fourth clock, reset below 500 hPa
+    injection: once             # pulses injected once at the start of the run
+    first_segment: false        # chain_segments.sh sets true on segment 1: inject the pulses and the WACCM N2O/CFC-11 state
+    pulse_sigma_deg: 12.0       # Gaussian sigma = box cap radius
+    pulse_sigma_decades: 0.25   # Gaussian sigma = box half-thickness in log10 p
+    source_timescale_days: 90.0
+    surface_sink: false         # Phase 10 had absorption in the lowest two layers
+    lid_p_hpa: 1.0              # tracer lid: relax above this pressure
+    lid_tau_days: 1.0
+    lid_clock_offset_days: 110.0   # ~0.3 yr: surface clocks (aoa, aoa_sfc) read WACCM's entry age plus the tropospheric transit
+    lid_sink_injections: false  # A: pulses / sources / sai have no sink anywhere; B (p11b_prod) sets true
+  omega_diagnostic:
+    _target_: jcm.physics.diagnostics.omega.OmegaDiagnostic

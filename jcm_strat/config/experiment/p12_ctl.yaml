@@ -1,0 +1,20 @@
+# @package _global_
+# Phase 12 control: Phase 11 run A (p11a_prod: strat63, ERA5-nudged troposphere < 150 hPa, Polvani-Kushner
+# stratosphere, QBO nudging to 1 hPa tau 1 d, tracer lid, no sinks, 6-hourly output, Gregorian calendar) with
+#   * the fourth clock aoa500 (physics/strat_pk_qbo_prod12.yaml), so the "before" of the Phase 12 age-of-air
+#     plots has the same clock definitions as the "after" runs (p11a_5yr carries aoa (700 hPa), aoa150, aoa_sfc only);
+#   * the 19 injection tracers (sai, pulses, sources) still integrated but NOT written: Phase 12 is about the
+#     circulation (w*) and the clocks, and the 6-hourly archive was 31 min/yr and 130 GB/yr output-bound in
+#     Phase 11 (output_drop, jcm_strat/main.py). Their tendencies do not touch the dynamics (passive, linear:
+#     Phase 10 check), so the circulation is p11a's to roundoff.
+# The two experiments of the phase derive from this: p12_noqbo (QBO nudging off) and p12_l81 (full L95
+# troposphere). Chains (scripts/phase12_run.sh):
+#   EXPERIMENT=p12_ctl PREFIX=p12ctl SCHEME=calendar YEARS=1990-1994 AGG=p12ctl_5yr SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p11a_prod
+  - override /physics: strat_pk_qbo_prod12
+
+# clocks (now four) and steady tracers impose a value, not a mass: exempt from the global mass fixer (KEY_DECISIONS #19, #34)
+sl_mass_fixer: true
+sl_mass_fixer_exclude: [aoa, aoa150, aoa_sfc, aoa500, n2o, cfc11]
+output_drop: [sai, pulse_1, pulse_1_box, pulse_2, pulse_2_box, pulse_3, pulse_3_box, pulse_4, pulse_4_box, pulse_5, pulse_5_box, src_1, src_1_box, src_2, src_2_box, src_3, src_3_box, src_4, src_4_box]
