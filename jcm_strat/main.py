@@ -17,6 +17,11 @@ top-level config keys are honoured before the model is built:
     700 hPa reset edge — slowed the whole stratospheric clock from 1.00 to 0.44 day/day over
     one year (docs/outputs/03_tracers/output.md, KEY_DECISIONS #19).
 
+``output_drop`` / ``output_keep`` (lists of variable names, default none)
+    Output policy (Phase 10 / 12): ``output_drop`` removes the listed variables from every written
+    dataset; ``output_keep`` keeps ONLY the listed ones (coordinates always stay). Both may be given;
+    keep is applied first. JCM has no output-variable list of its own.
+
 ``level_table`` (``null`` or ``strat``, default null)
     ``strat`` serves the Phase 9 L95-derived vertical tables (``jcm_strat/levels.py``) for
     ``grid.layers`` 47 and 63, with hyperdiffusion order profiles mapped from L95's.
@@ -114,23 +119,30 @@ def install_calendar(name: str | None) -> None:
     logging.getLogger("jcm_strat").info("jcm_strat: model calendar %s", name)
 
 
-def install_output_policy(drop=()) -> None:
-    """Drop the listed variables from every dataset ``ModelPredictions.to_xarray`` returns.
+def install_output_policy(drop=(), keep=()) -> None:
+    """Drop the listed variables from every dataset ``ModelPredictions.to_xarray`` returns, or with
+    ``keep`` write only those (Phase 12: the full ECHAM package publishes ~130 diagnostics).
 
     JCM writes every prognostic and every diagnostic a term provides; it has no output-variable
     list (``run.tracer_vars`` selects *inputs*). At 6-hourly output one 3-D field is 10 GB per
     simulated year at T63L95, so Phase 10 drops what is a diagnostic of other outputs.
     """
-    drop = tuple(str(v) for v in (drop or ()))
-    if not drop:
+    drop = tuple(str(v) for v in (drop or ())); keep = tuple(str(v) for v in (keep or ()))
+    if not drop and not keep:
         return
 
     def patched(self):
         ds = _ORIG_TO_XARRAY(self)
+        if keep:
+            ds = ds.drop_vars([v for v in ds.data_vars if v not in keep])
         return ds.drop_vars([v for v in drop if v in ds])
 
     _predictions.ModelPredictions.to_xarray = patched
-    logging.getLogger("jcm_strat").info("jcm_strat: output drops %s", list(drop))
+    log = logging.getLogger("jcm_strat")
+    if keep:
+        log.info("jcm_strat: output keeps only %s", list(keep))
+    if drop:
+        log.info("jcm_strat: output drops %s", list(drop))
 
 
 def _as_list(raw):
@@ -150,7 +162,7 @@ def main(cfg: DictConfig) -> None:
     di = cfg.get("sl_departure_iterations", None)
     install_sl_options({"departure_iterations": int(di) if di is not None else None})
     install_calendar(cfg.get("calendar", None))
-    install_output_policy(_as_list(cfg.get("output_drop", None)))
+    install_output_policy(_as_list(cfg.get("output_drop", None)), _as_list(cfg.get("output_keep", None)))
     # ``level_table: strat`` (Phase 9): serve the L95-derived strat47/strat63 hybrid tables and
     # their hyperdiffusion profiles for grid.layers 47/63 (jcm_strat/levels.py)
     levels.install(cfg.get("level_table", None))

@@ -1,0 +1,51 @@
+# Phase 14: JCM's full ECHAM package with the Phase 12 tracers and omega, and NOTHING relaxed to reanalysis - the
+# echam_prod12 list (RRTMGP radiation, Tiedtke convection, Sundqvist clouds + 1-moment microphysics, TTE/TKE vertical
+# diffusion, ECHAM surface, Hines + Lott-Miller gravity-wave drag, MACv2-SP aerosol, simple chemistry, ProductionTracersAoa500,
+# omega_diagnostic) WITHOUT the qbo_nudging term. The ERA5 nudging of u/v/T below 150 hPa is a NudgingTerm that
+# jcm.runners appends when ``nudging.enabled`` is true; experiment p14_free sets nudging=none, so with this group the
+# model's circulation is its own everywhere: tropospheric waves, QBO (if the package makes one), vortex. Susanne,
+# 2026-09-22: "a new phase that runs JCM full physics with no nudging ... for 10 years". Everything else identical to
+# echam_prod12 so the only difference to p12echam_5yr is the absence of the two relaxations (tests/test_phase14.py).
+vectorize_columns: true
+checkpoint_terms: true
+
+terms:
+  moist_air_state:
+    _target_: jcm.physics.diagnostics.moist_air_state.MoistAirColumnState
+  echam_boundary_conditions:
+    _target_: jcm.physics.forcing.echam_boundary_conditions.EchamBoundaryConditions
+  macv2_sp_aerosol:
+    _target_: jcm.physics.aerosol.Macv2SpAerosol
+  simple_chemistry:
+    _target_: jcm.physics.chemistry.SimpleChemistry
+  sundqvist_cloud_fraction:
+    _target_: jcm.physics.clouds.sundqvist.SundqvistCloudFraction
+  rrtmgp_radiation:
+    _target_: jcm.physics.radiation.rrtmgp.RRTMGPRadiation
+  tte_tke_vertical_diffusion:
+    _target_: jcm.physics.vertical_diffusion.tte_tke.TteTkeVerticalDiffusion
+  echam_surface:
+    _target_: jcm.physics.surface.echam.surface_physics.EchamSurface
+  tiedtke_convection:
+    _target_: jcm.physics.convection.tiedtke_nordeng.TiedtkeConvection
+  echam_1m_microphysics:
+    _target_: jcm.physics.clouds.echam_1m.Echam1MMicrophysics
+  hines_gwd:
+    _target_: jcm.physics.gravity_waves.hines.HinesGwd
+  lott_miller_sso:
+    _target_: jcm.physics.gravity_waves.sso.LottMillerSso
+  production_tracers:
+    _target_: jcm_strat.advection_tracers.ProductionTracersAoa500
+    aoa500_reset_pressure_hpa: 500.0
+    injection: once
+    first_segment: false        # chain_segments.sh sets true on segment 1
+    pulse_sigma_deg: 12.0
+    pulse_sigma_decades: 0.25
+    source_timescale_days: 90.0
+    surface_sink: false
+    lid_p_hpa: 1.0
+    lid_tau_days: 1.0
+    lid_clock_offset_days: 110.0
+    lid_sink_injections: false
+  omega_diagnostic:
+    _target_: jcm.physics.diagnostics.omega.OmegaDiagnostic

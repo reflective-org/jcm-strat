@@ -398,3 +398,177 @@ the phase's `docs/outputs/<NN_phase>/output.md` is updated before the PR is open
 2. Minimum acceptable Δz in the 18–30 km aerosol layer, needed before issue 4 starts.
 3. What counts as "realistic enough": one agreed number on age of air and one on vortex
    strength, before PR 5's run so the result is decided, not argued.
+
+# Phase 13 (planned, 2026-09-21) — radiative relaxation and gravity-wave drag for the dry model
+
+**Why.** Phase 12 (`docs/outputs/12_circulation/`) showed that the too-old stratospheric age of air belongs to the dry
+Polvani-Kushner configuration: JCM's full physics puts the tropical age on CLaMS (1.33 yr at 55 hPa) under the same ERA5
+and QBO nudging, while no dry-model change (QBO off, full L95 troposphere) moved it. The dry model's deficit is the
+near-zero tropical ascent between 50 and 20 hPa and a weak deep branch, i.e. missing wave drag above ~20 hPa
+(downward control) and a relaxation whose single 15-day time scale and fixed equilibrium profile misplace the winds that
+filter the waves. The full physics costs 11× (3.1-3.4 h/yr) and over-drives the shallow branch instead.
+
+**Susanne's choice (2026-09-21): option (c), both changes together, plus a drag-only run alongside it.** The two components,
+so each can also be run alone if the combined run needs separating:
+
+(a) **Jucker et al. (2013, J. Atmos. Sci., "Maintenance of the stratospheric structure in an idealized GCM") relaxation**
+    in place of the Held-Suarez + Polvani-Kushner *thermal relaxation*: equilibrium temperature T_e(lat, p, season) from a
+    radiative calculation with seasonal insolation and ozone, and a height-dependent relaxation time tau(p) (weeks in the
+    lower stratosphere, days near the stratopause). New relaxation term subclassing `HeldSuarezColumns` like
+    `PolvaniKushnerColumns` does, so the Held-Suarez boundary-layer friction stays. T_e and tau: from the paper's data if
+    available, otherwise reconstructed from the paper (open: ask Susanne for a pointer).
+(b) **Gravity-wave drag, both schemes** (Susanne, 2026-09-21): JCM's `HinesGwd` (non-orographic, prescribed launch
+    spectrum) AND `LottMillerSso` (orographic: sub-grid mountain waves from the T63 terrain file's orostd/orosig/orogam/
+    orothe/oropic/oroval fields, which the dry runs already load) added to the dry physics list as they are in
+    `physics/echam.yaml`. Rationale: the resolved planetary-wave source is ERA5's by construction (nudging < 150 hPa,
+    real T63 orography), so the idealized-topography route of Gerber-Polvani / Linz et al. is not needed; what the dry
+    model lacks is the SUB-GRID orographic and the non-orographic wave drag above 150 hPa, where the winds are free and the
+    schemes deposit their momentum (the nudging suppresses only Lott-Miller's low-level blocking part, which we do not
+    need). In CMIP-class models the orographic part is a third to a half of the NH-winter gravity-wave drag. Check what
+    each term needs from the state (both ran inside the full package; the dry model has no moisture physics). If a
+    scheme cannot run dry, a Rayleigh drag profile in the upper stratosphere/mesosphere is the fallback.
+
+**Unchanged from the Phase 12 control** (`p12_ctl`): ERA5 nudging of u, v, T below 150 hPa (tau 6 h, lowest 2 levels
+free), QBO nudging as its own `QboNudging` term (tau 1 d, 90-1 hPa, mean-preserving), strat63 grid and sponge, Phase 12
+tracer term (4 clocks incl. aoa500, n2o/cfc11, injections not written), 6-hourly output, Gregorian calendar, one
+calendar year per segment, 1990-1994.
+
+**Why the drag stays in (Susanne, 2026-09-21).** By downward control the ascent through 30 hPa is set by the wave drag
+above 30 hPa - in reality mostly gravity waves breaking between 30 and 80 km. The dry model has no drag there but the
+sponge in the top four levels, so the 50-20 hPa stall and the 12 hPa entry age (3.80 vs WACCM6 2.90 yr) have no forcing
+to fix them; a better relaxation changes the winds the waves propagate through but cannot supply momentum where no waves
+break. Caveat from Phase 12 run 4: the Hines scheme at its ECHAM defaults over-drives the full-physics circulation
+(70 hPa upwelling 3x WACCM6, no Arctic vortex, polar 55 hPa entry age 2.7 vs 3.7 yr). So the drag goes in as a
+**tunable experiment with acceptance criteria**, not as a fixed component; the source strength (and launch level) are
+the knobs, a prescribed Rayleigh drag profile in the upper stratosphere/mesosphere is the fallback (one tunable number,
+also the fallback if Hines cannot run without the moisture physics).
+
+**Runs, two at once (GPU 0 and 1):**
+* `p13_gwd` - **drag only**: Phase 12 control + `HinesGwd` + `LottMillerSso`. Isolates the wave-drag effect.
+* `p13_jucker_gwd` - **(c) both**: drag + the Jucker et al. relaxation. The relaxation-only effect is the difference
+  between the two runs; `p13_jucker` alone is run only if that difference needs its own check.
+Each ~30 min/yr on strat63, 5 years ~2.5 h. Smoke 5 days each, then the chains, then `scripts/phase12_compare.py`
+against `p12ctl_5yr` (tags gwd, jucker_gwd) and against `p12echam_5yr`; age of air judged by the ENTRY-AGE clock
+`aoa150` against WACCM6 REF-D1 (Phase 12 addendum: the surface clock carries a 1-2 yr tropospheric transit in the dry
+model), with `aoa500` and `aoa_sfc` shown alongside.
+
+**Acceptance (entry-age clock).** Tropical w* at 30 and 10 hPa within a factor 1.5 of WACCM6 (0.26 / 0.47 mm/s; control
+0.09 / 0.13); no 50-20 hPa stall; tropical `aoa150` at 12 hPa within 0.4 yr of WACCM6 (2.90; control 3.80) and at
+55 hPa within 0.3 yr (1.19; control 1.39, i.e. do not make it worse); polar-cap `aoa150` at 55 hPa not below WACCM6's
+3.7 yr (the full-physics failure); polar-night jets no weaker than the control's (u(60N, 10 hPa) DJF, u(60S) JJA vs
+ERA5); age above 20 hPa no longer flat at the lid value; cost <= 1.3x the control. If `p13_gwd` overshoots like the full
+physics, one retune of the Hines source strength (and/or the Lott-Miller gwd constant) before falling back to the Rayleigh
+profile; if the retune needs to know which scheme overshoots, one extra run with Lott-Miller only.
+
+**Troposphere (separate, small).** The dry troposphere mixes tracers 10x too slowly (no convection / boundary-layer
+turbulence; Phase 12 addendum). Not part of the two runs above. Options, if the surface clock itself must be right:
+reset the surface clock through the boundary layer (p > 850 hPa) instead of the lowest two layers; a dry convective
+adjustment or a prescribed vertical tracer diffusion in the troposphere. Otherwise judge the stratosphere by `aoa150`.
+
+**Record.** `docs/outputs/13_relaxation_gwd/output.md`, KEY_DECISIONS row for the relaxation choice, PDF as for Phase 12.
+Branch `phase13-relaxation-gwd` off `phase12-circulation`.
+
+**Update 2026-09-23 (Susanne): what actually runs first.** Three runs, all 1990-1994, 6-hourly, in `scripts/phase13_run.sh`
+(tmux `phase13-gravity-wave`), branch `phase13-gwd`, record `docs/outputs/13_gwd/`:
+
+* `p13_gwd` (GPU 1) - **drag only**, as above: `p12_ctl` + `HinesGwdLaunch` (JCM's Hines with the launch level given as a
+  pressure, 634 hPa = the L95 default level; JCM's fixed "10 levels above the surface" would be 126 hPa on the 8-layer
+  tropospheres of strat63/77) + `LottMillerSso` at JCM defaults, `MoistAirColumnState` prepended because the drag terms
+  read its pressure/height/density diagnostics. **The clocks keep the 1 hPa lid** (Susanne: "for tracers, keep the
+  relaxation of the clocks to WACCM above 1"); the mesosphere is judged by w* (`scripts/mesosphere_wstar.py`, the table
+  of the Phase 12 addendum), not by the clocks.
+* `p13_gwd_l95` (GPU 2) - the same on **JCM's native T63L95** (all 95 levels: 22 mesosphere, 47 stratosphere, 26
+  troposphere; L95's own 10-level sponge). Susanne 2026-09-23: "just use L95, definitely use all levels for troposphere and
+  stratosphere" (replaces a strat63 + L95-mesosphere hybrid, strat77, that was set up first and dropped before it ran).
+  Two questions at once: does resolving where the waves break (12 free mesospheric layers instead of 4) change the
+  mesospheric cell, and does the full troposphere change the wave source under the drag? Same grid as `p12_echam`, so
+  dry + drag vs full physics is a like-for-like comparison there. Reuses the 6-h L95 windows prefetched for `p12_echam`.
+* `p13_l81_n400` (GPU 3) - Phase 12's strat81 run (no drag) with the **ERA5 nudging cut off at 400 hPa** instead of 150
+  (`nudging.min_pressure_hpa`): the upper troposphere, the tropopause region and the wave fluxes into the stratosphere
+  become the model's own. Reuses the strat81 windows (the cutoff is a run-time mask).
+
+The Jucker et al. relaxation (a) is postponed, not dropped: the mesosphere result of 2026-09-22 made the drag the first
+question. Comparisons: gwd vs `p12ctl_5yr`, gwd_l95 vs gwd, vs ctl and vs `p12echam_5yr`, l81_n400 vs `p12l81_5yr`, gwd vs `p12echam_5yr`;
+acceptance as above (entry-age clock `aoa150`), plus for the mesosphere: tropical w* UPWARD at 1-0.3 hPa and polar
+descent in the 1994 segment (the dry runs have -0.4 to -1 mm/s there, full ECHAM +1 to +2 / -3 to -7).
+
+# Phase 13b (planned 2026-09-23 19:40 PDT; CONFIRMED 19:50 PDT "Go but do it with L81, not L63") — the Jucker et al. relaxation
+
+**Why.** Phase 13 (`docs/outputs/13_gwd/`) showed that Hines + Lott-Miller drag added to the dry Polvani-Kushner model puts
+its momentum into the lower stratosphere (shallow branch 2.6× WACCM6, extratropics 1.4 yr too young, 10 hPa ascent collapses)
+and none above the stratopause (mesosphere still downward). The same schemes give the full physics a mesospheric cell, so the
+difference is the winds and temperatures the waves propagate through: Polvani-Kushner relaxes to a flat standard atmosphere
+above 3 hPa with one 15-day timescale, whereas the radiative equilibrium has a 300 K summer stratopause, a 190-200 K winter
+polar upper stratosphere and a 4-6 day relaxation time there. That is exactly what Jucker, Fueglistaler & Vallis (2013, JAS)
+provide. Susanne, 2026-09-23 19:20 PDT: "can you try this Jucker thing? ... one GPU ... nothing that takes more than 14 h".
+
+**Data.** JFV's own repository `github.com/mjucker/JFV-strat` (cloned read-only to `cache/jfv-strat`, 2026-09-23) ships
+`temp_monthly_L10_full.nc` and `tau_monthly_L10_full.nc`: the 2013 paper's equilibrium temperature T_e(month, p, lat) and
+relaxation time tau(month, p, lat) from their radiative calculation - 12 mid-month values, 40 pressure levels 0.007-945 hPa,
+64 Gaussian latitudes, zonally uniform. Checked: January T_e at 1 hPa is 305 K at 85S (summer stratopause) and 205 K at 85N;
+at 100 hPa 231 K / 186 K; tau is 25-40 d at 100-300 hPa, 5-10 d at 10 hPa, 4.5-6 d at 1-0.1 hPa, 15 d at 0.01 hPa. The
+zonal slice (12x40x64, 0.5 MB) is stored in the repo as `jcm_strat/data/jfv2013_te_tau_zm.nc`; the analytic 2014 formulas
+(also in the repo) are not used - the data is the paper's.
+
+**Term.** `jcm_strat/jucker.py: JuckerColumns(PolvaniKushnerQbo)`: T_e and 1/tau interpolated (log-p, latitude) onto the
+column grid in `cache_coords`, linear and periodic in the fraction of year between mid-months at run time. Above p_bd = 100 hPa
+the JFV fields; below p_hs = 250 hPa the term's present troposphere (Held-Suarez T_eq with the PK winter asymmetry, HS tau);
+linear blend in pressure between - JFV's own `hs_forcing.f90` defaults (`p_hs=250e2, p_bd=100e2`). Nothing else changes:
+QBO nudging (in the same term), ERA5 nudging < 150 hPa, sponge, tracers with the 1 hPa lid, 6-h output, calendar.
+
+**Runs (GPU 1 only, sequential, strat81 = full L95 troposphere (Susanne), 1990-1994, ~27 min/yr each):**
+* `p13_jucker`     - `p12_l81` with the relaxation swapped: relaxation effect alone (vs `p12l81_5yr`). ~2.3 h.
+* `p13_jucker_gwd` - the same plus Hines + Lott-Miller as in `p13_gwd`: option (c) of the original Phase 13 plan
+  (vs `p13gwd_5yr` for the relaxation's effect under drag, vs `p13_jucker` for the drag's effect under the new relaxation,
+  vs `p12echam_5yr`). ~2.7 h.
+Pipeline `scripts/phase13b_run.sh` (tmux `phase13b-jucker`): pytest -> 5-day smokes (both) -> chain 1 -> chain 2 -> diagnostics
+with the compare pairs in parallel (~1 h) -> mesosphere table over every Phase 12/13 run. Budget ~7 h, hard stop at 12 h.
+Native L95 is not repeated (Phase 13: ≤ 0.2 yr / 0.08 mm/s difference at 1.7× cost); strat81 keeps every tropospheric level.
+
+**Rules for the unattended run.** Smoke gate: finite fields, 150 K < T < 330 K, |u| < 150 m/s, the term's log line shows the
+JFV table on the run's levels; a failed gate stops the phase and is recorded. No retunes, no extra runs, no pushes; both runs
+are made regardless of the first one's result (each answers a different question). Record `docs/outputs/13b_jucker/output.md`
+with the Phase 13 acceptance table (entry-age clock vs WACCM6, w* vs WACCM6, mesosphere w* 1994) and a PROGRESS row; commit
+on `phase13-gwd`. Everything stays on Voltage Park in this folder.
+
+**Acceptance, as Phase 13:** tropical w* 30 / 10 hPa within 1.5× of 0.26 / 0.47 mm/s; tropical `aoa150` 12 hPa within 0.4 yr
+of 2.90, 55 hPa not worse than 1.29; 50-70° `aoa150` 55 hPa ≥ 3.6 (not the drag run's 2.5); tropical w* at 1-0.3 hPa upward
+and polar descent > 1 mm/s in the 1994 segment; cost ≤ 1.3× control.
+
+# Phase 13c (2026-09-24, Susanne) — Jucker + drag + 400 hPa cutoff, ten years, Lott-Miller on/off
+
+Susanne, 2026-09-24 10:30 PDT: "Can you do an additional run, 10 years, with Jucker relaxation, gravity wave drag and nudging
+only until 400 hPa. And do the same but for gravity use only Hines, not Lott-Miller." Two strat81 chains 1990-1999 in parallel
+(GPU 1: `p13_jucker_gwd_n400` = `p13_jucker_gwd` + `nudging.min_pressure_hpa: 400`; GPU 2: `p13_jucker_hines_n400` = the same
+without `lott_miller_sso`), pipeline `scripts/phase13c_run.sh` (tmux `phase13c-n400`), strat81 windows 1995-1999 prefetched,
+the nine moist_air_state diagnostics dropped from the output (31 GB/yr, never analysed). ~40 min/yr -> ~7 h + 1 h diagnostics.
+Record `docs/outputs/13c_jucker_n400/`. Comparisons: Hines-only vs Hines+LM (clean pair, both 10 yr), n400 vs `p13juckergwd_5yr`,
+vs `p12echam_5yr`, Hines-only vs `p13jucker_5yr`; mesosphere table on the 1994 and 1999 segments.
+
+# Phase 13d (2026-09-25, Susanne) — Jucker + Hines only, nudged below 150 hPa, strat81
+
+"Can you do an additional run: Jucker relaxation plus Hines only, nudged below 150 hPa, on strat81." `p13_jucker_hines` =
+`p13_jucker_gwd` minus `lott_miller_sso`, 1990-1994 (equal clock length with `p13jucker_5yr` and `p13juckergwd_5yr`), GPU 1,
+pipeline `scripts/phase13d_run.sh` (tmux `phase13d-jucker-hines`), record `docs/outputs/13d_jucker_hines/`. Comparisons: vs
+Jucker no drag (the Hines effect), vs Jucker + both schemes (Lott-Miller off at 150 hPa), vs full physics; mesosphere table 1994.
+If the shallow branch overshoots as in 13b, the next knob is `rms_launch_wind` (1.0 -> 0.5-0.7 m/s) - not part of this run.
+
+# Phase 14 (running, 2026-09-22) — free-running full physics, 10 years
+
+**Susanne, 2026-09-22:** "Can you create a new phase that runs JCM full physics with no nudging? Can you run it for 10 years?
+Look at the same plots as in phase 12." Numbered 14 because Phase 13 (above) is planned and agreed but not started.
+
+**Run.** `p14_free` = `p12_echam` (JCM's full ECHAM package on T63L95 with the Phase 12 clocks and omega) with BOTH
+relaxations removed: `nudging: none` (no ERA5 u/v/T relaxation below 150 hPa) and physics `echam_free14` (= `echam_prod12`
+without the `qbo_nudging` term). ERA5 initial state 1990-01-01, present-day climatological boundary conditions, ten
+calendar-year segments 1990-1999 chained on GPU 0 (`p14free_10yr`; the first five also linked as `p14free_5yr`),
+~2.5-3 h per year. Pipeline `scripts/phase14_run.sh`.
+
+**Diagnostics (the Phase 12 set).** `scripts/phase12_compare.py` with before = `p12echam_5yr` (nudged full physics) for the
+10-yr and the first-5-yr aggregate, and before = `p12ctl_5yr` (dry control) for the 10-yr; clocks `aoa_sfc`, `aoa500`,
+`aoa150`; `scripts/aoa_vs_clams.py` triptychs and profiles for the three clocks. Question answered: is the over-driven
+shallow branch / missing vortex / too-young extratropics of Phase 12 run 4 the package's own or the nudging's, and does
+the free package make a QBO.
+
+**Record.** `docs/outputs/14_free_physics/output.md`; KEY_DECISIONS #45. Branch `phase14-free-physics` off
+`phase12-circulation`.

@@ -1,0 +1,14 @@
+# @package _global_
+# Phase 13 run 1, DRAG ONLY: the Phase 12 control (p12_ctl: strat63, ERA5-nudged troposphere < 150 hPa,
+# Polvani-Kushner stratosphere, QBO nudging to 1 hPa tau 1 d, four clocks with the 1 hPa tracer lid, injections
+# integrated but not written, 6-hourly output, Gregorian calendar) plus Hines non-orographic and Lott-Miller
+# orographic gravity-wave drag (physics/strat_pk_gwd_prod13.yaml). Everything else - grid, sponge, nudging,
+# tracers, output policy - is p12_ctl's, so the difference to p12ctl_5yr is the wave drag alone.
+# Why (PLANS Phase 13, docs/outputs/12_circulation addendum 2026-09-22): the dry runs have no momentum sink above
+# the stratopause but the sponge; their tropical residual motion is DOWNWARD from ~1.5 hPa up and the 50-20 hPa
+# ascent stalls; by downward control only drag above those levels can fix either.
+# Chain (scripts/phase13_run.sh):
+#   EXPERIMENT=p13_gwd PREFIX=p13gwd SCHEME=calendar YEARS=1990-1994 AGG=p13gwd_5yr SAVE_INTERVAL=0.25 GPU=1 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p12_ctl
+  - override /physics: strat_pk_gwd_prod13
