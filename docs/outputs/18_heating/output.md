@@ -1,6 +1,6 @@
 # Phase 18 — T_e correction with ERA5's diabatic heating as the tropical target (strat81, GPU 0)
 
-Status: **running unattended** (tmux `strat_p18`, log `runs/p18.log`, branch `phase18-heating` in the main `jcm-strat` checkout).
+Status: **finished** 2026-10-02 01:09 PDT (H_final diagnostics in `final/`); results not yet written up.
 Susanne, 2026-10-01: "I need age of air to look like that of CLaMS, and the tropical upwelling needs to match ERA5 better too" ...
 "can you set this up what you just laid out and run it? Use GPU 0". Nothing is pushed by the pipeline.
 
