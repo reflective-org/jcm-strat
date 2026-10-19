@@ -72,8 +72,18 @@ def interpolate_table(field, p_hpa, lat_deg, p_out_hpa, lat_out_deg):
 class JuckerColumns(PolvaniKushnerQbo):
     """PolvaniKushnerQbo with the JFV2013 equilibrium temperature and relaxation time above ``p_bd_hpa``."""
 
-    def __init__(self, data_file: str = DEFAULT_DATA, p_bd_hpa: float = 100.0, p_hs_hpa: float = 250.0, **pk_kwargs) -> None:
+    def __init__(self, data_file: str = DEFAULT_DATA, p_bd_hpa: float = 100.0, p_hs_hpa: float = 250.0,
+                 tau_scale: float = 1.0, tau_max_days: float | None = None, **pk_kwargs) -> None:
         super().__init__(**pk_kwargs)
+        # Phase 15 sweep knobs on the JFV relaxation TIME only (T_e untouched): ``tau_scale`` multiplies tau(month, p, lat)
+        # everywhere above p_bd (0.5 = twice as fast); ``tau_max_days`` caps it (15 = the lower stratosphere, where JFV
+        # has 12-39 d, relaxes as fast as Polvani-Kushner's 15 d; the 4-10 d of the upper stratosphere are unchanged).
+        if not float(tau_scale) > 0.0:
+            raise ValueError("tau_scale must be positive")
+        if tau_max_days is not None and not float(tau_max_days) > 0.0:
+            raise ValueError("tau_max_days must be positive or null")
+        self.tau_scale = float(tau_scale)
+        self.tau_max_days = None if tau_max_days is None else float(tau_max_days)
         if float(p_bd_hpa) > self.p_t_pa / 100.0:
             raise ValueError(f"p_bd_hpa={p_bd_hpa} must not exceed the tropopause pressure {self.p_t_pa / 100.0} hPa "
                              "(the Polvani-Kushner stratosphere would show through the blend)")
@@ -96,7 +106,10 @@ class JuckerColumns(PolvaniKushnerQbo):
         p_ref_hpa = np.asarray(self._sigma.get_value()) * P0_PA / 100.0          # (nlev,)
         lat_cols = np.rad2deg(np.asarray(self._lat.get_value()))                   # (ncols,)
         te_tab = interpolate_table(te, p_hpa, lat_deg, p_ref_hpa, lat_cols) * self._k_per_nondim
-        k_tab = self._k_per_inv_second / interpolate_table(tau, p_hpa, lat_deg, p_ref_hpa, lat_cols)
+        tau_s = interpolate_table(tau, p_hpa, lat_deg, p_ref_hpa, lat_cols) * self.tau_scale
+        if self.tau_max_days is not None:
+            tau_s = np.minimum(tau_s, self.tau_max_days * 86400.0)
+        k_tab = self._k_per_inv_second / tau_s
         self._te_tab = nnx.Variable(jnp.asarray(te_tab))                           # (12, nlev, ncols), model T units
         self._k_tab = nnx.Variable(jnp.asarray(k_tab))                             # (12, nlev, ncols), model 1/time units
         self._nodes = nnx.Variable(jnp.asarray(month_nodes))                       # (14,) fractions of year, periodic ends
@@ -106,10 +119,12 @@ class JuckerColumns(PolvaniKushnerQbo):
         top = int(np.argmin(p_ref_hpa)); j_eq = int(np.argmin(np.abs(lat_cols)))
         tau_days = 1.0 / (k_tab / self._k_per_inv_second) / 86400.0
         _log.info("JuckerColumns: JFV2013 table (%s) on L%d x %d columns; JFV above %.0f hPa, Held-Suarez below %.0f hPa; "
-                  "T_e at the top level (%.3f hPa) Jan: equator %.0f K, min %.0f, max %.0f K; tau range above p_bd %.1f-%.1f d",
+                  "T_e at the top level (%.3f hPa) Jan: equator %.0f K, min %.0f, max %.0f K; tau range above p_bd %.1f-%.1f d "
+                  "(tau_scale %g, tau_max_days %s)",
                   os.path.basename(self.data_file), p_ref_hpa.size, lat_cols.size, self.p_bd_pa / 100, self.p_hs_pa / 100,
                   p_ref_hpa[top], te_tab[0, top, j_eq] / self._k_per_nondim, te_tab[0, top].min() / self._k_per_nondim,
-                  te_tab[0, top].max() / self._k_per_nondim, tau_days[:, beta >= 1.0].min(), tau_days[:, beta >= 1.0].max())
+                  te_tab[0, top].max() / self._k_per_nondim, tau_days[:, beta >= 1.0].min(), tau_days[:, beta >= 1.0].max(),
+                  self.tau_scale, self.tau_max_days)
 
     # --- time interpolation --------------------------------------------------------------
     def _month_weights(self, tyear):
