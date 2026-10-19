@@ -30,3 +30,5 @@ dist/
 .nfs*
 .wt-*
 docs/outputs/comparisons/*/.cache.pkl
+# Phase 22 3-D (zonally varying) T_e corrections are 168 MB each, over GitHub's 100 MB limit: kept on disk, not tracked
+docs/outputs/22_teq_vortex/corrections/C3[1-8].nc

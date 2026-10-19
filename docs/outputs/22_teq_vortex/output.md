@@ -59,7 +59,8 @@ shallow branch), and aoa150 at 55 hPa.
 | finals | 0/1/2 | best iteration of each track, 1990-2009 from spin-up |
 
 Results: `leaderboard.md` (updated after every score), `runlog.md` (every step), `scores/*.json`, `corrections/*.nc`,
-`final/<track>_final/`. Decisions: `decisions.md`.
+`final/<track>_final/`. Decisions: `decisions.md`. The 3-D corrections `C31.nc`-`C38.nc` (168 MB each, over GitHub's
+100 MB limit) are not tracked; they stay on disk in the `jcm-strat-phase19` worktree and can be regenerated with `teq_update.py`.
 
 ## Results (written 2026-10-19)
 
