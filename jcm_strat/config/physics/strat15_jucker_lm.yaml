@@ -16,6 +16,7 @@ terms:
     p_hs_hpa: 250.0            # Held-Suarez (PK troposphere) below this; linear blend between (JFV hs_forcing.f90 defaults)
     tau_scale: 1.0             # Phase 15 knob: multiplies the JFV relaxation time above p_bd (0.5 = twice as fast)
     tau_max_days: null         # Phase 15 knob: caps the JFV relaxation time (15 = lower stratosphere as fast as PK)
+    te_correction_file: null      # Phase 17: additive dT_e(month, p, lat) file from scripts/teq_correction.py (null = plain JFV)
     gamma_k_per_km: 4.0
     p_tropopause_hpa: 100.0
     phi0_deg: 50.0

@@ -107,8 +107,9 @@ def test_base_is_p13_jucker_with_whitelisted_output_only(cfgs):
     assert b.run == j.run
     for k in ("grid", "nudging", "sl_mass_fixer_exclude", "calendar", "level_table", "terrain"):
         assert b[k] == j[k], k
-    hs_b = {k: v for k, v in b.physics.terms.held_suarez.items() if k not in ("tau_scale", "tau_max_days")}
-    assert hs_b == dict(j.physics.terms.held_suarez) and b.physics.terms.held_suarez.tau_scale == 1.0 and b.physics.terms.held_suarez.tau_max_days is None
+    hs_b = {k: v for k, v in b.physics.terms.held_suarez.items() if k not in ("tau_scale", "tau_max_days", "te_correction_file")}
+    assert hs_b == dict(j.physics.terms.held_suarez) and b.physics.terms.held_suarez.tau_scale == 1.0 and b.physics.terms.held_suarez.tau_max_days is None \
+        and b.physics.terms.held_suarez.te_correction_file is None          # Phase 17 knob, off by default
     assert b.physics.terms.production_tracers == j.physics.terms.production_tracers and b.physics.terms.production_tracers.lid_p_hpa == 1.0
     assert list(b.physics.terms) == ["held_suarez", "production_tracers", "omega_diagnostic"]
 

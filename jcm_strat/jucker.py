@@ -58,6 +58,16 @@ def load_jfv_table(path: str = DEFAULT_DATA):
                 np.asarray(d.te.values, float), np.asarray(d.tau.values, float))
 
 
+def load_te_correction(path: str):
+    """Phase 17 T_e correction file -> (p_hpa ascending, lat_deg ascending, dte[12, np, nlat] K)."""
+    import xarray as xr
+    with xr.open_dataset(path, decode_times=False) as d:
+        d = d.sortby("pfull").sortby("lat")
+        if d.dte.shape[0] != 12:
+            raise ValueError(f"{path}: dte must have 12 months first, got {d.dte.shape}")
+        return np.asarray(d.pfull.values, float), np.asarray(d.lat.values, float), np.asarray(d.dte.values, float)
+
+
 def interpolate_table(field, p_hpa, lat_deg, p_out_hpa, lat_out_deg):
     """Bilinear (log-p, lat) interpolation of ``field[12, np, nlat]`` onto ``(12, nlev, ncols)``; clamped at the edges."""
     lp, lpo = np.log(p_hpa), np.log(np.asarray(p_out_hpa, float))
@@ -73,8 +83,14 @@ class JuckerColumns(PolvaniKushnerQbo):
     """PolvaniKushnerQbo with the JFV2013 equilibrium temperature and relaxation time above ``p_bd_hpa``."""
 
     def __init__(self, data_file: str = DEFAULT_DATA, p_bd_hpa: float = 100.0, p_hs_hpa: float = 250.0,
-                 tau_scale: float = 1.0, tau_max_days: float | None = None, **pk_kwargs) -> None:
+                 tau_scale: float = 1.0, tau_max_days: float | None = None, te_correction_file: str | None = None,
+                 **pk_kwargs) -> None:
         super().__init__(**pk_kwargs)
+        # Phase 17: an additive correction dT_e(month, p, lat) in K on the JFV T_e (scripts/teq_correction.py writes it from the
+        # model-minus-ERA5 temperature of a previous run). Applied above p_bd through the same blend; null = plain JFV.
+        self.te_correction_file = None if te_correction_file in (None, "", "null") else str(te_correction_file)
+        if self.te_correction_file is not None and not os.path.exists(self.te_correction_file):
+            raise FileNotFoundError(self.te_correction_file)
         # Phase 15 sweep knobs on the JFV relaxation TIME only (T_e untouched): ``tau_scale`` multiplies tau(month, p, lat)
         # everywhere above p_bd (0.5 = twice as fast); ``tau_max_days`` caps it (15 = the lower stratosphere, where JFV
         # has 12-39 d, relaxes as fast as Polvani-Kushner's 15 d; the 4-10 d of the upper stratosphere are unchanged).
@@ -105,7 +121,14 @@ class JuckerColumns(PolvaniKushnerQbo):
         month_nodes = np.concatenate([[days[-1] / DAYS_PER_YEAR - 1.0], days / DAYS_PER_YEAR, [days[0] / DAYS_PER_YEAR + 1.0]])
         p_ref_hpa = np.asarray(self._sigma.get_value()) * P0_PA / 100.0          # (nlev,)
         lat_cols = np.rad2deg(np.asarray(self._lat.get_value()))                   # (ncols,)
-        te_tab = interpolate_table(te, p_hpa, lat_deg, p_ref_hpa, lat_cols) * self._k_per_nondim
+        te_k = interpolate_table(te, p_hpa, lat_deg, p_ref_hpa, lat_cols)
+        if self.te_correction_file is not None:
+            c_p, c_lat, dte = load_te_correction(self.te_correction_file)
+            dte_k = interpolate_table(dte, c_p, c_lat, p_ref_hpa, lat_cols)
+            _log.info("JuckerColumns: T_e correction %s: %+.1f .. %+.1f K above p_bd", self.te_correction_file,
+                      dte_k[:, p_ref_hpa <= self.p_bd_pa / 100].min(), dte_k[:, p_ref_hpa <= self.p_bd_pa / 100].max())
+            te_k = te_k + dte_k
+        te_tab = te_k * self._k_per_nondim
         tau_s = interpolate_table(tau, p_hpa, lat_deg, p_ref_hpa, lat_cols) * self.tau_scale
         if self.tau_max_days is not None:
             tau_s = np.minimum(tau_s, self.tau_max_days * 86400.0)

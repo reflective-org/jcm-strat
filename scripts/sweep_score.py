@@ -149,6 +149,26 @@ def waccm_wstar():
     return out
 
 
+def era5_wstar(years):
+    """Phase 17: ERA5 TEM w* from the monthly means of [v], [T], [v'T'] (scripts/fetch_era5_tem.py) of ``years`` (the
+    window's own years). None if any year is missing. theta = T (1000/p)^kappa at a pressure level, so
+    [v'theta'] = (1000/p)^kappa [v'T']; the formula is linear in the monthly means."""
+    files = [os.path.join(REPO, "cache", "era5_ref", f"era5_tem_monthly_{y}.nc") for y in years]
+    if not files or not all(os.path.exists(q) for q in files):
+        return None
+    ds = xr.open_mfdataset(files, combine="by_coords", decode_times=True).load()
+    ds = ds.sel(lat=ds.lat[np.abs(ds.lat) < 89.0])
+    fac = (1000.0 / ds.level) ** circ.KAPPA
+    out = {}
+    for s, months in SEASONS.items():
+        k = ds.time.dt.month.isin(list(months))
+        m = ds.where(k, drop=True).mean("time")
+        p, vstar, psi = circ.tem_streamfunction(m.vzm.values, (m.vtzm * fac).values, (m.tzm * fac).values,
+                                                ds.level.values * 100.0, ds.lat.values)
+        out[s] = (p / 100.0, ds.lat.values, psi, circ.residual_w(p, psi, ds.lat.values))
+    return out
+
+
 def clams_ref():
     f = os.path.join(REF_DIR, "clams_age.npz")
     if os.path.exists(f):
@@ -207,6 +227,29 @@ def score(rundir, window_years, age_days):
         a, b = out[f"wstar_annual_{lv:g}"], out[f"wstar_waccm_annual_{lv:g}"]
         w_terms.append(min(abs(np.log(max(a, W_FLOOR) / max(b, W_FLOOR))), W_CAP))
     out["w_logerr"] = float(np.mean(w_terms))
+    # Phase 17: ERA5 w* of the window's own years (Susanne 2026-10-01: "the tropical upwelling needs to match ERA5"); when
+    # present it replaces WACCM in the composite (w_logerr_waccm keeps the old number)
+    years = sorted({int(y) for y in np.unique(fields["v"].time.dt.year.values)})
+    years = [y for y in years if (fields["v"].time.dt.year == y).sum() > 300]          # drop the stray first frame of the window
+    eref = era5_wstar(years)
+    if eref is not None:
+        e_terms = []
+        for s in SEASONS:
+            pe, lae, psie, we = eref[s]
+            for lv in W_LEVELS:
+                out[f"wstar_era5_{s}_{lv:g}"] = circ.tropical_wstar(pe * 100.0, we, lae, lv)
+            for lv in FLUX_LEVELS:
+                out[f"flux_era5_{s}_{lv:g}"] = circ.upward_mass_flux(pe * 100.0, psie, lv, lae) / 1e9
+        for lv in W_LEVELS:
+            a, b = out[f"wstar_annual_{lv:g}"], out[f"wstar_era5_annual_{lv:g}"]
+            e_terms.append(min(abs(np.log(max(a, W_FLOOR) / max(b, W_FLOOR))), W_CAP))
+        out["w_logerr_waccm"] = out["w_logerr"]; out["w_logerr_era5"] = float(np.mean(e_terms)); out["w_ref"] = "ERA5"
+        out["w_logerr"] = out["w_logerr_era5"]
+        pe, lae, _, we = eref["annual"]; trope = np.abs(lae) <= 15; wgte = np.cos(np.deg2rad(lae[trope]))
+        out["profile_era5_p"] = [float(x) for x in pe]
+        out["profile_era5_wstar_tropics"] = [float(np.nansum(we[k, trope] * wgte) / np.sum(wgte)) for k in range(pe.size)]
+    else:
+        out["w_ref"] = "WACCM6"
     p, la, _, w = wm["annual"]
     for lv in MESO_LEVELS:
         row = at_level(p, w, lv)
@@ -235,10 +278,13 @@ def score(rundir, window_years, age_days):
         for lv, tag in ((55.0, "55"), (12.0, "12"), (100.0, "100")):
             row = at_level(p_hpa, age[clock], lv)
             out[f"age_{clock}_{tag}_tropics"] = band(lat, row, 0, 10); out[f"age_{clock}_{tag}_5070"] = band(lat, row, 50, 70)
+            # Phase 17: the subtropical barrier - age step from the deep tropics to 25-35 deg (in-mixing shrinks it)
+            out[f"age_{clock}_{tag}_barrier"] = band(lat, row, 25, 35) - band(lat, row, 0, 10)
     for lv, tag in ((55.0, "55"), (12.0, "12"), (100.0, "100")):
         rc = at_level(pc, ac, lv); rw = at_level(pwa, awa, lv)
         out[f"age_clams_{tag}_tropics"] = band(latc, rc, 0, 10); out[f"age_clams_{tag}_5070"] = band(latc, rc, 50, 70)
         out[f"age_waccm_{tag}_tropics"] = band(latwa, rw, 0, 10); out[f"age_waccm_{tag}_5070"] = band(latwa, rw, 50, 70)
+        out[f"age_clams_{tag}_barrier"] = band(latc, rc, 25, 35) - band(latc, rc, 0, 10)
     if "aoa150" in age:
         out["profile_lat"] = [float(x) for x in lat]
         out["profile_age150_55"] = [float(x) for x in at_level(p_hpa, age["aoa150"], 55.0)]
@@ -301,7 +347,9 @@ def main():
           f"u {res['score_u']:.2f}, T {res['score_T']:.2f}); age150 RMSE vs CLaMS-entry {res.get('age_rmse_aoa150', float('nan')):.2f} yr "
           f"(bias {res.get('age_bias_aoa150', float('nan')):+.2f}); tropical w* 100/70/50/30/10: "
           + "/".join(f"{res[f'wstar_annual_{lv:g}']:.2f}" for lv in W_LEVELS)
-          + f" (WACCM " + "/".join(f"{res[f'wstar_waccm_annual_{lv:g}']:.2f}" for lv in W_LEVELS) + f"); u RMSE {res['u_rmse']:.1f} m/s, "
+          + f" (WACCM " + "/".join(f"{res[f'wstar_waccm_annual_{lv:g}']:.2f}" for lv in W_LEVELS)
+          + ("; ERA5 " + "/".join(f"{res[f'wstar_era5_annual_{lv:g}']:.2f}" for lv in W_LEVELS) if res.get("w_ref") == "ERA5" else "")
+          + f"); barrier age 55 hPa {res.get('age_aoa150_55_barrier', float('nan')):.2f} (CLaMS {res.get('age_clams_55_barrier', float('nan')):.2f}); u RMSE {res['u_rmse']:.1f} m/s, "
           f"T RMSE {res['T_rmse']:.1f} K; {res['minutes_per_year'] or float('nan'):.0f} min/yr -> {f}")
 
 
