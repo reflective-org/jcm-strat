@@ -126,3 +126,12 @@ re-initialisation, sponge, GPUs, pipelines, diagnostics) are in the Phase 19 log
      SSO u/v/T tendencies at 100-115E, 25-35N.
   3. Before any relaunch of the chain, move runs/p20jhsso_19970101 aside (it is incomplete).
   GPU 1 is idle. Phase 21 (strat_p21_run, GPUs 2/3) is unaffected.
+
+### 2026-10-15 16:47 PDT (recorded 2026-10-20) - Phase 20b: nudge the bottom two levels as well
+- Why: 19d (dry, no Lott-Miller) and 21a/21b (full physics with Lott-Miller) all run through Dec 1997; only the dry config with
+  Lott-Miller fails, and only the dry config leaves the bottom two levels (jcm's default `pbl_levels: 2`) to the dynamics and
+  the drag alone, with no boundary layer. Test: `p20b_sso_pbl0` = Phase 20 with `nudging.pbl_levels: 0`, nothing else changed
+  (commit 82096e4), clean from the 1989-12 spin-up, GPU 0.
+- Result 18:50 PDT: passes Dec 1997 (east-Tibet bottom levels 259-291 K), no humidity exemption needed 1990-1997.
+- Susanne asked for 20 years: the 1999-2009 extension of p20b was replaced by `p20bt` (all output variables, fresh 1990-2009
+  from the spin-up, so the 1990 tracer pulses are written from their release; commit ac5f341). Done 2026-10-16 02:41 PDT, healthy.
