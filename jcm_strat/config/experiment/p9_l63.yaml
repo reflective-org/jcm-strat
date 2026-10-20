@@ -12,6 +12,17 @@ defaults:
 level_table: strat
 
 run:
+  # Phase 19 (jcm 3, PR #1027): the jcm 2 sponge (full u, v damped over N levels, T relaxed to target_T_K 250 K)
+  # no longer exists; jcm 3's UpperSponge is ECHAM's uspnge (m != 0 anomalies of u, v, T only). The remapped
+  # strat63 values (4 levels, enspodi 6.73, tau 1.5 h) have no counterpart: ECHAM's single top level, 3 h
+  # (timescale_h / enspodi null = ECHAM's). docs/outputs/19_jcm_update/decisions.md.
   sponge:
-    levels: 4
-    enspodi: 6.73
+    levels: 1
+    timescale_h: null
+    enspodi: null
+
+# jcm 3 (Phase 19): forcing.ozone_file=auto now fetches an on-grid ozone bundle eagerly and fails for the strat
+# tables (no hf://bundles/t63_l63|l81/ozone_pd.nc); jcm 2 fell back to the analytic profile silently, and the dry
+# physics never reads ozone. State the old behaviour explicitly.
+forcing:
+  ozone_file: analytic

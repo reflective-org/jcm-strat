@@ -20,7 +20,11 @@ run:
   chunk_days: 30
   save_interval: 5
   total_time: 365
-  start_date: 2005-01-01
+  start_time: 2005-01-01
+  # jcm 3 (Phase 19): run=longrun now writes calendar-month means only (monthly_means: true,
+  # save_chunks: false); every jcm-strat diagnostic reads the per-chunk files longrun_day<N>.nc
+  monthly_means: false
+  save_chunks: true
 
 # The clock is not a conserved quantity: keep it out of the dycore's global mass fixer
 # (jcm_strat/main.py; KEY_DECISIONS #19). Everything else stays fixed as in Phases 1-2.

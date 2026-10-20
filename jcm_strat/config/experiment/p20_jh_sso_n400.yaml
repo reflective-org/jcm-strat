@@ -1,0 +1,17 @@
+# @package _global_
+# Phase 20 (Susanne 2026-10-07): p19_jh_n400 (13d physics, strat81, nudging < 400 hPa, new jcm) + the FIXED Lott-Miller
+# sub-grid orographic drag (jcm PR #1027: nktopg from the grid, no land-fraction factor; terrain hf://bundles/t63/terrain.nc
+# carries orostd). Physics = strat_jucker_gwd_prod13 (Jucker + Hines launched at 634 hPa + LottMillerSso), the list of
+# Phase 13b/13c run 1, which ran the BROKEN scheme. One change against p19_jh_n400: lott_miller_sso on.
+# Ten years 1990-1999 after the discarded one-month spin-up.
+#   EXPERIMENT=p20_jh_sso_n400 PREFIX=p20jhsso SCHEME=calendar YEARS=1990-1999 AGG=p20jhsso_10yr SAVE_INTERVAL=0.25 \
+#     SPINUP="1989-12-01 31" GPU=1 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p19_jh_n400
+  - override /physics: strat_jucker_gwd_prod13
+
+# Susanne 2026-10-07 19:20 PDT: the fixed Lott-Miller drives a surface humidity spike over the SE Himalaya (q_max 105 g/kg
+# at 1990 day 60 -> jcm's health check stopped the run). q is near-passive in this dry configuration: treat it as
+# unimportant for now - q_max > 100 g/kg is logged, not fatal (jcm_strat.main.install_health_policy); every temperature
+# check stays fatal. To be revisited: reflective-org/jcm-strat#62.
+health_ignore_q_max: true

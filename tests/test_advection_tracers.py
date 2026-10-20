@@ -25,10 +25,9 @@ def _model(**kw):
     coords = get_held_suarez_coords()
     physics = ComposablePhysics(terms=[HeldSuarezColumns(), ProductionTracers(**kw), OmegaDiagnostic()],
                                 checkpoint_terms=False, vectorize_columns=True)
-    # as the production chain: a 1 January start on the Gregorian calendar, so the fraction of year
-    # is exactly 0 at the first step (JCM's 365_day default would put 2005-01-01 at day 9)
-    return Model(coords=coords, time_step=DT / 60, physics=physics,
-                 start_date=jdt.to_datetime("2005-01-01"), calendar="gregorian")
+    # as the production chain: a 1 January start, so the fraction of year is exactly 0 at the first step
+    # (jcm 3 has one Gregorian clock; jcm 2 needed calendar="gregorian" for that)
+    return Model(coords=coords, time_step=DT / 60, physics=physics, start_time=jdt.to_datetime("2005-01-01"))
 
 
 def _state_and_term(model):
@@ -222,7 +221,7 @@ def test_aoa500_subclass_adds_one_clock_and_changes_nothing_else():
     coords = get_held_suarez_coords()
     physics = ComposablePhysics(terms=[HeldSuarezColumns(), ProductionTracersAoa500(first_segment=False), OmegaDiagnostic()],
                                 checkpoint_terms=False, vectorize_columns=True)
-    model = Model(coords=coords, time_step=DT / 60, physics=physics, start_date=jdt.to_datetime("2005-01-01"), calendar="gregorian")
+    model = Model(coords=coords, time_step=DT / 60, physics=physics, start_time=jdt.to_datetime("2005-01-01"))
     state = model.dycore.to_physics_state(model._prepare_initial_dycore_state())
     term = [t for t in model.physics.terms if isinstance(t, ProductionTracersAoa500)][0]
     nlev = state.temperature.shape[0]
@@ -241,3 +240,24 @@ def test_aoa500_subclass_adds_one_clock_and_changes_nothing_else():
     # above the lid aoa500 relaxes to WACCM's age + the tropospheric offset, like aoa and aoa_sfc
     if lid.any():
         assert np.allclose(d["aoa500"][lid], d["aoa"][lid]) and not np.allclose(d["aoa500"][lid], d["aoa150"][lid])
+
+
+def test_first_step_reinitialises_after_spinup():
+    """Phase 19: after a spin-up the first step of the first segment restarts the clocks, sources and sai at 0
+    (the usual tendency at q = 0 plus -q/dt), and is the identity on a state that already holds 0."""
+    model = _model(first_segment=True, lid_p_hpa=1.0)
+    cols, term = _state_and_term(model)
+    old = {k: v + 37.0 for k, v in cols.tracers.items()}          # a month of ageing / accumulation
+    spun = cols.replace(tracers=old)
+    t_spun = _tend(term, spun, _forcing(0.0))
+    t_zero = _tend(term, cols.replace(tracers={k: jnp.zeros_like(v) for k, v in cols.tracers.items()}), _forcing(0.0))
+    for name in CLOCKS + ("sai",) + SOURCE_NAMES:
+        np.testing.assert_allclose(t_spun[name], t_zero[name] - 37.0 / DT, rtol=1e-5, atol=1e-9, err_msg=name)
+    # not on the first step: no reinitialisation (q = 37 ages normally where not reset)
+    later = _tend(term, spun, _forcing(5.0 / 365.0))
+    assert float(np.max(later["aoa"])) <= 1.0 / DAY + 1e-9
+    # a segment that is not the first never reinitialises, even on 1 January
+    model2 = _model(first_segment=False, lid_p_hpa=1.0)
+    cols2, term2 = _state_and_term(model2)
+    t2 = _tend(term2, cols2.replace(tracers={k: v + 37.0 for k, v in cols2.tracers.items()}), _forcing(0.0))
+    assert float(np.max(t2["src_1"])) >= 0.0 and float(np.min(t2["sai"])) >= 0.0

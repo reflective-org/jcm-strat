@@ -1,0 +1,26 @@
+# @package _global_
+# Phase 19d baseline (Susanne 2026-10-07): the 13d physics (Jucker relaxation + Hines only, NO Lott-Miller;
+# physics/strat_jucker_hines_prod13.yaml) on T63L95 (was strat81) with the ERA5 nudging cut off at 400 hPa - i.e. Phase 13c run 2
+# (p13_jucker_hines_n400, OLD jcm 849893be) - on the NEW jcm (35dc1997, dinosaur 1.5.0) with jcm 3's defaults:
+#   * run.sponge.levels 1, ECHAM uspnge (3 h, m != 0 only), no target_T_K (p9_l63 carries it for the whole chain);
+#   * dycore.sl_vertical_interpolation null (= cubic, jcm 3's default) on the FULL L95 grid (see below).
+# Purpose: the effect of the jcm update alone. One-month spin-up from ERA5 on 1989-12-01, discarded
+# (chain_segments.sh SPINUP), then 1990-1994 with the tracers initialised on 1990-01-01.
+#   EXPERIMENT=p19_jh_n400 PREFIX=p19jhn400 SCHEME=calendar YEARS=1990-1994 AGG=p19jhn400_5yr SAVE_INTERVAL=0.25 \
+#     SPINUP="1989-12-01 31" GPU=0 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p13_jucker_hines_n400
+  - override /grid: echam_t63_l95_hybrid
+
+# Susanne 2026-10-07 18:10 PDT: 19d and 20 run on the FULL L95 grid (22 mesospheric layers, not strat81's 8) with jcm 3's
+# cubic SL vertical interpolation. strat81 + cubic blew up in every segment; L95 + cubic ran 1990 healthy
+# (runs/p19t_l95cubic; above 1 hPa max|u| 204 m/s, T 149-397 K - stable for a year, not by a wide margin). The strat81 + linear chains are in runs/superseded_strat81_linear_20261007/.
+level_table: null
+dycore:
+  sl_vertical_interpolation: null
+
+run:
+  sponge:
+    levels: 1
+    timescale_h: null
+    enspodi: null

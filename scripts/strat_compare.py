@@ -257,7 +257,8 @@ def plot_polar_cap(models, era5, waccm, outdir, years):
     for ax, hemi in ((axes[0], "N"), (axes[1], "S")):
         if era5 is not None:
             c = polar_cap(era5, hemi); ax.plot(c.time, c, "k", lw=1.5, label="ERA5 monthly")
-        if waccm is not None:
+        # WACCM6 histSST covers 1996-2014: for a run outside it the selection is empty and there is no climatology to draw
+        if waccm is not None and waccm.sizes.get("time", 0) > 0:
             c = polar_cap(waccm, hemi).groupby("month").mean()
             yrs = list(years)
             times = [np.datetime64(f"{y}-{mm:02d}-15") for y in yrs for mm in range(1, 13)]

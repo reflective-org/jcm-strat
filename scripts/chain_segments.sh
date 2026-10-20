@@ -25,6 +25,13 @@
 #                  for an experiment without the QBO term, e.g. p12_noqbo - unset means the default)
 #   FIRST_SEG_EXTRA overrides for the FIRST segment only; unset = for p10_* experiments the flag that
 #                  makes the production tracers inject their WACCM initial state, empty otherwise
+#   SPINUP         "<YYYY-MM-DD> <days>" (Phase 19, default empty = none): run a discarded spin-up segment
+#                  runs/<PREFIX>_spinup_<YYYYMMDD> from ERA5 before the first segment, which then starts from
+#                  its checkpoint (dynamics carried over) with FIRST_SEG_EXTRA, so the tracers are
+#                  (re)initialised on the first segment's first step exactly as without a spin-up. The
+#                  spin-up gets the per-segment override for ITS year, no FIRST_SEG_EXTRA, and is not linked
+#                  into the aggregate. SPINUP_ONLY=1 stops the chain after the spin-up (a gate can then
+#                  inspect it); a later call without it skips the finished spin-up and continues.
 #   COMPACT        1 (default) rewrites each finished segment's chunk files compressed, in the
 #                  background on the CPU (scripts/compact_run.py); 0 leaves them as written
 # Every segment's ERA5 zonal-mean QBO target year must exist in cache/era5_ref (checked up front:
@@ -43,19 +50,22 @@ EXTRA="${EXTRA:-}"
 _default_per_seg='physics.terms.held_suarez.qbo.year={year}'
 EXTRA_PER_SEG="${EXTRA_PER_SEG-$_default_per_seg}"        # '-' not ':-': set-but-empty = no per-segment override
 COMPACT="${COMPACT:-1}"
+SPINUP="${SPINUP:-}"
 if [ -z "${FIRST_SEG_EXTRA+x}" ]; then      # unset: the production experiments inject their WACCM initial state on segment 1
-  case "$EXPERIMENT" in p10_*|p1[1-9]*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
+  case "$EXPERIMENT" in p10_*|p1[1-9]*|p2[0-9]*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
 fi
 export CUDA_VISIBLE_DEVICES="$GPU"
 LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"
 step() { echo "[chain] $(date -Is) $*" | tee -a "$LOG"; }
 
-if nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
+# LINK_ONLY=1 (Phase 19): every segment is already finished and only an aggregate is (re)linked - no GPU needed, so the
+# busy/visible checks are skipped (Phase 14's "GPU=1 trick" for a 5-year aggregate collided with another run's GPU)
+if [ "${LINK_ONLY:-0}" != 1 ] && nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
   step "refusing: GPU $GPU is busy"; exit 1
 fi
 # JAX falls back to the CPU silently when the host has no /dev/nvidia* nodes (they vanish at every reboot of this
 # node: the driver is a container, nothing recreates them). A CPU chain runs 100x slower and looks normal.
-if ! python -c "import jax, sys; sys.exit(0 if any(d.platform == 'gpu' for d in jax.devices()) else 1)" 2>/dev/null; then
+if [ "${LINK_ONLY:-0}" != 1 ] && ! python -c "import jax, sys; sys.exit(0 if any(d.platform == 'gpu' for d in jax.devices()) else 1)" 2>/dev/null; then
   step "refusing: JAX sees no GPU (missing /dev/nvidia*? recreate the device nodes, see docs/outputs/11_lid_tracers/output.md)"; exit 1
 fi
 # the time step must divide the save interval (JCM truncates silently); default 12 min
@@ -67,27 +77,42 @@ read -r -a extra <<< "$EXTRA"
 mapfile -t SEGS < <(JAX_PLATFORMS=cpu python -m jcm_strat.segments "$SCHEME" "$YEARS" "$SAVE_INTERVAL") || { step "segments failed"; exit 1; }
 NYEARS=$(printf '%s\n' "${SEGS[@]}" | awk '{print $3}' | sort -u | wc -l); AGG="${AGG:-${PREFIX}_${NYEARS}yr}"
 # every QBO target year must be on disk before we start (qbo_nudging.py refuses a missing year)
-for y in $(printf '%s\n' "${SEGS[@]}" | awk '{print $3}' | sort -u); do
+spin_year=""; if [ -n "$SPINUP" ]; then read -r spin_d spin_days <<< "$SPINUP"; spin_year="${spin_d:0:4}"; fi
+for y in $(printf '%s\n' "${SEGS[@]}" | awk '{print $3}' | sort -u) $spin_year; do
   ls "$REPO"/cache/era5_ref/era5_zm_monthly_"$y".nc >/dev/null 2>&1 || { step "refusing: no cache/era5_ref/era5_zm_monthly_$y.nc (scripts/fetch_era5_strat_ref.py)"; exit 1; }
 done
-step "chain $PREFIX: experiment=$EXPERIMENT scheme=$SCHEME years=$YEARS (${#SEGS[@]} segments) GPU=$GPU save=$SAVE_INTERVAL d aggregate=$AGG extra: ${extra[*]:-none} per-seg: $EXTRA_PER_SEG first-seg: ${FIRST_SEG_EXTRA:-none}"
+step "chain $PREFIX: experiment=$EXPERIMENT scheme=$SCHEME years=$YEARS (${#SEGS[@]} segments) GPU=$GPU save=$SAVE_INTERVAL d aggregate=$AGG extra: ${extra[*]:-none} per-seg: $EXTRA_PER_SEG first-seg: ${FIRST_SEG_EXTRA:-none} spin-up: ${SPINUP:-none}"
 
 prev=""
-for seg in "${SEGS[@]}"; do
-  read -r d days y <<< "$seg"
-  name="${PREFIX}_${d//-/}"; rundir="$REPO/runs/$name"
-  if grep -q '\[launch\].*exit=0' "$rundir/log.txt" 2>/dev/null; then step "skip $name (done)"; prev="$rundir"; continue; fi
+ALLSEGS=("${SEGS[@]}"); if [ -n "$SPINUP" ]; then ALLSEGS=("$spin_d $spin_days $spin_year spinup" "${SEGS[@]}"); fi
+first_real=1
+for seg in "${ALLSEGS[@]}"; do
+  read -r d days y kind <<< "$seg"
+  if [ "${kind:-}" = spinup ]; then name="${PREFIX}_spinup_${d//-/}"; else name="${PREFIX}_${d//-/}"; fi
+  rundir="$REPO/runs/$name"
+  # done = a clean exit AND no health stop (jcm's bail_on_unhealthy ends a run early with exit 0 - Phase 19: the dry chains
+  # spliced partial years that way)
+  if grep -q '\[launch\].*exit=0' "$rundir/log.txt" 2>/dev/null && ! grep -q "atmosphere unhealthy" "$rundir/log.txt"; then
+    step "skip $name (done)"; prev="$rundir"; [ "${kind:-}" = spinup ] || first_real=0
+    if [ "${kind:-}" = spinup ] && [ "${SPINUP_ONLY:-0}" = 1 ]; then step "spin-up done, SPINUP_ONLY=1 - stopping"; exit 0; fi
+    continue
+  fi
+  [ "${LINK_ONLY:-0}" = 1 ] && { step "LINK_ONLY=1 but $name is not finished - stopping"; exit 1; }
   mkdir -p "$rundir"
   init=(); if [ -n "$prev" ]; then init=(init=from_state "init.file=$prev/checkpoint.ckpt"); fi
   per=(); if [ -n "$EXTRA_PER_SEG" ]; then read -r -a per <<< "${EXTRA_PER_SEG//\{year\}/$y}"; fi
-  if [ -z "$prev" ] && [ -n "$FIRST_SEG_EXTRA" ]; then read -r -a firstx <<< "$FIRST_SEG_EXTRA"; per+=("${firstx[@]}"); fi
+  if [ "${kind:-}" != spinup ] && [ "$first_real" = 1 ] && [ -n "$FIRST_SEG_EXTRA" ]; then read -r -a firstx <<< "$FIRST_SEG_EXTRA"; per+=("${firstx[@]}"); fi
   step "run $name: $d +$days d ${init[*]:-init=era5} ${per[*]}"
   echo "[launch] $(date -Is) jcm-strat $(git -C "$REPO" rev-parse --short HEAD) chain=$PREFIX GPU=$GPU" >> "$rundir/log.txt"
   ( cd "$rundir" && python -m jcm_strat.main --config-dir "$REPO/jcm_strat/config" "+experiment=$EXPERIMENT" ++run.checkpoint_path=checkpoint.ckpt \
-      "run.start_date=$d" "run.total_time=$days" "${extra[@]}" "${per[@]}" "${init[@]}" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
-  rc=$?; echo "[launch] $(date -Is) exit=$rc" >> "$rundir/log.txt"
+      "run.start_time=$d" "run.total_time=$days" "${extra[@]}" "${per[@]}" "${init[@]}" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
+  rc=$?
+  if [ $rc -eq 0 ] && grep -q "atmosphere unhealthy" "$rundir/log.txt"; then rc=3; step "$name stopped on jcm's health check: $(grep -m1 'atmosphere unhealthy' "$rundir/log.txt")"; fi
+  echo "[launch] $(date -Is) exit=$rc" >> "$rundir/log.txt"
   step "done $name exit=$rc"
   [ $rc -eq 0 ] || { step "segment $name FAILED - stopping"; exit 1; }
+  [ "${kind:-}" = spinup ] || first_real=0
+  if [ "${kind:-}" = spinup ] && [ "${SPINUP_ONLY:-0}" = 1 ]; then step "spin-up done, SPINUP_ONLY=1 - stopping"; exit 0; fi
   if [ "$COMPACT" = 1 ]; then
     step "compacting $name in the background (runs/$name/compact.log)"
     ( JAX_PLATFORMS=cpu nohup python "$REPO/scripts/compact_run.py" "$rundir" >> "$rundir/compact.log" 2>&1 & )

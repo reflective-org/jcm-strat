@@ -1,0 +1,10 @@
+# @package _global_
+# Phase 20b with every tracer written (Susanne 2026-10-15/16): p20b_sso_pbl0 run 1990-2009 (p20bt) with the Phase 11a
+# production tracers WRITTEN from the start. Physics, nudging (bottom levels included) and tracers are p20b_sso_pbl0's;
+# the tracers are injected once on 1990-01-01, so they are written from their release on. Only
+# output_drop changes, exactly as in p20_ext: the nine moist_air_state diagnostics stay dropped, the injection tracers
+# are written 6-hourly.
+defaults:
+  - /experiment/p20b_sso_pbl0
+
+output_drop: [air_density, height_full, height_half, layer_thickness, pressure_full, pressure_half, pressure_thickness, relative_humidity, surface_pressure]

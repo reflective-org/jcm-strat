@@ -1,0 +1,4 @@
+/data/JCM_stripped/jcm-strat-phase19/.venv/lib/python3.11/site-packages/dinosaur/jax_numpy_utils.py:36:FLOAT32_DOT_ALGORITHM = lax.DotAlgorithmPreset.BF16_BF16_F32_X6
+/data/JCM_stripped/jcm-strat-phase19/.venv/lib/python3.11/site-packages/dinosaur/jax_numpy_utils.py:120:        precision = FLOAT32_DOT_ALGORITHM
+/data/JCM_stripped/jcm-strat-phase19/.venv/lib/python3.11/site-packages/dinosaur/spherical_harmonic.py:47:FAST_TRANSFORM_DOT_ALGORITHM = jax.lax.DotAlgorithmPreset.BF16_BF16_F32_X3
+/data/JCM_stripped/jcm-strat-phase19/.venv/lib/python3.11/site-packages/dinosaur/spherical_harmonic.py:429:      precision, lhs, rhs, float32_algorithm=FAST_TRANSFORM_DOT_ALGORITHM

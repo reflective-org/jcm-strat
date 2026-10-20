@@ -1,0 +1,10 @@
+# @package _global_
+# Phase 22 (Susanne 2026-10-16): equilibrium-temperature optimisation for the lower/middle-stratosphere circulation (the polar
+# vortex at ~50 hPa) on the Phase 20b setup. Physics, nudging and tracers are p20b_sso_pbl0's (dry 13d + fixed Lott-Miller,
+# nudged below 400 hPa incl. the bottom levels, L95 + cubic); the T_eq correction, its mode and the polar-cap tau come as
+# overrides from scripts/p22_track.sh. Output only what the scores need (u, v, T, omega, surface pressure and two clocks)
+# so an iteration costs ~25 GB a year instead of ~180.
+defaults:
+  - /experiment/p20b_sso_pbl0
+
+output_keep: [u_wind, v_wind, temperature, omega, normalized_surface_pressure, aoa150, aoa_sfc]

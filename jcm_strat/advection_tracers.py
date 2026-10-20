@@ -37,6 +37,11 @@ Tracers (all ``nondimensionalize=False``, so state, dycore and netCDF carry the 
               transport against a realistic sink, so they carry permanent, latitude- and
               height-dependent gradients spanning 1 to ~1e-2 (N2O) and 1 to ~1e-4 (CFC-11).
 
+First step (``first_segment=true``, Phase 19). Every tracer is (re)initialised on the first step of the
+first segment: pulses set to their shapes, n2o/cfc11 to the WACCM state (as before), and the clocks, sources and
+``sai`` set to 0 before their usual tendency acts. Without a spin-up they already hold 0 there, so this changes
+nothing; after the discarded spin-up month it restarts them on 1 January exactly as an ERA5 start did.
+
 Sinks. ``surface_sink`` (Phase 10: true; Phase 11: false) relaxes the pulses and sources to zero in
 the lowest ``absorb_layers`` layers on one step. Without it the pulses conserve their injected mass
 for ever and the sources grow linearly, like ``sai``.
@@ -287,20 +292,27 @@ class ProductionTracers(PhysicsTerm):
         if self.lid_pa is not None:
             lid_target = self._lid_targets(self._aoa_ref.get_value())
         reset = self._reset_masks(p, sfc)
+        # (Re)initialisation on the first step of the first segment (Phase 19): the clocks, sources and sai are
+        # treated as if they held their initial value 0 - the tendency is the usual one evaluated at q = 0 plus
+        # -q/dt, which sets the field to 0 first. Without a spin-up q is 0 there already (ERA5 start, initial_value
+        # 0), so this is the identity; after the one-month spin-up (chain_segments.sh SPINUP) it discards the
+        # month's ageing and accumulation, so the clocks start on 1 January exactly as in the runs before Phase 19.
+        def restart(q):
+            return jnp.where(first, 0.0, q), jnp.where(first, -q / dt, 0.0)
         for name in self.CLOCKS:
-            q = tr[name]
+            q, q_reinit = restart(tr[name])
             t = jnp.where(reset[name], -q / dt, 1.0 / DAY)
-            d[name] = jnp.where(lid, (lid_target[name] - q) / tau, t) if self.lid_pa is not None else t
+            d[name] = (jnp.where(lid, (lid_target[name] - q) / tau, t) if self.lid_pa is not None else t) + q_reinit
         sai_box = (jnp.abs(lat) <= self.sai_lat) & (p >= self.sai_p_top_pa) & (p <= self.sai_p_bot_pa)
-        d["sai"] = jnp.where(sai_box, self.sai_source_per_s, 0.0)
+        d["sai"] = jnp.where(sai_box, self.sai_source_per_s, 0.0) + restart(tr["sai"])[1]
         targets = self._targets.get_value()
         for i, name in enumerate(self._pulse_names):
             q = tr[name]
             d[name] = jnp.where(fire, (targets[i] - q) / dt, jnp.where(absorb, -q / dt, 0.0))
         srcs = self._sources.get_value()
         for i, name in enumerate(self._source_names):
-            q = tr[name]
-            d[name] = jnp.where(absorb, -q / dt, self.source_rate * srcs[i])
+            q, q_reinit = restart(tr[name])
+            d[name] = jnp.where(absorb, -q / dt, self.source_rate * srcs[i]) + q_reinit
         if self.lid_pa is not None and self.lid_sink_injections:
             for name in ("sai",) + self._pulse_names + self._source_names:
                 d[name] = jnp.where(lid, -tr[name] / tau, d[name])

@@ -1,0 +1,17 @@
+# @package _global_
+# Phase 21b (Susanne 2026-10-07): Phase 14 (p14_free: full ECHAM physics, T63L95, NO nudging, NO QBO term) on the new
+# jcm (fixed Lott-Miller, ECHAM sponge levels=1, no target_T_K, cubic SL vertical interpolation). One-month spin-up
+# from 1989-12-01, discarded; 1990-1999.
+#   EXPERIMENT=p21_free PREFIX=p21free SCHEME=calendar YEARS=1990-1999 AGG=p21free_10yr SAVE_INTERVAL=0.25 \
+#     EXTRA_PER_SEG= SPINUP="1989-12-01 31" GPU=3 bash scripts/chain_segments.sh
+defaults:
+  - /experiment/p14_free
+
+dycore:
+  sl_vertical_interpolation: null
+
+run:
+  sponge:
+    levels: 1
+    timescale_h: null
+    enspodi: null

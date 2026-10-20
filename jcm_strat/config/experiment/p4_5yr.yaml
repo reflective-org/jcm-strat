@@ -5,8 +5,8 @@
 # years of 6-hourly L95 targets (154 GB) do not fit an 80 GB card (run p4_5yr_oom); one
 # year (31 GB) does. Physics, grid, nudging and tracers are exactly Phase 3.
 #
-#   segment 1:  +experiment=p4_5yr run.start_date=2005-01-01 run.total_time=365
-#   segment n:  +experiment=p4_5yr run.start_date=2006-01-01 run.total_time=365 \
+#   segment 1:  +experiment=p4_5yr run.start_time=2005-01-01 run.total_time=365
+#   segment n:  +experiment=p4_5yr run.start_time=2006-01-01 run.total_time=365 \
 #               init=from_state init.file=<segment n-1>/checkpoint.ckpt
 #
 # Each segment needs its ERA5 window [start-1 d, start+total_time+2 d] in $JCM_ERA5_CACHE;

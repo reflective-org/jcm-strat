@@ -1,0 +1,58 @@
+- 2026-10-16 17:23 PDT - **A** started: Phase 17 correction on P20b, extratropics only (zero at |lat|<=25, full >=35), 100-1 hPa, smoothed, alpha 0.7 (MODE=zonal LAT=25 35 PR=1 100 SMOOTH=1 ALPHA=default CMODE=jfv OVR=none; GPU 0)
+- 2026-10-16 17:23 PDT - **B** started: as A + polar-cap relaxation time <= 10 d poleward of 60 deg (blend from 50) (MODE=zonal LAT=25 35 PR=1 100 SMOOTH=1 ALPHA=default CMODE=jfv OVR=++physics.terms.held_suarez.tau_polar_days=10; GPU 1)
+- 2026-10-16 17:23 PDT - **C** started: Chang 2006 / Mooring & Linz iteration (zonal mean): pointwise, all latitudes, 400-1 hPa, alpha 2/3, no smoothing (MODE=zonal LAT=0 0 PR=1 400 SMOOTH=0 ALPHA=0.6667 CMODE=total OVR=none; GPU 2)
+- 2026-10-16 18:31 PDT - **B** [score] B0: u_ls_ext 6.89 m/s, u50_ext 5.11, u_up_ext 11.18, T_ls 5.17 K, jet50 N 16@53 (ERA5 17@59), S 45@-57 (ERA5 47@-57), cap T50 N -2.4 S +0.6 K, w_logerr 0.091, age150 {trop: 1.01, n50_70: 3.31, s50_70: 3.28}
+- 2026-10-16 18:31 PDT - **B5** started: as A + polar-cap relaxation time <= 5 d poleward of 60 deg (blend from 50) (MODE=zonal LAT=25 35 PR=1 100 SMOOTH=1 ALPHA=default CMODE=jfv OVR=++physics.terms.held_suarez.tau_polar_days=5; GPU 1)
+- 2026-10-16 18:31 PDT - **A** [score] A1: u_ls_ext 7.08 m/s, u50_ext 5.66, u_up_ext 9.90, T_ls 4.66 K, jet50 N 12@51 (ERA5 17@59), S 40@-59 (ERA5 47@-57), cap T50 N -0.5 S +1.5 K, w_logerr 0.093, age150 {trop: 1.11, n50_70: 3.71, s50_70: 3.53}
+- 2026-10-16 18:32 PDT - **C** [score] C1: u_ls_ext 6.26 m/s, u50_ext 5.23, u_up_ext 9.45, T_ls 2.53 K, jet50 N 14@55 (ERA5 17@59), S 41@-59 (ERA5 47@-57), cap T50 N -0.7 S +1.9 K, w_logerr 0.271, age150 {trop: 1.18, n50_70: 3.71, s50_70: 3.64}
+- 2026-10-16 19:26 PDT - **B5** [score] B50: u_ls_ext 6.19 m/s, u50_ext 4.84, u_up_ext 10.15, T_ls 5.36 K, jet50 N 23@57 (ERA5 17@59), S 48@-55 (ERA5 47@-57), cap T50 N -8.1 S -2.5 K, w_logerr 0.113, age150 {trop: 0.94, n50_70: 3.11, s50_70: 3.02}
+- 2026-10-16 19:27 PDT - **A** [score] A2: u_ls_ext 7.04 m/s, u50_ext 5.76, u_up_ext 10.47, T_ls 4.50 K, jet50 N 12@51 (ERA5 17@59), S 41@-59 (ERA5 47@-57), cap T50 N -0.1 S +0.8 K, w_logerr 0.113, age150 {trop: 1.13, n50_70: 3.78, s50_70: 3.56}
+- 2026-10-16 19:29 PDT - **C** [score] C2: u_ls_ext 5.18 m/s, u50_ext 4.18, u_up_ext 9.19, T_ls 1.73 K, jet50 N 15@53 (ERA5 17@59), S 43@-59 (ERA5 47@-57), cap T50 N +0.8 S +1.6 K, w_logerr 0.438, age150 {trop: 1.22, n50_70: 3.52, s50_70: 3.12}
+- 2026-10-16 20:22 PDT - **B5** [score] B51: u_ls_ext 5.51 m/s, u50_ext 4.10, u_up_ext 9.32, T_ls 4.64 K, jet50 N 19@59 (ERA5 17@59), S 46@-57 (ERA5 47@-57), cap T50 N -3.5 S -0.8 K, w_logerr 0.069, age150 {trop: 0.97, n50_70: 3.26, s50_70: 3.08}
+- 2026-10-16 20:23 PDT - **A** [score] A3: u_ls_ext 7.06 m/s, u50_ext 6.00, u_up_ext 10.14, T_ls 4.38 K, jet50 N 11@57 (ERA5 17@59), S 41@-61 (ERA5 47@-57), cap T50 N +0.6 S +0.7 K, w_logerr 0.113, age150 {trop: 1.11, n50_70: 3.78, s50_70: 3.51}
+- 2026-10-16 20:23 PDT - **A** converged after iteration 3
+- 2026-10-16 20:23 PDT - **AL** started: as A, but the correction reaches down to 400 hPa (lowermost extratropical stratosphere; total-blend mode) (MODE=zonal LAT=25 35 PR=1 400 SMOOTH=1 ALPHA=default CMODE=total OVR=none; GPU 0)
+- 2026-10-16 20:26 PDT - **C** [score] C3: u_ls_ext 4.12 m/s, u50_ext 3.31, u_up_ext 8.31, T_ls 1.37 K, jet50 N 17@53 (ERA5 17@59), S 45@-57 (ERA5 47@-57), cap T50 N +0.9 S +0.6 K, w_logerr 0.622, age150 {trop: 1.19, n50_70: 3.34, s50_70: 2.71}
+- 2026-10-16 21:20 PDT - **AL** [score] AL1: u_ls_ext 6.09 m/s, u50_ext 4.46, u_up_ext 9.98, T_ls 4.57 K, jet50 N 13@48 (ERA5 17@59), S 42@-59 (ERA5 47@-57), cap T50 N +0.5 S +1.7 K, w_logerr 0.073, age150 {trop: 1.02, n50_70: 3.48, s50_70: 3.33}
+- 2026-10-16 21:20 PDT - **B5** [score] B52: u_ls_ext 5.36 m/s, u50_ext 4.05, u_up_ext 9.31, T_ls 4.41 K, jet50 N 17@61 (ERA5 17@59), S 45@-57 (ERA5 47@-57), cap T50 N -1.6 S -0.2 K, w_logerr 0.089, age150 {trop: 1.01, n50_70: 3.39, s50_70: 3.13}
+- 2026-10-16 21:23 PDT - **C** [score] C4: u_ls_ext 3.60 m/s, u50_ext 2.90, u_up_ext 7.33, T_ls 1.20 K, jet50 N 18@53 (ERA5 17@59), S 47@-57 (ERA5 47@-57), cap T50 N +0.6 S -0.1 K, w_logerr 0.865, age150 {trop: 1.19, n50_70: 3.2, s50_70: 2.56}
+- 2026-10-16 22:18 PDT - **AL** [score] AL2: u_ls_ext 5.36 m/s, u50_ext 3.74, u_up_ext 10.03, T_ls 4.33 K, jet50 N 14@49 (ERA5 17@59), S 43@-59 (ERA5 47@-57), cap T50 N +1.9 S +0.9 K, w_logerr 0.066, age150 {trop: 0.98, n50_70: 3.32, s50_70: 3.14}
+- 2026-10-16 22:19 PDT - **B5** [score] B53: u_ls_ext 5.44 m/s, u50_ext 4.23, u_up_ext 9.39, T_ls 4.29 K, jet50 N 16@61 (ERA5 17@59), S 45@-57 (ERA5 47@-57), cap T50 N -0.2 S -0.0 K, w_logerr 0.097, age150 {trop: 1.01, n50_70: 3.44, s50_70: 3.12}
+- 2026-10-16 22:21 PDT - **C** [score] C5: u_ls_ext 3.48 m/s, u50_ext 2.85, u_up_ext 6.77, T_ls 1.10 K, jet50 N 19@53 (ERA5 17@59), S 47@-57 (ERA5 47@-57), cap T50 N +0.0 S -0.5 K, w_logerr 1.268, age150 {trop: 1.21, n50_70: 3.26, s50_70: 2.55}
+- 2026-10-16 23:18 PDT - **B5** [score] B54: u_ls_ext 5.48 m/s, u50_ext 4.39, u_up_ext 9.32, T_ls 4.21 K, jet50 N 15@59 (ERA5 17@59), S 45@-59 (ERA5 47@-57), cap T50 N +0.3 S +0.1 K, w_logerr 0.101, age150 {trop: 1.0, n50_70: 3.43, s50_70: 3.1}
+- 2026-10-16 23:18 PDT - **B5** converged after iteration 4
+- 2026-10-16 23:18 PDT - **B5** finished
+- 2026-10-16 23:18 PDT - **B_final** started: 1990-2009 with B52
+- 2026-10-16 23:19 PDT - **AL** [score] AL3: u_ls_ext 4.64 m/s, u50_ext 3.08, u_up_ext 9.57, T_ls 4.19 K, jet50 N 14@51 (ERA5 17@59), S 44@-57 (ERA5 47@-57), cap T50 N +2.1 S +0.5 K, w_logerr 0.065, age150 {trop: 0.95, n50_70: 3.22, s50_70: 3.0}
+- 2026-10-16 23:21 PDT - **C** [score] C6: u_ls_ext 3.50 m/s, u50_ext 2.91, u_up_ext 6.64, T_ls 1.10 K, jet50 N 19@55 (ERA5 17@59), S 47@-55 (ERA5 47@-57), cap T50 N -0.7 S -0.8 K, w_logerr None, age150 {trop: 1.23, n50_70: 3.26, s50_70: 2.61}
+- 2026-10-16 23:23 PDT - **C3** started: Chang 2006 / Mooring & Linz iteration in 3-D (zonally varying T_eq): pointwise, all latitudes, 400-1 hPa, alpha 2/3, target ERA5 3-D monthly means (MODE=chang3d LAT=0 0 PR=1 400 SMOOTH=0 ALPHA=0.6667 CMODE=total OVR=none; GPU 2)
+- 2026-10-17 00:16 PDT - **AL** [score] AL4: u_ls_ext 4.21 m/s, u50_ext 2.76, u_up_ext 8.83, T_ls 4.09 K, jet50 N 15@53 (ERA5 17@59), S 46@-57 (ERA5 47@-57), cap T50 N +1.9 S +0.2 K, w_logerr 0.062, age150 {trop: 0.94, n50_70: 3.16, s50_70: 2.85}
+- 2026-10-17 00:21 PDT - **C3** [score] C31: u_ls_ext 6.30 m/s, u50_ext 5.25, u_up_ext 9.47, T_ls 2.52 K, jet50 N 14@55 (ERA5 17@59), S 41@-59 (ERA5 47@-57), cap T50 N -1.0 S +1.8 K, w_logerr 0.267, age150 {trop: 1.19, n50_70: 3.68, s50_70: 3.62}
+- 2026-10-17 01:14 PDT - **AL** [score] AL5: u_ls_ext 4.09 m/s, u50_ext 2.74, u_up_ext 8.73, T_ls 4.02 K, jet50 N 16@55 (ERA5 17@59), S 46@-57 (ERA5 47@-57), cap T50 N +1.8 S +0.1 K, w_logerr 0.064, age150 {trop: 0.93, n50_70: 3.1, s50_70: 2.79}
+- 2026-10-17 01:19 PDT - **C3** [score] C32: u_ls_ext 5.05 m/s, u50_ext 4.16, u_up_ext 8.33, T_ls 1.64 K, jet50 N 15@55 (ERA5 17@59), S 43@-59 (ERA5 47@-57), cap T50 N +0.6 S +1.5 K, w_logerr 0.422, age150 {trop: 1.21, n50_70: 3.49, s50_70: 3.06}
+- 2026-10-17 02:11 PDT - **AL** [score] AL6: u_ls_ext 3.86 m/s, u50_ext 2.56, u_up_ext 8.37, T_ls 3.97 K, jet50 N 18@59 (ERA5 17@59), S 46@-57 (ERA5 47@-57), cap T50 N +0.0 S +0.1 K, w_logerr 0.063, age150 {trop: 0.93, n50_70: 3.13, s50_70: 2.76}
+- 2026-10-17 02:17 PDT - **C3** [score] C33: u_ls_ext 3.98 m/s, u50_ext 3.24, u_up_ext 7.45, T_ls 1.32 K, jet50 N 18@57 (ERA5 17@59), S 45@-57 (ERA5 47@-57), cap T50 N -0.1 S +0.3 K, w_logerr 0.624, age150 {trop: 1.21, n50_70: 3.31, s50_70: 2.67}
+- 2026-10-17 03:09 PDT - **AL** [score] AL7: u_ls_ext 3.84 m/s, u50_ext 2.57, u_up_ext 8.05, T_ls 3.92 K, jet50 N 19@59 (ERA5 17@59), S 46@-57 (ERA5 47@-57), cap T50 N +0.0 S -0.1 K, w_logerr 0.067, age150 {trop: 0.93, n50_70: 3.11, s50_70: 2.74}
+- 2026-10-17 03:14 PDT - **C3** [score] C34: u_ls_ext 3.74 m/s, u50_ext 3.06, u_up_ext 6.34, T_ls 1.17 K, jet50 N 19@57 (ERA5 17@59), S 46@-57 (ERA5 47@-57), cap T50 N -0.3 S -0.2 K, w_logerr 0.907, age150 {trop: 1.23, n50_70: 3.27, s50_70: 2.6}
+- 2026-10-17 04:06 PDT - **AL** [score] AL8: u_ls_ext 3.88 m/s, u50_ext 2.57, u_up_ext 8.29, T_ls 3.89 K, jet50 N 18@59 (ERA5 17@59), S 47@-57 (ERA5 47@-57), cap T50 N +0.4 S -0.1 K, w_logerr 0.072, age150 {trop: 0.92, n50_70: 3.11, s50_70: 2.71}
+- 2026-10-17 04:07 PDT - **AL** converged after iteration 8
+- 2026-10-17 04:07 PDT - **AL** finished
+- 2026-10-17 04:07 PDT - **A_final** started: 1990-2009 with A2
+- 2026-10-17 04:12 PDT - **C3** [score] C35: u_ls_ext 3.53 m/s, u50_ext 2.92, u_up_ext 6.33, T_ls 1.08 K, jet50 N 19@55 (ERA5 17@59), S 47@-55 (ERA5 47@-57), cap T50 N -0.2 S -0.5 K, w_logerr 1.593, age150 {trop: 1.25, n50_70: 3.22, s50_70: 2.63}
+- 2026-10-17 04:34 PDT - **B_final** [score] B_final: u_ls_ext 7.09 m/s, u50_ext 5.57, u_up_ext 10.71, T_ls 4.50 K, jet50 N 12@59 (ERA5 17@59), S 41@-59 (ERA5 47@-57), cap T50 N +2.4 S +3.3 K, w_logerr 0.11, age150 {trop: 1.05, n50_70: 3.67, s50_70: 3.43}
+- 2026-10-17 04:47 PDT - **B_final** diagnostics in `final/B_final/`
+- 2026-10-17 04:47 PDT - **B5_final** started: 1990-2009 with B52
+- 2026-10-17 05:11 PDT - **C3** [score] C36: u_ls_ext 3.61 m/s, u50_ext 2.94, u_up_ext 6.31, T_ls 1.08 K, jet50 N 20@57 (ERA5 17@59), S 47@-55 (ERA5 47@-57), cap T50 N -0.8 S -0.8 K, w_logerr None, age150 {trop: 1.29, n50_70: 3.27, s50_70: 2.64}
+- 2026-10-17 06:11 PDT - **C3** [score] C37: u_ls_ext 3.49 m/s, u50_ext 2.83, u_up_ext 6.12, T_ls 1.03 K, jet50 N 19@55 (ERA5 17@59), S 46@-55 (ERA5 47@-57), cap T50 N -0.6 S -0.5 K, w_logerr None, age150 {trop: 1.3, n50_70: 3.23, s50_70: 2.62}
+- 2026-10-17 07:12 PDT - **C3** [score] C38: u_ls_ext 3.52 m/s, u50_ext 2.87, u_up_ext 6.33, T_ls 1.04 K, jet50 N 19@55 (ERA5 17@59), S 46@-55 (ERA5 47@-57), cap T50 N -0.6 S -0.5 K, w_logerr None, age150 {trop: 1.32, n50_70: 3.2, s50_70: 2.65}
+- 2026-10-17 07:12 PDT - **C3** finished
+- 2026-10-17 07:12 PDT - **C3_final** started: 1990-2009 with C37
+- 2026-10-17 09:28 PDT - **A_final** [score] A_final: u_ls_ext 7.07 m/s, u50_ext 5.78, u_up_ext 10.47, T_ls 4.50 K, jet50 N 11@53 (ERA5 17@59), S 41@-59 (ERA5 47@-57), cap T50 N +0.1 S +1.0 K, w_logerr 0.108, age150 {trop: 1.12, n50_70: 3.77, s50_70: 3.55}
+- 2026-10-17 09:41 PDT - **A_final** diagnostics in `final/A_final/`
+- 2026-10-17 09:41 PDT - **AL_final** started: 1990-2009 with AL7
+- 2026-10-17 10:04 PDT - **B5_final** [score] B5_final: u_ls_ext 5.37 m/s, u50_ext 4.07, u_up_ext 9.50, T_ls 4.40 K, jet50 N 17@59 (ERA5 17@59), S 45@-57 (ERA5 47@-57), cap T50 N -1.5 S -0.2 K, w_logerr 0.089, age150 {trop: 0.99, n50_70: 3.31, s50_70: 3.02}
+- 2026-10-17 10:17 PDT - **B5_final** diagnostics in `final/B5_final/`
+- 2026-10-17 12:33 PDT - **C3_final** [score] C3_final: u_ls_ext 3.52 m/s, u50_ext 2.85, u_up_ext 6.52, T_ls 1.06 K, jet50 N 19@55 (ERA5 17@59), S 46@-55 (ERA5 47@-57), cap T50 N -0.6 S -0.5 K, w_logerr None, age150 {trop: 1.3, n50_70: 3.1, s50_70: 2.51}
+- 2026-10-17 12:46 PDT - **C3_final** diagnostics in `final/C3_final/`
+- 2026-10-17 12:46 PDT - **C_final** started: 1990-2009 with C5
+- 2026-10-17 13:05 PDT - **AL_final** (at 2003) and **C_final** (at 1991) died mid-segment: /data disk quota exceeded; partial run dirs deleted 2026-10-19, not relaunched (deadline passed)
