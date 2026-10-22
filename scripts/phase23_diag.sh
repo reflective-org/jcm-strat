@@ -7,15 +7,16 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 # shellcheck disable=SC1091
 source "$REPO/scripts/env.sh"
 export JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES=""
-PY="$REPO/.venv/bin/python"; OUT="$REPO/docs/outputs/23_lat_nudging"; LOG="$REPO/runs/p23_diag.log"
+py() { bash "$REPO/scripts/memcap.sh" -m 96G -- "$REPO/.venv/bin/python" "$@"; }   # memory-capped (scripts/memcap.sh)
+OUT="$REPO/docs/outputs/23_lat_nudging"; LOG="$REPO/runs/p23_diag.log"
 step() { echo "[p23 diag] $(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M %Z') $*" | tee -a "$LOG"; }
-[ -e runs/p23_P20bref_agg/log.txt ] || "$PY" scripts/link_segments.py runs/p23_P20bref_agg $(for y in $(seq 1990 2007); do echo "$REPO/runs/p20bt_${y}0101"; done) >> "$LOG" 2>&1
+[ -e runs/p23_P20bref_agg/log.txt ] || py scripts/link_segments.py runs/p23_P20bref_agg $(for y in $(seq 1990 2007); do echo "$REPO/runs/p20bt_${y}0101"; done) >> "$LOG" 2>&1
 diag() {  # <name> <agg>
   local n="$1" a="runs/$2" d="$OUT/$1"; mkdir -p "$d"
-  "$PY" scripts/sweep_score.py "$a" --name "$n" --out "$OUT/sweep" --desc "Phase 23 $n, 2006-2007" > "runs/p23_diag_${n}_sweep.log" 2>&1; step "$n sweep_score exit=$?"
-  "$PY" scripts/strat_circulation.py "$a" "$d" --years 2006-2007 --label "$n" > "runs/p23_diag_${n}_circ.log" 2>&1; step "$n strat_circulation exit=$?"
-  "$PY" scripts/vortex_jets.py "$a" "$d" --years 2006-2007 --label "$n" > "runs/p23_diag_${n}_vortex.log" 2>&1; step "$n vortex_jets exit=$?"
-  "$PY" scripts/seasonal_age_winds.py "$a" "$d" --years 2006-2007 --label "$n" > "runs/p23_diag_${n}_seasonal.log" 2>&1; step "$n seasonal exit=$?"
+  py scripts/sweep_score.py "$a" --name "$n" --out "$OUT/sweep" --desc "Phase 23 $n, 2006-2007" > "runs/p23_diag_${n}_sweep.log" 2>&1; step "$n sweep_score exit=$?"
+  py scripts/strat_circulation.py "$a" "$d" --years 2006-2007 --label "$n" > "runs/p23_diag_${n}_circ.log" 2>&1; step "$n strat_circulation exit=$?"
+  py scripts/vortex_jets.py "$a" "$d" --years 2006-2007 --label "$n" > "runs/p23_diag_${n}_vortex.log" 2>&1; step "$n vortex_jets exit=$?"
+  py scripts/seasonal_age_winds.py "$a" "$d" --years 2006-2007 --label "$n" > "runs/p23_diag_${n}_seasonal.log" 2>&1; step "$n seasonal exit=$?"
 }
 step "start"
 diag P20b p23_P20bref_agg & diag AL7 p22_AL7_agg & diag L0 p23_L0_agg & diag LAL7 p23_LAL7_agg & wait

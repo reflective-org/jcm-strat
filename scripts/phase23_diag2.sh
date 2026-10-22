@@ -8,11 +8,12 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 # shellcheck disable=SC1091
 source "$REPO/scripts/env.sh"
 export JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES=""
-PY="$REPO/.venv/bin/python"; OUT="$REPO/docs/outputs/23_lat_nudging"; LOG="$REPO/runs/p23_diag.log"
+py() { bash "$REPO/scripts/memcap.sh" -m 96G -- "$REPO/.venv/bin/python" "$@"; }   # memory-capped (scripts/memcap.sh)
+OUT="$REPO/docs/outputs/23_lat_nudging"; LOG="$REPO/runs/p23_diag.log"
 step() { echo "[p23 diag2] $(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M %Z') $*" | tee -a "$LOG"; }
-circ() { "$PY" scripts/strat_circulation.py "runs/p23d_$1_0607" "$OUT/$1" --years 2006-2007 --label "$1" --age-var aoa_sfc > "runs/p23_diag_$1_circ.log" 2>&1; step "$1 strat_circulation exit=$?"; }
+circ() { py scripts/strat_circulation.py "runs/p23d_$1_0607" "$OUT/$1" --years 2006-2007 --label "$1" --age-var aoa_sfc > "runs/p23_diag_$1_circ.log" 2>&1; step "$1 strat_circulation exit=$?"; }
 step "start"
-( "$PY" scripts/vortex_jets.py runs/p23d_AL7_0607 "$OUT/AL7" --years 2006-2007 --label AL7 > runs/p23_diag_AL7_vortex.log 2>&1; step "AL7 vortex_jets exit=$?"
-  "$PY" scripts/seasonal_age_winds.py runs/p23d_AL7_0607 "$OUT/AL7" --years 2006-2007 --label AL7 > runs/p23_diag_AL7_seasonal.log 2>&1; step "AL7 seasonal exit=$?" ) &
+( py scripts/vortex_jets.py runs/p23d_AL7_0607 "$OUT/AL7" --years 2006-2007 --label AL7 > runs/p23_diag_AL7_vortex.log 2>&1; step "AL7 vortex_jets exit=$?"
+  py scripts/seasonal_age_winds.py runs/p23d_AL7_0607 "$OUT/AL7" --years 2006-2007 --label AL7 > runs/p23_diag_AL7_seasonal.log 2>&1; step "AL7 seasonal exit=$?" ) &
 circ P20b & circ AL7 & circ L0 & circ LAL7 & wait
 step "finished"
