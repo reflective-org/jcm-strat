@@ -1,0 +1,12 @@
+<section><h2>Caveats</h2><div class="col">
+<p><b>The two age references disagree.</b> At 55 hPa between 50&deg; and 70&deg;, CLaMS gives an entry age of 4.0 years and WACCM6 3.4 years. The 2-D age error and the tropics-to-midlatitude step are scored against CLaMS; against WACCM6 the runs would look less young in the extratropics.</p>
+<p><b>Restart runs.</b> AL7, L0, LAL7 and AL7t ran 3 years of their own circulation on top of P20b&rsquo;s 15. Earlier tests found 3-year and 20-year ages within about 0.1 years, but the deep stratosphere could drift a little further.</p>
+<p><b>Two years only (2006&ndash;2007).</b> Winter jets carry a few m/s of year-to-year variability; jet latitudes are on the model grid, about 1.9&deg; apart.</p>
+<p><b>Reference periods differ.</b> CLaMS is the 2005&ndash;2009 mean, WACCM6 entry age 2005&ndash;2009, WACCM6 circulation 1996&ndash;2014 and ERA5 circulation 1996&ndash;2001. ERA5 winds and temperatures are for the same months as the runs.</p>
+</div></section>
+<section><h2>Next step</h2><div class="col">
+<p>The age error now follows the vortex fix rather than the subtropics. The next test is whether a weaker correction (part of AL7&rsquo;s amplitude) keeps most of the vortex gain while bringing the 70 hPa mass flux and the ages back toward WACCM6 and CLaMS.</p>
+</div></section>
+<section><h2>Method and reproducibility</h2><div class="col small">
+<p>Model: JCM (jax-gcm) dry configuration in the <code>reflective-org/jcm-strat</code> repository, branches <code>phase23-lat-nudging</code> and <code>phase24-al7-taper</code>. Scores: <code>scripts/success_metrics.py</code>; figures: <code>scripts/report_figures.py</code>; this page: <code>scripts/build_scorecard.py</code>. Ages are averaged over 2006&ndash;2007, circulation from every 6-hourly frame. References: CLaMS v3.1 driven by ERA5, WACCM6 REF-D1 (age) and histSST (circulation), ERA5.</p>
+</div></section>
