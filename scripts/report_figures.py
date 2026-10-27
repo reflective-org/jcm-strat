@@ -5,7 +5,7 @@
 
 SWEEP_JSON is a success-metrics raw score (sweep_score.py, window 2006-2007, clocks averaged over the window); DIAG_DIR holds
 that run's vortex_jets.md. Writes OUTDIR/{age_profile,age_latitude,wstar_profile,jets}.png.
-Run colours: a brand-derived set validated for separation (OKLab dE x100: normal >= 15.8, deutan/protan >= 14.6), plus a
+Run colours: a brand-derived set validated for separation (OKLab dE x100: normal >= 16.3, deutan/protan >= 10.8), plus a
 marker per run; references in grey with their own dash patterns.
 """
 from __future__ import annotations
@@ -20,7 +20,8 @@ HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import sweep_score as ss  # noqa: E402
 import strat_circulation as circ  # noqa: E402
 
-STYLE = {"P20b": ("#242729", "o"), "AL7": ("#933923", "s"), "L0": ("#01a096", "^"), "LAL7": ("#655886", "D"), "AL7t": ("#e46907", "v")}
+STYLE = {"P20b": ("#242729", "o"), "AL7": ("#6f382a", "s"), "AL7h": ("#b18e63", "P"), "AL7t": ("#5e7227", "v"),
+         "L0": ("#25a3b2", "^"), "LAL7": ("#6f6194", "D")}
 REF = {"CLaMS (ERA5)": dict(color="#5f6264", ls="--", lw=2.4), "WACCM6": dict(color="#8B8D8E", ls=":", lw=2.4),
        "ERA5": dict(color="#5f6264", ls="--", lw=2.4)}
 INK, MUTED, GRID = "#282C2E", "#5f6264", "#E4E1DD"

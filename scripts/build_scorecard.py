@@ -17,8 +17,9 @@ RUNS_INFO = {
     "L0": ("none", "150 hPa tropics, 400 hPa extratropics", "Phase 23 nudging top alone"),
     "LAL7": ("as AL7", "150 hPa tropics, 400 hPa extratropics", "Phase 23 nudging top on AL7"),
     "AL7t": ("as AL7, but zero below 35 deg, full from 50 deg", "400 hPa everywhere", "Phase 24: AL7 kept away from the tropics"),
+    "AL7h": ("as AL7, at half amplitude", "400 hPa everywhere", "Phase 25: a weaker AL7"),
 }
-COLORS = {"P20b": "#242729", "AL7": "#933923", "L0": "#01a096", "LAL7": "#655886", "AL7t": "#e46907"}
+COLORS = {"P20b": "#242729", "AL7": "#6f382a", "AL7h": "#b18e63", "AL7t": "#5e7227", "L0": "#25a3b2", "LAL7": "#6f6194"}
 GROUPS = {"A": "Age of air", "B": "Residual circulation", "C": "Polar vortex"}
 BOUNDS = [
     ("A1", "Tropical entry age at 55 hPa (clock reset below 150 hPa)", "WACCM6 entry age", "&plusmn; 0.25 yr"),
@@ -129,7 +130,7 @@ def main():
     H.append('<div class="wrap">')
     H.append('<header class="col"><p class="eyebrow">jcm-strat &middot; dry model &middot; tracer transport</p>'
              '<h1>Stratospheric transport scorecard</h1>'
-             f'<p class="lede">Five configurations of the dry JCM model, scored against CLaMS, WACCM6 and ERA5 on age of air, '
+             f'<p class="lede">{["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"][len(names) - 1]} configurations of the dry JCM model, scored against CLaMS, WACCM6 and ERA5 on age of air, '
              f'the residual circulation and the polar vortex, 2006&ndash;2007.</p></header>')
     H.append(f'<div class="findings col">{open(fh).read()}</div>')
 
@@ -152,11 +153,11 @@ def main():
     H.append('</tbody></table></div></section>')
 
     # --- runs and metrics
-    H.append('<section><h2>The runs</h2><p class="col">All five use the same dry model: temperature relaxation to a '
+    H.append('<section><h2>The runs</h2><p class="col">All runs use the same dry model: temperature relaxation to a '
              'Jucker-type equilibrium, Hines and Lott-Miller gravity-wave drag, ERA5 nudging of winds and temperature in the '
              'troposphere (including the lowest levels), QBO nudging, T63 with 95 levels. They differ in a correction to the '
              'equilibrium temperature in the extratropics, which strengthens the polar vortex, and in how high the ERA5 nudging '
-             'reaches. AL7, L0, LAL7 and AL7t restart from P20b at the end of 2004 and run 2005&ndash;2007.</p>'
+             'reaches. All runs except P20b restart from P20b at the end of 2004 and run 2005&ndash;2007.</p>'
              '<div class="tablewrap"><table><thead><tr><th>Run</th><th>Equilibrium-temperature correction</th>'
              '<th>Top of ERA5 nudging</th><th>Role</th></tr></thead><tbody>')
     for n in names:
