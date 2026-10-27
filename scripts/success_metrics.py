@@ -2,6 +2,9 @@
 """Success metrics for stratospheric tracer transport (Susanne 2026-10-23): one table, fixed bounds, any set of runs.
 
     JAX_PLATFORMS=cpu python scripts/success_metrics.py OUTDIR NAME=runs/<agg> [NAME=runs/<agg> ...] [--t0 2006-01-01 --t1 2008-01-01]
+        [--window-years 2]
+
+--window-years must match t0..t1 (Phase 26 scores 2005-2009: --t0 2005-01-01 --t1 2010-01-01 --window-years 5).
 
 The aggregates should hold only the window's years (scripts/sweep_score.py scores the LAST two years of an archive;
 strat_circulation-style readers load every file). Raw scores come from sweep_score.py (w*, mass flux, ages; clocks
@@ -35,12 +38,12 @@ B = dict(A1=0.25, A2=0.4, A3=0.5, A4=(2.3, 3.2), B1=1.35, B2=0.20, C1u=5.0, C1la
 W_LEV = (100, 70, 50, 30, 10)
 
 
-def raw_scores(name, agg, outdir, t0, t1):
+def raw_scores(name, agg, outdir, t0, t1, years):
     raw = os.path.join(outdir, "raw"); os.makedirs(raw, exist_ok=True)
     sw, tq = os.path.join(raw, "sweep", f"{name}.json"), os.path.join(raw, "teq", f"{name}.json")
     if not os.path.exists(sw):
         subprocess.run([sys.executable, os.path.join(HERE, "sweep_score.py"), agg, "--name", name, "--out", os.path.dirname(sw),
-                        "--window-years", "2", "--age-days", "730", "--desc", f"success metrics {name}"], check=True)
+                        "--window-years", f"{years:g}", "--age-days", f"{round(years * 365.25):d}", "--desc", f"success metrics {name}"], check=True)
     if not os.path.exists(tq):
         subprocess.run([sys.executable, os.path.join(HERE, "teq_score.py"), agg, "--t0", t0, "--t1", t1, "--name", name,
                         "--out", os.path.dirname(tq), "--desc", f"success metrics {name}"], check=True)
@@ -95,9 +98,10 @@ def fmt(x):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("outdir"); ap.add_argument("runs", nargs="+")
     ap.add_argument("--t0", default="2006-01-01"); ap.add_argument("--t1", default="2008-01-01")
+    ap.add_argument("--window-years", type=float, default=2.0)
     a = ap.parse_args(); os.makedirs(a.outdir, exist_ok=True)
     runs = [r.split("=", 1) for r in a.runs]
-    res = {n: metrics(*raw_scores(n, p, a.outdir, a.t0, a.t1)) for n, p in runs}
+    res = {n: metrics(*raw_scores(n, p, a.outdir, a.t0, a.t1, a.window_years)) for n, p in runs}
     era5 = ss.era5_wstar(list(range(1996, 2002)))
     w_era5 = {}
     if era5 is not None:
