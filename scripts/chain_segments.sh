@@ -33,7 +33,12 @@
 #                  into the aggregate. SPINUP_ONLY=1 stops the chain after the spin-up (a gate can then
 #                  inspect it); a later call without it skips the finished spin-up and continues.
 #   COMPACT        1 (default) rewrites each finished segment's chunk files compressed, in the
-#                  background on the CPU (scripts/compact_run.py); 0 leaves them as written
+#                  background on the CPU (scripts/compact_run.py, under scripts/memcap.sh); 0 leaves them as written
+#   ERA5_RECYCLE   "<first model year> <shift>" (Phase 20bt, Susanne 2026-10-28; default empty = off): model years
+#                  from <first> on are nudged to ERA5 year - <shift> (the WB2 store ends Jan 2023). jcm keys the
+#                  nudging on run.start_time, so those segments START on the ERA5 date, and the QBO target is the
+#                  ERA5 year too; run names and the aggregate keep the model year. <shift> must be a multiple of 4
+#                  (same leap years). The tracers only see the fraction of the year, so their clocks run on.
 # Every segment's ERA5 zonal-mean QBO target year must exist in cache/era5_ref (checked up front:
 # qbo_nudging.py would otherwise refuse the segment hours into the chain).
 # Restartable: a finished segment (exit=0 in its log) is skipped; a crashed one resumes from its
@@ -76,12 +81,18 @@ JAX_PLATFORMS=cpu python -c "from jcm_strat.segments import check_time_step; che
 read -r -a extra <<< "$EXTRA"
 mapfile -t SEGS < <(JAX_PLATFORMS=cpu python -m jcm_strat.segments "$SCHEME" "$YEARS" "$SAVE_INTERVAL") || { step "segments failed"; exit 1; }
 NYEARS=$(printf '%s\n' "${SEGS[@]}" | awk '{print $3}' | sort -u | wc -l); AGG="${AGG:-${PREFIX}_${NYEARS}yr}"
+RECYCLE_FROM=""; RECYCLE_SHIFT=0
+if [ -n "${ERA5_RECYCLE:-}" ]; then
+  read -r RECYCLE_FROM RECYCLE_SHIFT <<< "$ERA5_RECYCLE"
+  [ "$RECYCLE_SHIFT" -gt 0 ] && [ $(( RECYCLE_SHIFT % 4 )) -eq 0 ] || { step "refusing: ERA5_RECYCLE shift $RECYCLE_SHIFT is not a positive multiple of 4"; exit 1; }
+fi
+met_year() { if [ -n "$RECYCLE_FROM" ] && [ "$1" -ge "$RECYCLE_FROM" ]; then echo $(( $1 - RECYCLE_SHIFT )); else echo "$1"; fi; }
 # every QBO target year must be on disk before we start (qbo_nudging.py refuses a missing year)
 spin_year=""; if [ -n "$SPINUP" ]; then read -r spin_d spin_days <<< "$SPINUP"; spin_year="${spin_d:0:4}"; fi
-for y in $(printf '%s\n' "${SEGS[@]}" | awk '{print $3}' | sort -u) $spin_year; do
+for y in $(for s in $(printf '%s\n' "${SEGS[@]}" | awk '{print $3}' | sort -u); do met_year "$s"; done) $spin_year; do
   ls "$REPO"/cache/era5_ref/era5_zm_monthly_"$y".nc >/dev/null 2>&1 || { step "refusing: no cache/era5_ref/era5_zm_monthly_$y.nc (scripts/fetch_era5_strat_ref.py)"; exit 1; }
 done
-step "chain $PREFIX: experiment=$EXPERIMENT scheme=$SCHEME years=$YEARS (${#SEGS[@]} segments) GPU=$GPU save=$SAVE_INTERVAL d aggregate=$AGG extra: ${extra[*]:-none} per-seg: $EXTRA_PER_SEG first-seg: ${FIRST_SEG_EXTRA:-none} spin-up: ${SPINUP:-none}"
+step "chain $PREFIX: experiment=$EXPERIMENT scheme=$SCHEME years=$YEARS (${#SEGS[@]} segments) GPU=$GPU save=$SAVE_INTERVAL d aggregate=$AGG extra: ${extra[*]:-none} per-seg: $EXTRA_PER_SEG first-seg: ${FIRST_SEG_EXTRA:-none} spin-up: ${SPINUP:-none} era5-recycle: ${ERA5_RECYCLE:-none}"
 
 prev=""
 ALLSEGS=("${SEGS[@]}"); if [ -n "$SPINUP" ]; then ALLSEGS=("$spin_d $spin_days $spin_year spinup" "${SEGS[@]}"); fi
@@ -100,12 +111,13 @@ for seg in "${ALLSEGS[@]}"; do
   [ "${LINK_ONLY:-0}" = 1 ] && { step "LINK_ONLY=1 but $name is not finished - stopping"; exit 1; }
   mkdir -p "$rundir"
   init=(); if [ -n "$prev" ]; then init=(init=from_state "init.file=$prev/checkpoint.ckpt"); fi
-  per=(); if [ -n "$EXTRA_PER_SEG" ]; then read -r -a per <<< "${EXTRA_PER_SEG//\{year\}/$y}"; fi
+  my=$(met_year "$y"); md="${my}${d:4}"                     # ERA5 year/date the segment is nudged to (= model's unless recycled)
+  per=(); if [ -n "$EXTRA_PER_SEG" ]; then read -r -a per <<< "${EXTRA_PER_SEG//\{year\}/$my}"; fi
   if [ "${kind:-}" != spinup ] && [ "$first_real" = 1 ] && [ -n "$FIRST_SEG_EXTRA" ]; then read -r -a firstx <<< "$FIRST_SEG_EXTRA"; per+=("${firstx[@]}"); fi
-  step "run $name: $d +$days d ${init[*]:-init=era5} ${per[*]}"
+  step "run $name: $d +$days d $([ "$md" = "$d" ] || echo "(ERA5 $md) ")${init[*]:-init=era5} ${per[*]}"
   echo "[launch] $(date -Is) jcm-strat $(git -C "$REPO" rev-parse --short HEAD) chain=$PREFIX GPU=$GPU" >> "$rundir/log.txt"
   ( cd "$rundir" && python -m jcm_strat.main --config-dir "$REPO/jcm_strat/config" "+experiment=$EXPERIMENT" ++run.checkpoint_path=checkpoint.ckpt \
-      "run.start_time=$d" "run.total_time=$days" "${extra[@]}" "${per[@]}" "${init[@]}" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
+      "run.start_time=$md" "run.total_time=$days" "${extra[@]}" "${per[@]}" "${init[@]}" hydra.run.dir="$rundir" ) >> "$rundir/log.txt" 2>&1
   rc=$?
   if [ $rc -eq 0 ] && grep -q "atmosphere unhealthy" "$rundir/log.txt"; then rc=3; step "$name stopped on jcm's health check: $(grep -m1 'atmosphere unhealthy' "$rundir/log.txt")"; fi
   echo "[launch] $(date -Is) exit=$rc" >> "$rundir/log.txt"
@@ -115,7 +127,7 @@ for seg in "${ALLSEGS[@]}"; do
   if [ "${kind:-}" = spinup ] && [ "${SPINUP_ONLY:-0}" = 1 ]; then step "spin-up done, SPINUP_ONLY=1 - stopping"; exit 0; fi
   if [ "$COMPACT" = 1 ]; then
     step "compacting $name in the background (runs/$name/compact.log)"
-    ( JAX_PLATFORMS=cpu nohup python "$REPO/scripts/compact_run.py" "$rundir" >> "$rundir/compact.log" 2>&1 & )
+    ( JAX_PLATFORMS=cpu nohup bash "$REPO/scripts/memcap.sh" -m 96G -- python "$REPO/scripts/compact_run.py" "$rundir" >> "$rundir/compact.log" 2>&1 & )
   fi
   prev="$rundir"
 done
