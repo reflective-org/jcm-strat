@@ -2,8 +2,8 @@
 # Phase 26b (Susanne 2026-10-28): score on 2006-2010 instead of 2005-2009, so the first year after the restart from
 # P20b is left out. Every run needs 2010: the five restart runs are extended by one year from their 2009 checkpoints,
 # and P20b gets its own 2010 as runs/p26_P20b_* (1990-2009 linked to p20bt; the 50-year p20bt chain on GPU 0 will
-# reach 2010 only after its ERA5 prefetch). Two queues on GPUs 1 and 2 (GPU 0 is the p20bt chain's). Scoring
-# waits until that prefetch (memcap 192G in the same 256G slice) has finished, then runs one job at a time.
+# reach 2010 only after its ERA5 prefetch). Two queues on GPUs 1 and 2 (GPU 0 is the p20bt chain's). Scoring runs one
+# job at a time at a 60G cap, so it fits beside that prefetch (192G) in the shared 256G slice.
 #
 #   bash scripts/phase26_2010.sh      restartable
 set -uo pipefail
@@ -12,7 +12,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 source "$REPO/scripts/env.sh"
 OUT="$REPO/docs/outputs/26_5yr_scoring"; LOG="$REPO/runs/p26b_run.log"
 W=/data/JCM_stripped
-py() { JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" bash "$REPO/scripts/memcap.sh" -m 96G -- "$REPO/.venv/bin/python" "$@"; }
+py() { JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" bash "$REPO/scripts/memcap.sh" -m 60G -- "$REPO/.venv/bin/python" "$@"; }
 step() { echo "[p26b] $(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M %Z') $*" | tee -a "$LOG"; }
 corr() { echo "++physics.terms.held_suarez.te_correction_file=$1 ++physics.terms.held_suarez.te_correction_mode=total"; }
 
@@ -60,8 +60,6 @@ step "start, commit $(git rev-parse --short HEAD)"
 rm -f runs/p26b_*.done runs/p26b_*.failed
 extend 1 AL7 AL7t L0 &
 extend 2 AL7h LAL7 P20b &
-while tmux has-session -t preproc_p20bt_era5win 2>/dev/null; do sleep 300; done
-step "ERA5 prefetch finished, scoring"
 for n in "${ORDER[@]}"; do
   until [ -e "runs/p26b_$n.done" ] || [ -e "runs/p26b_$n.failed" ]; do sleep 60; done
   [ -e "runs/p26b_$n.done" ] && score "$n" "${RUN[$n]%%|*}"
