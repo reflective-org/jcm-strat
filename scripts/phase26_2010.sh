@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Relaunched 2026-10-28 16:30 PDT: the first launch died at 11:56 PDT, 5 min into 2010 (its tmux session vanished
+# when the p20bt chain was restarted). P20b now uses p20bt's own finished 2010; the five extensions queue on GPU 1.
+#
 # Phase 26b (Susanne 2026-10-28): score on 2006-2010 instead of 2005-2009, so the first year after the restart from
 # P20b is left out. Every run needs 2010: the five restart runs are extended by one year from their 2009 checkpoints,
 # and P20b gets its own 2010 as runs/p26_P20b_* (1990-2009 linked to p20bt; the 50-year p20bt chain on GPU 0 will
@@ -23,15 +26,14 @@ declare -A RUN=(
   [AL7t]="p24_AL7t|p22_teq|$(corr $W/jcm-strat-phase24/docs/outputs/24_al7_taper/corrections/AL7t35_50.nc)"
   [LAL7]="p23_LAL7|p23_lattop|$(corr $W/jcm-strat-phase23/docs/outputs/22_teq_vortex/corrections/AL7.nc)"
   [L0]="p23_L0|p23_lattop|"
-  [P20b]="p26_P20b|p20b_ext|"
+  [P20b]="p20bt|p20b_ext|"
 )
-for y in $(seq 1990 2009); do [ -e "runs/p26_P20b_${y}0101" ] || ln -s "$REPO/runs/p20bt_${y}0101" "runs/p26_P20b_${y}0101"; done
 
 extend() {  # <gpu> <name>...: extend each run to 2010 on one GPU; marker runs/p26b_<name>.done / .failed
   local gpu="$1"; shift
   for name in "$@"; do
     IFS='|' read -r pre exp extra <<< "${RUN[$name]}"
-    if [ ! -s "runs/${pre}_20100101/checkpoint.ckpt" ]; then
+    if [ "$name" != P20b ]; then  # P20b = the p20bt 50-year chain's own 2010; chain_segments skips finished years and resumes a crashed one
       while nvidia-smi -i "$gpu" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; do step "GPU $gpu busy"; sleep 300; done
       step "extend $name to 2010 on GPU $gpu ($exp)"; local t1; t1=$(date +%s)
       EXPERIMENT="$exp" PREFIX="$pre" SCHEME=calendar YEARS=1990-2010 AGG="${pre}_agg" SAVE_INTERVAL=0.25 GPU="$gpu" EXTRA="$extra" \
@@ -58,8 +60,7 @@ score() {  # <name> <prefix>: 2006-2010 aggregate, diagnostics, raw success scor
 ORDER=(P20b AL7 AL7h AL7t L0 LAL7)
 step "start, commit $(git rev-parse --short HEAD)"
 rm -f runs/p26b_*.done runs/p26b_*.failed
-extend 1 AL7 AL7t L0 &
-extend 2 AL7h LAL7 P20b &
+extend 1 AL7 AL7h AL7t L0 LAL7 P20b &  # GPU 2 is taken by another user since 2026-10-28 15:45 PDT
 for n in "${ORDER[@]}"; do
   until [ -e "runs/p26b_$n.done" ] || [ -e "runs/p26b_$n.failed" ]; do sleep 60; done
   [ -e "runs/p26b_$n.done" ] && score "$n" "${RUN[$n]%%|*}"
