@@ -9,7 +9,7 @@ FINDINGS_HTML is the hand-written summary inserted at the top. Every number on t
 """
 from __future__ import annotations
 
-import html, json, os, shutil, sys
+import html, json, os, re, shutil, sys
 
 RUNS_INFO = {  # what changes from P20b, why the run was made
     "P20b": ("Nothing: the reference configuration, run continuously since 1990.",
@@ -33,15 +33,15 @@ DESIGN = [  # rows of the design grid: correction label, run with P20b's nudging
 ]
 COLORS = {"P20b": "#242729", "AL7": "#6f382a", "AL7h": "#b18e63", "AL7t": "#5e7227", "L0": "#25a3b2", "LAL7": "#6f6194"}
 GROUPS = {"A": "Age of air", "B": "Residual circulation", "C": "Polar vortex"}
-BOUNDS = [
-    ("A1", "Tropical entry age at 55 hPa (clock reset below 150 hPa)", "WACCM6 entry age", "&plusmn; 0.25 yr"),
-    ("A2", "Entry age, whole stratosphere 100-5 hPa, RMS error", "CLaMS (ERA5-driven)", "&lt; 0.4 yr"),
-    ("A3", "Age step from the tropics to 50-70&deg; at 55 hPa", "CLaMS", "&plusmn; 0.5 yr"),
-    ("A4", "Tropical transit time from 70 to 10 hPa", "CLaMS 3.0 yr, WACCM6 2.5 yr", "2.3-3.2 yr"),
-    ("B1", "Tropical residual vertical velocity w* at 100, 70, 50, 30, 10 hPa", "WACCM6 (ERA5 shown)", "within a factor 1.35"),
-    ("B2", "Upward mass flux at 100 and 70 hPa", "WACCM6 (ERA5 shown)", "&plusmn; 20 %"),
-    ("C1", "Winter jet maximum at 50 and 10 hPa, both hemispheres: strength and latitude", "ERA5, same months", "&plusmn; 5 m/s, &plusmn; 4&deg;"),
-    ("C2", "Winter polar-cap temperature bias at 50 hPa", "ERA5, same months", "&plusmn; 2 K"),
+BOUNDS = [  # group, id, metric, reference ({X} = that metric's reference value from the scores), bound
+    ("A", "A1", "Tropical (10&deg;S&ndash;10&deg;N) entry age at 55 hPa (clock reset below 150 hPa)", "WACCM6 entry age ({A1} yr)", "&plusmn; 0.25 yr"),
+    ("A", "A2", "Entry age over the whole stratosphere, 100&ndash;5 hPa, RMS error", "CLaMS (ERA5-driven)", "&lt; 0.4 yr"),
+    ("A", "A3", "Age step from the tropics to 50&ndash;70&deg; at 55 hPa", "CLaMS ({A3} yr)", "&plusmn; 0.5 yr"),
+    ("A", "A4", "Tropical transit time from 70 to 10 hPa", "CLaMS 3.0 yr, WACCM6 2.5 yr", "inside 2.3&ndash;3.2 yr"),
+    ("B", "B1", "Tropical (15&deg;S&ndash;15&deg;N) w* at 100, 70, 50, 30 and 10 hPa (5 metrics)", "WACCM6 histSST 1996&ndash;2014", "within a factor of 1.35"),
+    ("B", "B2", "Upward mass flux at 100 and 70 hPa (2 metrics)", "WACCM6 ({B2-100} and {B2-70} &times; 10<sup>9</sup> kg/s)", "&plusmn; 20 %"),
+    ("C", "C1", "Winter jet maximum (30&ndash;90&deg;) at 50 and 10 hPa, both hemispheres: strength and latitude (8 metrics)", "ERA5, same months", "&plusmn; 5 m/s, &plusmn; 4&deg;"),
+    ("C", "C2", "Winter polar-cap (60&ndash;90&deg;) temperature bias at 50 hPa, DJF north / JJA south (2 metrics)", "ERA5, same months", "&plusmn; 2 K"),
 ]
 DIAG = [("age_seasonal_aoa150.png", "Entry age, DJF and JJA, against WACCM6"),
         ("age_seasonal_aoa_sfc.png", "Surface-clock age, DJF and JJA, against CLaMS"),
@@ -187,10 +187,26 @@ def main():
         a, b = RUNS_INFO[n]
         H.append(f"<tr><td>{run_tag(n)}</td><td>{a}</td><td>{b}</td></tr>")
     H.append('</tbody></table></div>')
+    ref = {m["id"]: m["ref"] for m in S[names[0]]["metrics"]}
+    rows, grp = "", None
+    for g, i, metric, r, bound in BOUNDS:
+        if g != grp:
+            grp = g; rows += f'<tr><td colspan="4"><b>{g}: {GROUPS[g]}</b></td></tr>'
+        r = re.sub(r"\{([^}]+)\}", lambda m: f"{ref[m.group(1)]:.3g}", r)
+        rows += f"<tr><td><b>{i}</b></td><td>{metric}</td><td>{r}</td><td>{bound}</td></tr>"
+    nm = len(S[names[0]]["metrics"]); per = {g: sum(m["group"] == g for m in S[names[0]]["metrics"]) for g in "ABC"}
     H.append('<h3>How each metric is scored</h3><div class="tablewrap"><table><thead><tr><th></th><th>Metric</th><th>Reference</th>'
-             '<th>Bound</th></tr></thead><tbody>' + "".join(f"<tr><td><b>{a}</b></td><td>{b}</td><td>{c}</td><td>{d}</td></tr>" for a, b, c, d in BOUNDS)
-             + '</tbody></table></div><p class="col small muted">Bounds are &ldquo;moderate&rdquo;: about the size of the disagreement '
-             'between CLaMS and WACCM6. Pass: error within the bound. Near: within 1.5 times the bound. Fail: beyond that.</p></section>')
+             '<th>Bound (normalised error = 1)</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+             '<h3>How the scores are combined</h3><ul class="col">'
+             '<li>Each metric&rsquo;s error is divided by its bound, so 1 means &ldquo;at the edge of acceptable&rdquo;.</li>'
+             '<li><b>Pass</b>: normalised error at most 1. <b>Near</b>: at most 1.5. <b>Fail</b>: beyond 1.5.</li>'
+             '<li>A <b>group score</b> (A, B or C) is the mean of the normalised errors in that group.</li>'
+             f'<li>The <b>combined score</b> is the mean of the three group scores, so each group counts equally even though C has '
+             f'{per["C"]} metrics and A only {per["A"]}.</li>'
+             f'<li>There are <b>{nm} metrics</b> in total ({per["A"]} + {per["B"]} + {per["C"]}); &ldquo;passed&rdquo; counts how many '
+             'are at or below 1.</li>'
+             '<li>The bounds are &ldquo;moderate&rdquo;: roughly the size of the disagreement between CLaMS and WACCM6.</li>'
+             f'<li>All metrics are computed over {y0}&ndash;{y1}.</li></ul></section>')
 
     def gallery(sec, files, label):
         tabs = "".join(f'<button type="button" role="tab" id="t-{sec}-{n}" aria-selected="{str(i == 0).lower()}" '
