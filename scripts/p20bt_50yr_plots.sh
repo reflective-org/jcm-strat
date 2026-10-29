@@ -11,7 +11,7 @@ say() { echo "[p20bt-50] $(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M %Z') $*"
 say "start, commit $(git rev-parse --short HEAD)"
 for v in aoa_sfc aoa150; do
   py scripts/aoa_vs_clams.py "$A" "$OUT" --years 2005-2009 --last-saves 240 --var "$v" \
-    --label "P20b 1990-2039 [$v]: age over 2035-2039 vs CLaMS/WACCM 2005-2009" > "runs/p20bt_50yr_aoa_$v.log" 2>&1
+    --label "P20b 1990-2039 [$v]: age over the last 60 days (Nov-Dec 2039) vs CLaMS/WACCM 2005-2009" > "runs/p20bt_50yr_aoa_$v.log" 2>&1
   say "end-state age $v exit=$?"
 done
 py scripts/vortex_series.py "$A" "$OUT/p20bt_50yr_vortex_series.png" --start 1990-01-01 > runs/p20bt_50yr_vortex.log 2>&1
