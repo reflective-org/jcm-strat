@@ -11,14 +11,26 @@ from __future__ import annotations
 
 import html, json, os, shutil, sys
 
-RUNS_INFO = {
-    "P20b": ("none", "400 hPa everywhere", "baseline (Phase 20b, 20-year run)"),
-    "AL7": ("extratropics 400-1 hPa, full from 35 deg", "400 hPa everywhere", "Phase 22's best vortex"),
-    "L0": ("none", "150 hPa tropics, 400 hPa extratropics", "Phase 23 nudging top alone"),
-    "LAL7": ("as AL7", "150 hPa tropics, 400 hPa extratropics", "Phase 23 nudging top on AL7"),
-    "AL7t": ("as AL7, but zero below 35 deg, full from 50 deg", "400 hPa everywhere", "Phase 24: AL7 kept away from the tropics"),
-    "AL7h": ("as AL7, at half amplitude", "400 hPa everywhere", "Phase 25: a weaker AL7"),
+RUNS_INFO = {  # what changes from P20b, why the run was made
+    "P20b": ("Nothing: the reference configuration, run continuously since 1990.",
+             "Baseline. Good age of air, but the polar vortices are too weak."),
+    "AL7": ("Adds the full temperature correction poleward of 25&deg; (ramping in to full strength at 35&deg;).",
+            "Fix the polar vortex."),
+    "AL7h": ("As AL7, with the correction at half strength.",
+             "Does a weaker correction keep most of the vortex gain while ageing the air less?"),
+    "AL7t": ("As AL7, with the correction moved poleward: zero up to 35&deg;, full strength from 50&deg;.",
+             "Does the young air come from the subtropical part of the correction?"),
+    "L0": ("Extends the ERA5 nudging in the tropics up to 150 hPa (400 hPa in the extratropics, as P20b).",
+           "Does nudging the tropical upper troposphere fix the weak upwelling at 100 hPa?"),
+    "LAL7": ("AL7's correction plus L0's higher tropical nudging.",
+             "Do the two changes combine?"),
 }
+DESIGN = [  # rows of the design grid: correction label, run with P20b's nudging, run with the higher tropical nudging
+    ("None", "P20b", "L0"),
+    ("Full (AL7)", "AL7", "LAL7"),
+    ("Half strength", "AL7h", None),
+    ("Full, moved poleward", "AL7t", None),
+]
 COLORS = {"P20b": "#242729", "AL7": "#6f382a", "AL7h": "#b18e63", "AL7t": "#5e7227", "L0": "#25a3b2", "LAL7": "#6f6194"}
 GROUPS = {"A": "Age of air", "B": "Residual circulation", "C": "Polar vortex"}
 BOUNDS = [
@@ -154,16 +166,26 @@ def main():
     H.append('</tbody></table></div></section>')
 
     # --- runs and metrics
-    H.append('<section><h2>The runs</h2><p class="col">All runs use the same dry model: temperature relaxation to a '
-             'Jucker-type equilibrium, Hines and Lott-Miller gravity-wave drag, ERA5 nudging of winds and temperature in the '
-             'troposphere (including the lowest levels), QBO nudging, T63 with 95 levels. They differ in a correction to the '
-             'equilibrium temperature in the extratropics, which strengthens the polar vortex, and in how high the ERA5 nudging '
-             f'reaches. All runs except P20b restart from P20b at the end of 2004 and run 2005&ndash;{y1}.</p>'
-             '<div class="tablewrap"><table><thead><tr><th>Run</th><th>Equilibrium-temperature correction</th>'
-             '<th>Top of ERA5 nudging</th><th>Role</th></tr></thead><tbody>')
+    H.append('<section><h2>The runs</h2><p class="col">All six runs are the same dry model (T63, 95 levels; relaxation to an '
+             'equilibrium temperature, gravity-wave drag, QBO nudging, ERA5 nudging of winds and temperature in the troposphere). '
+             'They differ in two settings:</p><ul class="col">'
+             '<li><b>A correction to the equilibrium temperature in the extratropics</b>, from 400 to 1 hPa. It was obtained by '
+             'repeatedly nudging the equilibrium temperature towards ERA5 temperatures, and its purpose is to strengthen the '
+             'polar vortex.</li>'
+             '<li><b>How high the ERA5 nudging reaches</b>: up to 400 hPa everywhere, or up to 150 hPa in the tropics.</li></ul>'
+             f'<p class="col">P20b has run since 1990. The other five start from P20b&rsquo;s state at the end of 2004 and run '
+             f'2005&ndash;{y1}; the scores leave out the first year after that restart.</p>')
+    H.append('<div class="tablewrap"><table><thead><tr><th>Temperature correction</th><th>ERA5 nudging up to 400 hPa</th>'
+             '<th>Up to 150 hPa in the tropics</th></tr></thead><tbody>')
+    for lab, r1, r2 in DESIGN:
+        cell = lambda r: run_tag(r) if r in names else '<span class="muted">&ndash;</span>'
+        H.append(f"<tr><td>{lab}</td><td>{cell(r1)}</td><td>{cell(r2)}</td></tr>")
+    H.append('</tbody></table></div>')
+    H.append('<div class="tablewrap"><table><thead><tr><th>Run</th><th>What changes from P20b</th><th>Question it answers</th>'
+             '</tr></thead><tbody>')
     for n in names:
-        a, b, c = RUNS_INFO[n]
-        H.append(f"<tr><td>{run_tag(n)}</td><td>{a}</td><td>{b}</td><td>{c}</td></tr>")
+        a, b = RUNS_INFO[n]
+        H.append(f"<tr><td>{run_tag(n)}</td><td>{a}</td><td>{b}</td></tr>")
     H.append('</tbody></table></div>')
     H.append('<h3>How each metric is scored</h3><div class="tablewrap"><table><thead><tr><th></th><th>Metric</th><th>Reference</th>'
              '<th>Bound</th></tr></thead><tbody>' + "".join(f"<tr><td><b>{a}</b></td><td>{b}</td><td>{c}</td><td>{d}</td></tr>" for a, b, c, d in BOUNDS)
