@@ -114,6 +114,7 @@ def fmt(v):
 
 def main():
     sj, rep, fh = sys.argv[1], sys.argv[2], sys.argv[3]
+    y0, y1 = os.environ.get("WINDOW", "2006-2007").split("-")      # scoring window, e.g. WINDOW=2006-2010 (Phase 26)
     runs = dict(a.split("=", 1) for a in sys.argv[4:])
     S = json.load(open(sj)); names = list(runs)
     best = min(names, key=lambda n: S[n]["combined"])
@@ -131,7 +132,7 @@ def main():
     H.append('<header class="col"><p class="eyebrow">jcm-strat &middot; dry model &middot; tracer transport</p>'
              '<h1>Stratospheric transport scorecard</h1>'
              f'<p class="lede">{["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"][len(names) - 1]} configurations of the dry JCM model, scored against CLaMS, WACCM6 and ERA5 on age of air, '
-             f'the residual circulation and the polar vortex, 2006&ndash;2007.</p></header>')
+             f'the residual circulation and the polar vortex, {y0}&ndash;{y1}.</p></header>')
     H.append(f'<div class="findings col">{open(fh).read()}</div>')
 
     # --- scorecard summary
@@ -157,7 +158,7 @@ def main():
              'Jucker-type equilibrium, Hines and Lott-Miller gravity-wave drag, ERA5 nudging of winds and temperature in the '
              'troposphere (including the lowest levels), QBO nudging, T63 with 95 levels. They differ in a correction to the '
              'equilibrium temperature in the extratropics, which strengthens the polar vortex, and in how high the ERA5 nudging '
-             'reaches. All runs except P20b restart from P20b at the end of 2004 and run 2005&ndash;2007.</p>'
+             f'reaches. All runs except P20b restart from P20b at the end of 2004 and run 2005&ndash;{y1}.</p>'
              '<div class="tablewrap"><table><thead><tr><th>Run</th><th>Equilibrium-temperature correction</th>'
              '<th>Top of ERA5 nudging</th><th>Role</th></tr></thead><tbody>')
     for n in names:
