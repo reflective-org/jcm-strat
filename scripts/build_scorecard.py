@@ -24,14 +24,23 @@ RUNS_INFO = {  # what changes from P20b, why the run was made
            "Does nudging the tropical upper troposphere fix the weak upwelling at 100 hPa?"),
     "LAL7": ("AL7's correction plus L0's higher tropical nudging.",
              "Do the two changes combine?"),
+    "QBO30": ("As AL7h, with the QBO nudging window starting higher: no nudging below 50 hPa, full strength from 30 hPa "
+              "(AL7h: zero at 90 hPa, full from about 40 hPa).",
+              "Does leaving the lowest stratosphere free let the upwelling there adjust towards WACCM6?"),
+    "QBO10d": ("As AL7h, with the QBO nudging ten times weaker: relaxation timescale 10 days instead of 1 day (WACCM6 uses "
+               "10 days). Same window as AL7h.",
+               "Does gentler QBO nudging over the whole window help in the same way?"),
 }
 DESIGN = [  # rows of the design grid: correction label, run with P20b's nudging, run with the higher tropical nudging
     ("None", "P20b", "L0"),
     ("Full (AL7)", "AL7", "LAL7"),
     ("Half strength", "AL7h", None),
     ("Full, moved poleward", "AL7t", None),
+    ("Half strength, QBO nudging from 30 hPa", "QBO30", None),
+    ("Half strength, QBO nudging at 10 days", "QBO10d", None),
 ]
-COLORS = {"P20b": "#242729", "AL7": "#6f382a", "AL7h": "#b18e63", "AL7t": "#5e7227", "L0": "#25a3b2", "LAL7": "#6f6194"}
+COLORS = {"P20b": "#242729", "AL7": "#6f382a", "AL7h": "#b18e63", "AL7t": "#5e7227", "L0": "#25a3b2", "LAL7": "#6f6194", "QBO30": "#d1495b",
+          "QBO10d": "#2b59c3"}
 GROUPS = {"A": "Age of air", "B": "Residual circulation", "C": "Polar vortex"}
 BOUNDS = [  # group, id, metric, reference ({X} = that metric's reference value from the scores), bound
     ("A", "A1", "Tropical (10&deg;S&ndash;10&deg;N) entry age at 55 hPa (clock reset below 150 hPa)", "WACCM6 entry age ({A1} yr)", "&plusmn; 0.25 yr"),
@@ -166,14 +175,18 @@ def main():
     H.append('</tbody></table></div></section>')
 
     # --- runs and metrics
-    H.append('<section><h2>The runs</h2><p class="col">All six runs are the same dry model (T63, 95 levels; relaxation to an '
+    H.append(f'<section><h2>The runs</h2><p class="col">All {len(names)} runs are the same dry model (T63, 95 levels; relaxation to an '
              'equilibrium temperature, gravity-wave drag, QBO nudging, ERA5 nudging of winds and temperature in the troposphere). '
-             'They differ in two settings:</p><ul class="col">'
+             'They differ in three settings:</p><ul class="col">'
              '<li><b>A correction to the equilibrium temperature in the extratropics</b>, from 400 to 1 hPa. It was obtained by '
              'repeatedly nudging the equilibrium temperature towards ERA5 temperatures, and its purpose is to strengthen the '
              'polar vortex.</li>'
-             '<li><b>How high the ERA5 nudging reaches</b>: up to 400 hPa everywhere, or up to 150 hPa in the tropics.</li></ul>'
-             f'<p class="col">P20b has run since 1990. The other five start from P20b&rsquo;s state at the end of 2004 and run '
+             '<li><b>How high the ERA5 nudging reaches</b>: up to 400 hPa everywhere, or up to 150 hPa in the tropics.</li>'
+             '<li><b>The QBO nudging</b>: the tropical (15&deg;S&ndash;15&deg;N, fading out by 25&deg;) zonal-mean wind is relaxed '
+             'towards ERA5&rsquo;s monthly mean so that the model has the observed QBO. In all runs but QBO30 and QBO10d it acts from '
+             '90 to 1 hPa with a 1-day timescale. QBO30 raises the bottom of that window to 50 hPa; QBO10d lengthens the timescale '
+             'to 10 days.</li></ul>'
+             f'<p class="col">P20b has run since 1990. The other {len(names) - 1} start from P20b&rsquo;s state at the end of 2004 and run '
              f'2005&ndash;{y1}; the scores leave out the first year after that restart.</p>')
     H.append('<div class="tablewrap"><table><thead><tr><th>Temperature correction</th><th>ERA5 nudging up to 400 hPa</th>'
              '<th>Up to 150 hPa in the tropics</th></tr></thead><tbody>')
@@ -236,6 +249,18 @@ def main():
              'higher up (the deep branch) set how fast air ages.</p><figure class="col"><img src="wstar_profile.png" alt="Tropical '
              'w* against height"><figcaption>Tropical (15S&ndash;15N) residual vertical velocity against height. WACCM6 is '
              '1996&ndash;2014, ERA5 1996&ndash;2001 (the years on disk).</figcaption></figure>')
+    if os.path.exists(os.path.join(rep, "qbo_nudging.png")):
+        H.append('<h3>Lighter QBO nudging: AL7h, QBO30 and QBO10d</h3><p class="col">The QBO nudging pins the tropical wind to '
+                 'ERA5, and with it the wave drag that drives part of the tropical upwelling. QBO30 and QBO10d loosen it in two ways '
+                 'to see whether the lower-stratospheric upwelling then moves towards WACCM6.</p>'
+                 '<figure><img src="qbo_nudging.png" alt="QBO nudging rate, QBO amplitude, correlation with ERA5 and 50 hPa '
+                 'equatorial wind for AL7h, QBO30 and QBO10d"><figcaption>(a) Strength of the QBO nudging against height. '
+                 '(b) QBO amplitude, the standard deviation of monthly equatorial-wind anomalies. (c) Correlation of those anomalies '
+                 'with ERA5: 1 means the model QBO is in phase with the observed one. (d) Equatorial wind at 50 hPa, where QBO30 is '
+                 'no longer nudged.</figcaption></figure>'
+                 '<figure class="col"><img src="qbo_upwelling.png" alt="Tropical w* and entry age for AL7h, QBO30 and QBO10d">'
+                 '<figcaption>Tropical upwelling and entry age for the three runs that differ only in the QBO nudging.'
+                 '</figcaption></figure>')
     H.append(gallery("circ", {"tem_streamfunction.png", "qbo_time_height.png"}, "Streamfunction and QBO by run"))
     H.append(_metric_table(S, names, "B") + '</section>')
 

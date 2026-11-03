@@ -21,7 +21,7 @@ import sweep_score as ss  # noqa: E402
 import strat_circulation as circ  # noqa: E402
 
 STYLE = {"P20b": ("#242729", "o"), "AL7": ("#6f382a", "s"), "AL7h": ("#b18e63", "P"), "AL7t": ("#5e7227", "v"),
-         "L0": ("#25a3b2", "^"), "LAL7": ("#6f6194", "D")}
+         "L0": ("#25a3b2", "^"), "LAL7": ("#6f6194", "D"), "QBO30": ("#d1495b", "X"), "QBO10d": ("#2b59c3", "h")}
 REF = {"CLaMS (ERA5)": dict(color="#5f6264", ls="--", lw=2.4), "WACCM6": dict(color="#8B8D8E", ls=":", lw=2.4),
        "ERA5": dict(color="#5f6264", ls="--", lw=2.4)}
 INK, MUTED, GRID = "#282C2E", "#5f6264", "#E4E1DD"

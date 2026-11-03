@@ -1,0 +1,30 @@
+<p class="eyebrow">Key findings</p>
+<p><b>Starting the QBO nudging at 50 hPa instead of 90 hPa (QBO30) gives the best score so far: 0.88, with 16 of 21 metrics passed.</b> QBO30 is AL7h with one change. It improves the circulation group and keeps AL7h&rsquo;s vortex, but the age of air is no better, and the QBO below 30 hPa is now weaker and lags ERA5 by a few months. No configuration yet gets both the polar vortex and the age of air right.</p>
+<ol>
+<li><b>Lighter QBO nudging (Phase 27).</b> QBO30 and QBO10d are AL7h with the QBO nudging loosened in two ways: QBO30 starts the nudging window higher, and QBO10d nudges ten times more gently.
+<ul>
+<li>Both lower the residual-circulation error (group B 0.88 and 0.90, against 1.05 for AL7h).</li>
+<li>w* at 50 hPa falls from 0.29 to 0.26&ndash;0.27 mm/s, closer to WACCM6 (0.20), and now passes. At 100 hPa it rises a little (0.14 to 0.17&ndash;0.18) but is still less than half of WACCM6&rsquo;s 0.40.</li>
+<li>The upward mass flux at 70 hPa does not drop (6.90 against 6.80 &times;10<sup>9</sup> kg/s).</li>
+<li>The tropical entry age is slightly younger than AL7h&rsquo;s (0.94&ndash;0.95 against 1.00 years). The overall age error is unchanged (RMS 0.61 against 0.62 years).</li>
+</ul></li>
+<li><b>QBO30 keeps the vortex; QBO10d weakens the northern one.</b>
+<ul>
+<li>QBO30&rsquo;s jets are within 1 m/s of AL7h&rsquo;s.</li>
+<li>In QBO10d the northern jet at 10 hPa drops to 16 m/s and moves to 49&deg;N (ERA5 25 m/s at 62&deg;N), so it scores worse overall (0.99).</li>
+<li>With 10-day nudging the semiannual oscillation near 1 hPa is weaker and drifts out of phase with ERA5. Below 3 hPa QBO10d&rsquo;s QBO is almost the same as AL7h&rsquo;s.</li>
+</ul></li>
+<li><b>QBO30&rsquo;s cost is the lowest part of the QBO.</b> At 50 hPa the QBO amplitude drops from 10.6 to 7.0 m/s (ERA5 11.3), and the wind there switches direction 2&ndash;3 months after ERA5 does.</li>
+<li><b>The two-year scores flattered the corrected runs (Phase 26).</b>
+<ul>
+<li>All runs except P20b restart from P20b at the end of 2004, and their air keeps getting younger for years after the restart.</li>
+<li>Entry-age bias against CLaMS, 2006&ndash;07 to 2008&ndash;09: AL7 &minus;0.55 to &minus;0.70 years, AL7h &minus;0.37 to &minus;0.47, LAL7 &minus;0.84 to &minus;1.04. P20b, which has run since 1990, holds at &minus;0.14 to &minus;0.16.</li>
+</ul></li>
+<li><b>The extratropical temperature correction fixes the vortex, and it also makes the air too young.</b>
+<ul>
+<li>AL7&rsquo;s winter jets match ERA5 within 1&ndash;4 m/s. Without the correction (P20b), the southern jet at 10 hPa is 15 m/s too weak.</li>
+<li>Entry-age bias over 2006&ndash;2010: P20b &minus;0.15 years, AL7h &minus;0.43, AL7 &minus;0.64.</li>
+<li>Half the correction (AL7h) gives about half of each effect. Moving it poleward (AL7t) does not help the age.</li>
+</ul></li>
+<li><b>Upwelling at 100 hPa is too weak in every run</b> (0.13&ndash;0.18 against 0.40 mm/s), while the 100 hPa mass flux is close to WACCM6&rsquo;s. Nudging the tropical upper troposphere (L0, LAL7) raises it, but it also makes the air younger, and LAL7 scores worst (1.21).</li>
+</ol>
