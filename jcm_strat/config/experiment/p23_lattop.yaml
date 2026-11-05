@@ -1,0 +1,18 @@
+# @package _global_
+# Phase 23 (Susanne 2026-10-20): nudge only the troposphere, with a latitude-dependent top instead of one global
+# pressure. Phase 22's scoring setup (p22_teq = P20b: dry 13d + fixed Lott-Miller, bottom levels nudged, L95 + cubic,
+# minimal output) with the ERA5 nudging top at 150 hPa for |lat| <= 20, 400 hPa for |lat| >= 35, a cos^2 blend in log p
+# between, and a 0.1-decade log-p taper below the top (jcm_strat/nudging_lat.py). P20b's global top was 400 hPa: the
+# extratropics are unchanged apart from the taper; the tropical 150-400 hPa layer is nudged again (13c/21a: the 400 hPa
+# cut removes the shallow branch). min_pressure_hpa only has to stay at or above the smallest top.
+defaults:
+  - /experiment/p22_teq
+
+nudging:
+  min_pressure_hpa: 100.0
+  lat_top:
+    p_trop_hpa: 150.0
+    p_pole_hpa: 400.0
+    lat_full_deg: 20.0
+    lat_zero_deg: 35.0
+    taper_decades: 0.1

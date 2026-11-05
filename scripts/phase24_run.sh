@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Phase 24 (Susanne 2026-10-24): AL7 with the T_eq correction tapered away from the tropics - zero for |lat| <= 35, full
+# for |lat| >= 50 (AL7: 25 -> 35) - to recover the age of air while keeping AL7's vortex. Same protocol as AL7 (Phase 22):
+# P20b physics and nudging (p22_teq, global top 400 hPa), 2005-2007 from P20b's end-of-2004 state. Then the Phase 23
+# diagnostics and the success metrics on 2006-2007, every CPU step under scripts/memcap.sh.
+#
+#   bash scripts/phase24_run.sh [GPU]      restartable
+set -uo pipefail
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
+# shellcheck disable=SC1091
+source "$REPO/scripts/env.sh"
+GPU="${1:-0}"; NAME=AL7t; PRE=p24_AL7t; BASE=p20bt
+OUT="$REPO/docs/outputs/24_al7_taper"; LOG="$REPO/runs/p24_run.log"
+CORR="$OUT/corrections/AL7t35_50.nc"
+py() { JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" bash "$REPO/scripts/memcap.sh" -m 96G -- "$REPO/.venv/bin/python" "$@"; }
+step() { echo "[p24] $(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M %Z') $*" | tee -a "$LOG"; }
+
+step "start, commit $(git rev-parse --short HEAD)"
+if [ ! -s "runs/${PRE}_20070101/checkpoint.ckpt" ]; then
+  for y in $(seq 1990 2004); do [ -e "runs/${PRE}_${y}0101" ] || ln -s "$REPO/runs/${BASE}_${y}0101" "runs/${PRE}_${y}0101"; done
+  while nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; do step "GPU $GPU busy"; sleep 300; done
+  step "run $NAME on GPU $GPU (2005-2007 from P20b 2004), correction ${CORR##*/}"; t1=$(date +%s)
+  EXPERIMENT=p22_teq PREFIX="$PRE" SCHEME=calendar YEARS=1990-2007 AGG="${PRE}_agg" SAVE_INTERVAL=0.25 GPU="$GPU" \
+    EXTRA="++physics.terms.held_suarez.te_correction_file=$CORR ++physics.terms.held_suarez.te_correction_mode=total" \
+    bash scripts/chain_segments.sh > "runs/${PRE}_chain_stdout.log" 2>&1; rc=$?
+  bad=$(grep -l 'atmosphere unhealthy' runs/${PRE}_200[5-7]0101/log.txt 2>/dev/null | tr '\n' ' ')
+  step "chain exit=$rc after $(( ($(date +%s) - t1) / 60 )) min ${bad:+HEALTH STOP: $bad}"
+  { [ $rc -eq 0 ] && [ -z "$bad" ]; } || { step "FAILED (runs/${PRE}_chain.log)"; exit 1; }
+fi
+A="runs/p23d_${NAME}_0607"
+[ -e "$A/log.txt" ] || py scripts/link_segments.py "$A" "$REPO/runs/${PRE}_20060101" "$REPO/runs/${PRE}_20070101" >> "$LOG" 2>&1
+mkdir -p "$OUT/$NAME"
+py scripts/vortex_jets.py "$A" "$OUT/$NAME" --years 2006-2007 --label "$NAME" > "runs/p24_vortex.log" 2>&1; step "vortex_jets exit=$?"
+py scripts/seasonal_age_winds.py "$A" "$OUT/$NAME" --years 2006-2007 --label "$NAME" > "runs/p24_seasonal.log" 2>&1; step "seasonal exit=$?"
+py scripts/strat_circulation.py "$A" "$OUT/$NAME" --years 2006-2007 --label "$NAME" --age-var aoa_sfc > "runs/p24_circ.log" 2>&1; step "strat_circulation exit=$?"
+# success metrics: the four Phase 23 runs' raw scores are reused (copied), only AL7t is scored new
+S="$OUT/success"; mkdir -p "$S/raw/sweep" "$S/raw/teq"
+cp -n "$REPO/docs/outputs/23_lat_nudging/success/raw/sweep/"*.json "$S/raw/sweep/"; cp -n "$REPO/docs/outputs/23_lat_nudging/success/raw/teq/"*.json "$S/raw/teq/"
+py scripts/success_metrics.py "$S" P20b=runs/p23d_P20b_0607 AL7=runs/p23d_AL7_0607 L0=runs/p23d_L0_0607 LAL7=runs/p23d_LAL7_0607 "$NAME=$A" \
+  > runs/p24_success.log 2>&1; step "success_metrics exit=$?"
+git add "$OUT" && git commit -q -m "Phase 24: AL7t (AL7 correction tapered 35 -> 50 deg) - diagnostics and success metrics" && step "committed"
+step "finished"

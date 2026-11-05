@@ -1,119 +1,133 @@
 #!/usr/bin/env python3
-"""Before/after comparison for QBO nudging: equatorial wind, its variability, and where the change is.
+"""Phase 27: how the QBO nudging settings change the QBO and the tropical upwelling, AL7h against QBO30 / QBO10d.
 
-    python scripts/qbo_compare.py --before runs/<phase6 run> --after runs/<phase8 run> <outdir> \
-        [--years 2005-2009] [--label-before TEXT] [--label-after TEXT]
+    python scripts/qbo_compare.py OUTDIR NAME=AGGREGATE:SWEEP_JSON:P_BOT:TAPER:TAU [...] [--years 2006-2010]
 
-Writes
-  qbo_time_height_before_after.png   equatorial (5S-5N) zonal-mean u, monthly, 100-1 hPa: before | after | ERA5,
-                                     with the nudging window (--p-top to --p-bot, default 1-90 hPa) marked
-  qbo_profiles.png                   time-mean equatorial u and its deseasonalised standard deviation (the QBO
-                                     amplitude) against pressure for before / after / ERA5; zonal-mean u change
-                                     (after minus before, time mean) in latitude x pressure with the window drawn
-  qbo_metrics.md                     the numbers: std at 10/20/30/50 hPa, mean u at 20/30 hPa, RMS of the
-                                     equatorial monthly wind against ERA5 (10-70 hPa and 1-7 hPa), and the RMS change in
-                                     zonal-mean u inside and outside the nudging window
-Reuses the loaders of strat_compare.py (model runs regridded to the ERA5 reference levels in ln p).
+AGGREGATE is a run directory of longrun_day*.nc covering the years (scripts/link_segments.py), SWEEP_JSON the run's
+success_metrics raw json (tropical w* and entry-age profiles), and P_BOT [hPa] / TAPER [decades] / TAU [days] the
+run's qbo nudging settings (p_top is 1 hPa in all of them). Equatorial (5S-5N) zonal-mean u is read on the model's own
+levels and averaged to months; ERA5 is the monthly zonal mean the nudging uses. Writes OUTDIR/qbo_nudging.png
+(nudging rate, QBO amplitude, correlation with ERA5, 50 hPa wind) and OUTDIR/qbo_upwelling.png (w*, entry age).
 """
 from __future__ import annotations
 
-import argparse, glob, os, sys
+import argparse, glob, json, os, re, sys
+
+import netCDF4
 import numpy as np
-import xarray as xr
-import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import strat_compare as sc
+HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
+import report_figures as rf  # noqa: E402  (style, colours, reference line styles)
+import strat_compare as sc  # noqa: E402
+import xarray as xr  # noqa: E402
 
-
-def eq_monthly(zm, lo=-5.0, hi=5.0):
-    u = zm["u"].where((zm.lat >= lo) & (zm.lat <= hi), drop=True).mean("lat")
-    um = u.resample(time="1MS").mean()
-    tdec = np.array([t.year + (t.month - 0.5) / 12 for t in um.indexes["time"]])
-    return um.assign_coords(tdec=("time", tdec), month=("time", um.time.dt.month.values))
+plt = rf.plt
+P_TOP = 1.0
 
 
-def deseason_std(um):
-    """Standard deviation in time per level -> (plev,): after removing the mean annual cycle when the
-    record has at least two years, otherwise the plain standard deviation (with 12 months the
-    deseasonalised anomaly would be identically zero)."""
-    if um.sizes["time"] >= 24:
-        anom = um.groupby("month") - um.groupby("month").mean("time")
-        return anom.std("time")
-    return um.std("time")
+def eq_monthly_model(rundir, t0_year):
+    """Equatorial (5S-5N, cos-weighted) zonal-mean u as monthly means: (months, nlev) array, p [hPa], year, month."""
+    files = sorted(glob.glob(os.path.join(rundir, "longrun_day*.nc")), key=lambda q: int(re.search(r"_day(\d+)\.nc$", q).group(1)))
+    rows, times = [], []
+    for f in files:
+        with netCDF4.Dataset(f) as d:
+            lat = np.asarray(d.variables["lat"][:]); m = np.abs(lat) <= 5; w = np.cos(np.deg2rad(lat[m]))
+            u = np.asarray(d.variables["u_wind"][:, :, :, m]).mean(2)                       # (t, lev, lat); dims time, level, lon, lat
+            rows.append((u * w).sum(-1) / w.sum())
+            tv = d.variables["time"]; times.append(netCDF4.num2date(tv[:], tv.units, getattr(tv, "calendar", "standard")))
+            p = np.asarray(d.variables["level"][:]) * sc.P0_HPA
+    u = np.concatenate(rows); t = np.concatenate(times)
+    ym = np.array([(x.year, x.month) for x in t]); keys = sorted({tuple(k) for k in ym})
+    out = np.array([u[(ym[:, 0] == y) & (ym[:, 1] == mo)].mean(0) for y, mo in keys])
+    return out, p, np.array([k[0] for k in keys]), np.array([k[1] for k in keys])
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("outdir"); ap.add_argument("--before", required=True); ap.add_argument("--after", required=True)
-    ap.add_argument("--years", default="2005-2009")
-    ap.add_argument("--label-before", default="before: Phase 6, no QBO nudging"); ap.add_argument("--label-after", default="after: QBO nudged to ERA5")
-    ap.add_argument("--p-bot", type=float, default=90.0); ap.add_argument("--p-top", type=float, default=1.0); ap.add_argument("--lat-zero", type=float, default=25.0)
+def eq_monthly_era5(years):
+    files = [os.path.join(sc.ERA5_DIR, f"era5_zm_monthly_{y}.nc") for y in years]
+    ds = xr.open_mfdataset([f for f in files if os.path.exists(f)], combine="by_coords")
+    tname = [c for c in ds.coords if c.startswith("time") or c == "valid_time"][0]
+    u = ds["uzm"].sel(lat=slice(-5, 5)) if ds.lat[0] < ds.lat[-1] else ds["uzm"].sel(lat=slice(5, -5))
+    w = np.cos(np.deg2rad(u.lat)); u = ((u * w).sum("lat") / w.sum()).load()
+    t = u[tname].dt
+    return u.values, ds.level.values.astype(float), t.year.values, t.month.values
+
+
+def deseason(u, month):
+    a = u.copy()
+    for mo in range(1, 13):
+        k = month == mo; a[k] -= u[k].mean(0)
+    return a
+
+
+def weight(p, p_bot, taper):
+    l10 = np.log10(p); lo, hi = np.log10(P_TOP), np.log10(p_bot)
+    w = np.clip(np.minimum((l10 - lo) / taper, (hi - l10) / taper), 0.0, 1.0)
+    return np.where((p < P_TOP) | (p > p_bot), 0.0, w)
+
+
+def main():
+    ap = argparse.ArgumentParser(); ap.add_argument("outdir"); ap.add_argument("runs", nargs="+")
+    ap.add_argument("--years", default="2006-2010")
     a = ap.parse_args(); os.makedirs(a.outdir, exist_ok=True)
     y0, y1 = map(int, a.years.split("-")); years = list(range(y0, y1 + 1))
-    first = xr.open_dataset(sorted(glob.glob(os.path.join(a.after, "longrun_day*.nc")))[0]); lat_out = np.sort(first.lat.values)
-    before = sc.load_model(a.before, lat_out); after = sc.load_model(a.after, lat_out)
-    era5, _ = sc.load_era5(years, lat_out)
-    # restrict ERA5 to the runs' time span
-    t0, t1 = after.time.values.min(), after.time.values.max()
-    era5 = era5.sel(time=slice(np.datetime64(t0, "M"), np.datetime64(t1, "M") + np.timedelta64(1, "M")))
-    eq = {a.label_before: eq_monthly(before), a.label_after: eq_monthly(after), "ERA5 (monthly, CDS)": eq_monthly(era5)}
+    ue, pe, ye, me = eq_monthly_era5(years)
+    ae = deseason(ue, me); tdec_e = ye + (me - 0.5) / 12
+    runs = {}
+    for arg in a.runs:
+        name, rest = arg.split("=", 1); agg, sw, pb, tp, tau = rest.split(":")
+        u, p, yy, mm = eq_monthly_model(agg, y0); k = (yy >= y0) & (yy <= y1)
+        runs[name] = dict(u=u[k], p=p, y=yy[k], m=mm[k], sw=json.load(open(sw)), p_bot=float(pb), taper=float(tp), tau=float(tau))
+        print(f"{name}: {k.sum()} months, {p.size} levels", flush=True)
 
-    # ---- figure 1: time-height
-    fig, axes = plt.subplots(3, 1, figsize=(13, 9), sharex=True)
-    for ax, (name, um) in zip(axes, eq.items()):
-        um = um.sortby("tdec")
-        cf = ax.contourf(um.tdec, um.plev, um.T, levels=np.arange(-40, 41, 5), cmap="RdBu_r", extend="both")
-        ax.contour(um.tdec, um.plev, um.T, levels=[0], colors="k", linewidths=0.6)
-        ax.set_yscale("log"); ax.set_ylim(100, 1); ax.set_ylabel(f"{name}\npressure [hPa]", fontsize=8)
-        for pp in (a.p_bot, a.p_top): ax.axhline(pp, color="k", ls=":", lw=0.8)
-        plt.colorbar(cf, ax=ax, label="u 5S-5N [m/s]")
-    axes[-1].set_xlabel("year"); axes[0].set_title(f"Equatorial zonal-mean zonal wind 5S-5N (monthly); dotted: the QBO-nudging window {a.p_top:g}-{a.p_bot:g} hPa", fontsize=10)
-    fig.tight_layout(); f1 = os.path.join(a.outdir, "qbo_time_height_before_after.png"); fig.savefig(f1, dpi=120); plt.close(fig); print("wrote", f1)
+    # ---- figure 1: nudging, QBO amplitude, phase agreement, 50 hPa wind
+    fig = plt.figure(figsize=(12, 8.4))
+    gs = fig.add_gridspec(2, 3, height_ratios=(1.15, 1)); ax = [fig.add_subplot(gs[0, i]) for i in range(3)]
+    ts = fig.add_subplot(gs[1, :])
+    pp = np.geomspace(0.5, 120, 400)
+    for n, r in runs.items():
+        c, mk = rf.STYLE[n]
+        ax[0].plot(weight(pp, r["p_bot"], r["taper"]) / r["tau"], pp, color=c, lw=2.2, label=f"{n}: {r['p_bot']:g} hPa, {r['tau']:g} d")
+        an = deseason(r["u"], r["m"]); sd = an.std(0); kk = (r["p"] >= 1) & (r["p"] <= 100)
+        rf.run_line(ax[1], n, sd[kk], r["p"][kk], every=4)
+        # correlation of the monthly anomalies with ERA5 at each model level (ERA5 interpolated in ln p)
+        ei = np.array([np.interp(np.log(r["p"]), np.log(pe), row) for row in ae])
+        cor = np.array([np.corrcoef(an[:, j], ei[:, j])[0, 1] for j in range(r["p"].size)])
+        rf.run_line(ax[2], n, cor[kk], r["p"][kk], every=4)
+        j50 = int(np.argmin(np.abs(r["p"] - 50)))
+        ts.plot(r["y"] + (r["m"] - 0.5) / 12, r["u"][:, j50], color=c, lw=2, marker=mk, ms=4, markevery=3, label=f"{n} ({r['p'][j50]:.0f} hPa)")
+    ke = (pe >= 1) & (pe <= 100)
+    ax[1].plot(ae.std(0)[ke], pe[ke], label="ERA5", **rf.REF["ERA5"])
+    ts.plot(tdec_e, ue[:, int(np.argmin(np.abs(pe - 50)))], label="ERA5 (50 hPa)", **rf.REF["ERA5"])
+    rf.log_p(ax[0], 1, 100); ax[0].set_xlabel("nudging rate, weight / tau [1/day]")
+    ax[0].set_title("a  QBO nudging window, 5S-5N", color=rf.INK, fontsize=11, loc="left"); ax[0].legend(loc="lower right", fontsize=8)
+    rf.log_p(ax[1], 1, 100); ax[1].set_xlabel("QBO amplitude: std of monthly anomalies [m/s]"); ax[1].set_xlim(left=0)
+    ax[1].set_title("b  QBO amplitude", color=rf.INK, fontsize=11, loc="left"); ax[1].legend(loc="lower right", fontsize=8)
+    rf.log_p(ax[2], 1, 100); ax[2].set_xlabel("correlation with ERA5, monthly anomalies"); ax[2].set_xlim(0, 1.02)
+    ax[2].set_title("c  QBO phase agreement", color=rf.INK, fontsize=11, loc="left"); ax[2].legend(loc="lower left", fontsize=8)
+    for x in ax[1:]: x.set_ylabel("")
+    ts.axhline(0, color=rf.MUTED, lw=0.8); ts.set_xlim(y0, y1 + 1); ts.set_ylabel("u, 5S-5N [m/s]"); ts.set_xlabel("year")
+    ts.set_title("d  Equatorial wind at 50 hPa, monthly means", color=rf.INK, fontsize=11, loc="left"); ts.legend(ncol=4, fontsize=8.5, loc="lower left")
+    fig.tight_layout(); fig.savefig(os.path.join(a.outdir, "qbo_nudging.png"), dpi=150); plt.close(fig)
 
-    # ---- figure 2: profiles and where the change is
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-    styles = ["--", "-", ":"]
-    for (name, um), ls in zip(eq.items(), styles):
-        axes[0].plot(um.mean("time"), um.plev, ls, label=name); axes[1].plot(deseason_std(um), um.plev, ls, label=name)
-    std_kind = "deseasonalised std" if min(v.sizes["time"] for v in eq.values()) >= 24 else "std (single year: not deseasonalised)"
-    for ax, ttl, xl in zip(axes[:2], ("time-mean equatorial u", f"{std_kind} of equatorial u (QBO amplitude)"), ("m/s", "m/s")):
-        ax.set_yscale("log"); ax.set_ylim(100, 1); ax.set_title(ttl, fontsize=9); ax.set_xlabel(xl); ax.grid(alpha=.3); ax.legend(fontsize=7)
-        for pp in (a.p_bot, a.p_top): ax.axhline(pp, color="k", ls=":", lw=0.8)
-    axes[0].set_ylabel("pressure (hPa)"); axes[0].axvline(0, color="k", lw=.5)
-    du = (after["u"].mean("time") - before["u"].mean("time"))                       # (plev, lat)
-    lv = np.arange(-20, 21, 2.5)
-    cf = axes[2].contourf(du.lat, du.plev, du, levels=lv, cmap="RdBu_r", extend="both"); plt.colorbar(cf, ax=axes[2], label="m/s")
-    axes[2].set_yscale("log"); axes[2].set_ylim(1000, 1); axes[2].set_title("zonal-mean u, after minus before (time mean)", fontsize=9); axes[2].set_xlabel("latitude")
-    axes[2].plot([-a.lat_zero, a.lat_zero, a.lat_zero, -a.lat_zero, -a.lat_zero], [a.p_bot, a.p_bot, a.p_top, a.p_top, a.p_bot], "k:", lw=0.9)
-    fig.suptitle("QBO nudging: before / after / ERA5"); fig.tight_layout()
-    f2 = os.path.join(a.outdir, "qbo_profiles.png"); fig.savefig(f2, dpi=120); plt.close(fig); print("wrote", f2)
-
-    # ---- metrics
-    def at(da, p): return float(da.sel(plev=p, method="nearest"))
-    lines = [f"# QBO nudging: before / after / ERA5, {a.years}", "",
-             f"| source | {std_kind} 10 / 20 / 30 / 50 hPa [m/s] | mean u 20 / 30 hPa [m/s] | RMS vs ERA5, eq. monthly u 10-70 hPa [m/s] | RMS vs ERA5, 1-7 hPa [m/s] |", "|---|---|---|---|---|"]
-    ref = eq["ERA5 (monthly, CDS)"]
-    for name, um in eq.items():
-        sd = deseason_std(um); mu = um.mean("time")
-        common = np.intersect1d(um.tdec.values.round(4), ref.tdec.values.round(4))
-        def rms_band(p_lo, p_hi):
-            if name.startswith("ERA5"):
-                return 0.0
-            band = (um.plev >= p_lo) & (um.plev <= p_hi)
-            x = um.sortby("tdec").where(band, drop=True); r = ref.sortby("tdec").where(band, drop=True)
-            n = min(x.sizes["time"], r.sizes["time"]); return float(np.sqrt(np.nanmean((x.values[:n] - r.values[:n]) ** 2)))
-        rms = rms_band(10, 70); rms_top = rms_band(1, 7)          # the QBO layer; the layer above the original 4 hPa window top
-        lines.append(f"| {name} | {at(sd,10):.1f} / {at(sd,20):.1f} / {at(sd,30):.1f} / {at(sd,50):.1f} | {at(mu,20):+.1f} / {at(mu,30):+.1f} | {rms:.1f} | {rms_top:.1f} |")
-    w = np.cos(np.deg2rad(du.lat)); inside = (np.abs(du.lat) <= a.lat_zero); pin = (du.plev >= a.p_top) & (du.plev <= a.p_bot)
-    def rms_region(mask_lat, mask_p):
-        d = du.where(mask_lat & mask_p); ww = (w * xr.ones_like(du)).where(mask_lat & mask_p)
-        return float(np.sqrt((d ** 2 * ww).sum() / ww.sum()))
-    lines += ["", f"RMS change in time-mean zonal-mean u, after minus before: inside the window (|lat| <= {a.lat_zero:.0f}, {a.p_top:.0f}-{a.p_bot:.0f} hPa) {rms_region(inside, pin):.1f} m/s; "
-              f"outside it in the stratosphere (|lat| > 30, 1-100 hPa) {rms_region(np.abs(du.lat) > 30, (du.plev >= 1) & (du.plev <= 100)):.1f} m/s; "
-              f"troposphere (200-1000 hPa, all latitudes) {rms_region(xr.ones_like(du.lat, dtype=bool), (du.plev >= 200)):.1f} m/s."]
-    md = "\n".join(lines); print(md)
-    with open(os.path.join(a.outdir, "qbo_metrics.md"), "w") as fh: fh.write(md + "\n")
+    # ---- figure 2: tropical w* and entry age
+    first = next(iter(runs.values()))["sw"]
+    fig, ax = plt.subplots(1, 2, figsize=(10, 4.6))
+    for n, r in runs.items():
+        s = r["sw"]
+        p = np.asarray(s["profile_p"]); w = np.asarray(s["profile_wstar_tropics"]); k = (p >= 5) & (p <= 120)
+        rf.run_line(ax[0], n, w[k], p[k], every=5)
+        p = np.asarray(s["profile_age_p"]); g = np.asarray(s["profile_age150_tropics"]); k = (p >= 1) & (p <= 100)
+        rf.run_line(ax[1], n, g[k], p[k], every=6)
+    p = np.asarray(first["profile_waccm_p"]); w = np.asarray(first["profile_waccm_wstar_tropics"]); k = (p >= 5) & (p <= 120)
+    ax[0].plot(w[k], p[k], label="WACCM6", **rf.REF["WACCM6"])
+    pc = np.asarray(first["profile_clams_p"]); ac = np.asarray(first["profile_clams_entry_tropics"]); k = (pc >= 1) & (pc <= 100)
+    ax[1].plot(ac[k], pc[k], label="CLaMS (ERA5)", **rf.REF["CLaMS (ERA5)"])
+    rf.log_p(ax[0], 5, 120); ax[0].set_xlabel("residual vertical velocity w*, 15S-15N [mm/s]"); ax[0].set_xlim(left=0)
+    ax[0].set_title("a  Tropical upwelling", color=rf.INK, fontsize=11, loc="left"); ax[0].legend(loc="lower right", fontsize=9)
+    rf.log_p(ax[1], 1, 100); ax[1].set_xlabel("entry age of air, 10S-10N [years]"); ax[1].set_xlim(left=0); ax[1].set_ylabel("")
+    ax[1].set_title("b  Tropical entry age", color=rf.INK, fontsize=11, loc="left"); ax[1].legend(loc="upper left", fontsize=9)
+    fig.tight_layout(); fig.savefig(os.path.join(a.outdir, "qbo_upwelling.png"), dpi=150); plt.close(fig)
+    print("wrote", a.outdir)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1450 @@
+{
+ "P20b": {
+  "metrics": [
+   {
+    "group": "A",
+    "id": "A1",
+    "label": "entry age 55 hPa tropics [yr]",
+    "model": 1.1452288325365394,
+    "ref": 1.1068947315216064,
+    "err": 0.1533364040597318
+   },
+   {
+    "group": "A",
+    "id": "A2",
+    "label": "2-D age RMSE vs CLaMS [yr]",
+    "model": 0.4193435793145271,
+    "ref": 0.0,
+    "err": 1.0483589482863176
+   },
+   {
+    "group": "A",
+    "id": "A3",
+    "label": "age step tropics -> 50-70 deg, 55 hPa [yr]",
+    "model": 2.4562408239607434,
+    "ref": 2.7934887409210205,
+    "err": 0.6744958339205542
+   },
+   {
+    "group": "A",
+    "id": "A4",
+    "label": "transit 70 -> 10 hPa [yr]",
+    "model": 2.3386685447232844,
+    "ref": [
+     2.3,
+     3.2
+    ],
+    "err": 0.9140699006149231
+   },
+   {
+    "group": "B",
+    "id": "B1-100",
+    "label": "w* 100 hPa [mm/s]",
+    "model": 0.12538841051950267,
+    "ref": 0.3984196583508234,
+    "err": 3.852289145179661
+   },
+   {
+    "group": "B",
+    "id": "B1-70",
+    "label": "w* 70 hPa [mm/s]",
+    "model": 0.1937645935027955,
+    "ref": 0.21136452402445519,
+    "err": 0.28969985926672753
+   },
+   {
+    "group": "B",
+    "id": "B1-50",
+    "label": "w* 50 hPa [mm/s]",
+    "model": 0.2766733879836678,
+    "ref": 0.20051906910484224,
+    "err": 1.072720524323846
+   },
+   {
+    "group": "B",
+    "id": "B1-30",
+    "label": "w* 30 hPa [mm/s]",
+    "model": 0.32428089258238685,
+    "ref": 0.25502792362496607,
+    "err": 0.8005110721049283
+   },
+   {
+    "group": "B",
+    "id": "B1-10",
+    "label": "w* 10 hPa [mm/s]",
+    "model": 0.3869410842949101,
+    "ref": 0.46861187469866544,
+    "err": 0.6381189321764631
+   },
+   {
+    "group": "B",
+    "id": "B2-100",
+    "label": "mass flux 100 hPa [1e9 kg/s]",
+    "model": 9.187834885246161,
+    "ref": 10.853474304,
+    "err": 0.9137971945822244
+   },
+   {
+    "group": "B",
+    "id": "B2-70",
+    "label": "mass flux 70 hPa [1e9 kg/s]",
+    "model": 6.425530470746575,
+    "ref": 6.053461504,
+    "err": 0.3271633596880312
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N",
+    "label": "jet NH 50 hPa [m/s]",
+    "model": 13.4,
+    "ref": 16.4,
+    "err": 0.5999999999999996
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N-lat",
+    "label": "jet NH 50 hPa latitude [deg]",
+    "model": 49.4,
+    "ref": 56.9,
+    "err": 1.875
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N",
+    "label": "jet NH 10 hPa [m/s]",
+    "model": 17.1,
+    "ref": 25.2,
+    "err": 1.6199999999999997
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N-lat",
+    "label": "jet NH 10 hPa latitude [deg]",
+    "model": 55.0,
+    "ref": 62.5,
+    "err": 1.875
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S",
+    "label": "jet SH 50 hPa [m/s]",
+    "model": 39.9,
+    "ref": 46.7,
+    "err": 1.3600000000000008
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S-lat",
+    "label": "jet SH 50 hPa latitude [deg]",
+    "model": -58.8,
+    "ref": -56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S",
+    "label": "jet SH 10 hPa [m/s]",
+    "model": 56.9,
+    "ref": 71.9,
+    "err": 3.0000000000000013
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S-lat",
+    "label": "jet SH 10 hPa latitude [deg]",
+    "model": -58.8,
+    "ref": -56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C2-N",
+    "label": "polar-cap T bias 50 hPa N [K]",
+    "model": -3.09,
+    "ref": 0.0,
+    "err": 1.545
+   },
+   {
+    "group": "C",
+    "id": "C2-S",
+    "label": "polar-cap T bias 50 hPa S [K]",
+    "model": 2.52,
+    "ref": 0.0,
+    "err": 1.26
+   }
+  ],
+  "groups": {
+   "A": 0.6975652717203817,
+   "B": 1.1277571553316974,
+   "C": 1.4085
+  },
+  "combined": 1.0779408090173597
+ },
+ "AL7": {
+  "metrics": [
+   {
+    "group": "A",
+    "id": "A1",
+    "label": "entry age 55 hPa tropics [yr]",
+    "model": 0.9017096673134719,
+    "ref": 1.1068947315216064,
+    "err": 0.8207402568325382
+   },
+   {
+    "group": "A",
+    "id": "A2",
+    "label": "2-D age RMSE vs CLaMS [yr]",
+    "model": 0.8201525043195763,
+    "ref": 0.0,
+    "err": 2.0503812607989405
+   },
+   {
+    "group": "A",
+    "id": "A3",
+    "label": "age step tropics -> 50-70 deg, 55 hPa [yr]",
+    "model": 2.0249799870094454,
+    "ref": 2.7934887409210205,
+    "err": 1.5370175078231503
+   },
+   {
+    "group": "A",
+    "id": "A4",
+    "label": "transit 70 -> 10 hPa [yr]",
+    "model": 2.191211473101293,
+    "ref": [
+     2.3,
+     3.2
+    ],
+    "err": 1.2417522819971265
+   },
+   {
+    "group": "B",
+    "id": "B1-100",
+    "label": "w* 100 hPa [mm/s]",
+    "model": 0.15394950724931758,
+    "ref": 0.3984196583508234,
+    "err": 3.1684993099666765
+   },
+   {
+    "group": "B",
+    "id": "B1-70",
+    "label": "w* 70 hPa [mm/s]",
+    "model": 0.23236987087187727,
+    "ref": 0.21136452402445519,
+    "err": 0.31571035781698165
+   },
+   {
+    "group": "B",
+    "id": "B1-50",
+    "label": "w* 50 hPa [mm/s]",
+    "model": 0.302368904628663,
+    "ref": 0.20051906910484224,
+    "err": 1.36865103288352
+   },
+   {
+    "group": "B",
+    "id": "B1-30",
+    "label": "w* 30 hPa [mm/s]",
+    "model": 0.3074579398111115,
+    "ref": 0.25502792362496607,
+    "err": 0.623000306951851
+   },
+   {
+    "group": "B",
+    "id": "B1-10",
+    "label": "w* 10 hPa [mm/s]",
+    "model": 0.40529777442411524,
+    "ref": 0.46861187469866544,
+    "err": 0.48367411817783146
+   },
+   {
+    "group": "B",
+    "id": "B2-100",
+    "label": "mass flux 100 hPa [1e9 kg/s]",
+    "model": 9.65320597873155,
+    "ref": 10.853474304,
+    "err": 0.6427937386509318
+   },
+   {
+    "group": "B",
+    "id": "B2-70",
+    "label": "mass flux 70 hPa [1e9 kg/s]",
+    "model": 7.229269751289078,
+    "ref": 6.053461504,
+    "err": 0.9735972737061198
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N",
+    "label": "jet NH 50 hPa [m/s]",
+    "model": 18.0,
+    "ref": 16.4,
+    "err": 0.3200000000000003
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N-lat",
+    "label": "jet NH 50 hPa latitude [deg]",
+    "model": 60.6,
+    "ref": 56.9,
+    "err": 0.9250000000000007
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N",
+    "label": "jet NH 10 hPa [m/s]",
+    "model": 26.4,
+    "ref": 25.2,
+    "err": 0.23999999999999985
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N-lat",
+    "label": "jet NH 10 hPa latitude [deg]",
+    "model": 64.4,
+    "ref": 62.5,
+    "err": 0.4750000000000014
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S",
+    "label": "jet SH 50 hPa [m/s]",
+    "model": 47.0,
+    "ref": 46.7,
+    "err": 0.05999999999999943
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S-lat",
+    "label": "jet SH 50 hPa latitude [deg]",
+    "model": -56.9,
+    "ref": -56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S",
+    "label": "jet SH 10 hPa [m/s]",
+    "model": 75.3,
+    "ref": 71.9,
+    "err": 0.6799999999999983
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S-lat",
+    "label": "jet SH 10 hPa latitude [deg]",
+    "model": -56.9,
+    "ref": -56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C2-N",
+    "label": "polar-cap T bias 50 hPa N [K]",
+    "model": -0.71,
+    "ref": 0.0,
+    "err": 0.355
+   },
+   {
+    "group": "C",
+    "id": "C2-S",
+    "label": "polar-cap T bias 50 hPa S [K]",
+    "model": -0.16,
+    "ref": 0.0,
+    "err": 0.08
+   }
+  ],
+  "groups": {
+   "A": 1.4124728268629387,
+   "B": 1.082275162593416,
+   "C": 0.3135
+  },
+  "combined": 0.9360826631521181
+ },
+ "AL7h": {
+  "metrics": [
+   {
+    "group": "A",
+    "id": "A1",
+    "label": "entry age 55 hPa tropics [yr]",
+    "model": 0.9996337822439344,
+    "ref": 1.1068947315216064,
+    "err": 0.4290437971106882
+   },
+   {
+    "group": "A",
+    "id": "A2",
+    "label": "2-D age RMSE vs CLaMS [yr]",
+    "model": 0.6201169827769583,
+    "ref": 0.0,
+    "err": 1.5502924569423955
+   },
+   {
+    "group": "A",
+    "id": "A3",
+    "label": "age step tropics -> 50-70 deg, 55 hPa [yr]",
+    "model": 2.257756906546025,
+    "ref": 2.7934887409210205,
+    "err": 1.071463668749991
+   },
+   {
+    "group": "A",
+    "id": "A4",
+    "label": "transit 70 -> 10 hPa [yr]",
+    "model": 2.150661726656925,
+    "ref": [
+     2.3,
+     3.2
+    ],
+    "err": 1.3318628296512778
+   },
+   {
+    "group": "B",
+    "id": "B1-100",
+    "label": "w* 100 hPa [mm/s]",
+    "model": 0.14438980101384719,
+    "ref": 0.3984196583508234,
+    "err": 3.382118432742192
+   },
+   {
+    "group": "B",
+    "id": "B1-70",
+    "label": "w* 70 hPa [mm/s]",
+    "model": 0.21656336524298508,
+    "ref": 0.21136452402445519,
+    "err": 0.08096823720018013
+   },
+   {
+    "group": "B",
+    "id": "B1-50",
+    "label": "w* 50 hPa [mm/s]",
+    "model": 0.2922155986219751,
+    "ref": 0.20051906910484224,
+    "err": 1.25483761582022
+   },
+   {
+    "group": "B",
+    "id": "B1-30",
+    "label": "w* 30 hPa [mm/s]",
+    "model": 0.3184275612435737,
+    "ref": 0.25502792362496607,
+    "err": 0.7398152974965717
+   },
+   {
+    "group": "B",
+    "id": "B1-10",
+    "label": "w* 10 hPa [mm/s]",
+    "model": 0.4011733645616228,
+    "ref": 0.46861187469866544,
+    "err": 0.517756828801721
+   },
+   {
+    "group": "B",
+    "id": "B2-100",
+    "label": "mass flux 100 hPa [1e9 kg/s]",
+    "model": 9.497220689936867,
+    "ref": 10.853474304,
+    "err": 0.7321462507132925
+   },
+   {
+    "group": "B",
+    "id": "B2-70",
+    "label": "mass flux 70 hPa [1e9 kg/s]",
+    "model": 6.799605417626484,
+    "ref": 6.053461504,
+    "err": 0.637523767751728
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N",
+    "label": "jet NH 50 hPa [m/s]",
+    "model": 14.3,
+    "ref": 16.4,
+    "err": 0.4199999999999996
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N-lat",
+    "label": "jet NH 50 hPa latitude [deg]",
+    "model": 53.2,
+    "ref": 56.9,
+    "err": 0.9249999999999989
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N",
+    "label": "jet NH 10 hPa [m/s]",
+    "model": 18.5,
+    "ref": 25.2,
+    "err": 1.3399999999999999
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N-lat",
+    "label": "jet NH 10 hPa latitude [deg]",
+    "model": 60.6,
+    "ref": 62.5,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S",
+    "label": "jet SH 50 hPa [m/s]",
+    "model": 43.6,
+    "ref": 46.7,
+    "err": 0.6200000000000003
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S-lat",
+    "label": "jet SH 50 hPa latitude [deg]",
+    "model": -56.9,
+    "ref": -56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S",
+    "label": "jet SH 10 hPa [m/s]",
+    "model": 66.0,
+    "ref": 71.9,
+    "err": 1.180000000000001
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S-lat",
+    "label": "jet SH 10 hPa latitude [deg]",
+    "model": -58.8,
+    "ref": -56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C2-N",
+    "label": "polar-cap T bias 50 hPa N [K]",
+    "model": -1.05,
+    "ref": 0.0,
+    "err": 0.525
+   },
+   {
+    "group": "C",
+    "id": "C2-S",
+    "label": "polar-cap T bias 50 hPa S [K]",
+    "model": 1.27,
+    "ref": 0.0,
+    "err": 0.635
+   }
+  ],
+  "groups": {
+   "A": 1.095665688113588,
+   "B": 1.0493094900751292,
+   "C": 0.6594999999999999
+  },
+  "combined": 0.934825059396239
+ },
+ "AL7t": {
+  "metrics": [
+   {
+    "group": "A",
+    "id": "A1",
+    "label": "entry age 55 hPa tropics [yr]",
+    "model": 0.9146668403401298,
+    "ref": 1.1068947315216064,
+    "err": 0.7689115647259066
+   },
+   {
+    "group": "A",
+    "id": "A2",
+    "label": "2-D age RMSE vs CLaMS [yr]",
+    "model": 0.7883088879335123,
+    "ref": 0.0,
+    "err": 1.9707722198337807
+   },
+   {
+    "group": "A",
+    "id": "A3",
+    "label": "age step tropics -> 50-70 deg, 55 hPa [yr]",
+    "model": 2.072799244579529,
+    "ref": 2.7934887409210205,
+    "err": 1.4413789926829832
+   },
+   {
+    "group": "A",
+    "id": "A4",
+    "label": "transit 70 -> 10 hPa [yr]",
+    "model": 1.9575731946615464,
+    "ref": [
+     2.3,
+     3.2
+    ],
+    "err": 1.7609484563076738
+   },
+   {
+    "group": "B",
+    "id": "B1-100",
+    "label": "w* 100 hPa [mm/s]",
+    "model": 0.15610181615346613,
+    "ref": 0.3984196583508234,
+    "err": 3.122236144697325
+   },
+   {
+    "group": "B",
+    "id": "B1-70",
+    "label": "w* 70 hPa [mm/s]",
+    "model": 0.22151507451659275,
+    "ref": 0.21136452402445519,
+    "err": 0.15630016986718015
+   },
+   {
+    "group": "B",
+    "id": "B1-50",
+    "label": "w* 50 hPa [mm/s]",
+    "model": 0.30352558486860426,
+    "ref": 0.20051906910484224,
+    "err": 1.3813735837397683
+   },
+   {
+    "group": "B",
+    "id": "B1-30",
+    "label": "w* 30 hPa [mm/s]",
+    "model": 0.355585694648933,
+    "ref": 0.25502792362496607,
+    "err": 1.1075912826605243
+   },
+   {
+    "group": "B",
+    "id": "B1-10",
+    "label": "w* 10 hPa [mm/s]",
+    "model": 0.4687339253839396,
+    "ref": 0.46861187469866544,
+    "err": 0.0008677562314709077
+   },
+   {
+    "group": "B",
+    "id": "B2-100",
+    "label": "mass flux 100 hPa [1e9 kg/s]",
+    "model": 10.015245438022252,
+    "ref": 10.853474304,
+    "err": 0.44085168333303587
+   },
+   {
+    "group": "B",
+    "id": "B2-70",
+    "label": "mass flux 70 hPa [1e9 kg/s]",
+    "model": 7.57813353994814,
+    "ref": 6.053461504,
+    "err": 1.2320906018966915
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N",
+    "label": "jet NH 50 hPa [m/s]",
+    "model": 16.0,
+    "ref": 16.4,
+    "err": 0.07999999999999971
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N-lat",
+    "label": "jet NH 50 hPa latitude [deg]",
+    "model": 55.0,
+    "ref": 56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N",
+    "label": "jet NH 10 hPa [m/s]",
+    "model": 20.1,
+    "ref": 25.2,
+    "err": 1.0199999999999996
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N-lat",
+    "label": "jet NH 10 hPa latitude [deg]",
+    "model": 62.5,
+    "ref": 62.5,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S",
+    "label": "jet SH 50 hPa [m/s]",
+    "model": 45.7,
+    "ref": 46.7,
+    "err": 0.2
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S-lat",
+    "label": "jet SH 50 hPa latitude [deg]",
+    "model": -56.9,
+    "ref": -56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S",
+    "label": "jet SH 10 hPa [m/s]",
+    "model": 70.7,
+    "ref": 71.9,
+    "err": 0.24000000000000057
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S-lat",
+    "label": "jet SH 10 hPa latitude [deg]",
+    "model": -58.8,
+    "ref": -56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C2-N",
+    "label": "polar-cap T bias 50 hPa N [K]",
+    "model": -0.23,
+    "ref": 0.0,
+    "err": 0.115
+   },
+   {
+    "group": "C",
+    "id": "C2-S",
+    "label": "polar-cap T bias 50 hPa S [K]",
+    "model": 0.0,
+    "ref": 0.0,
+    "err": 0.0
+   }
+  ],
+  "groups": {
+   "A": 1.485502808387586,
+   "B": 1.063044460346571,
+   "C": 0.26049999999999995
+  },
+  "combined": 0.9363490895780523
+ },
+ "L0": {
+  "metrics": [
+   {
+    "group": "A",
+    "id": "A1",
+    "label": "entry age 55 hPa tropics [yr]",
+    "model": 0.865699140000082,
+    "ref": 1.1068947315216064,
+    "err": 0.9647823660860979
+   },
+   {
+    "group": "A",
+    "id": "A2",
+    "label": "2-D age RMSE vs CLaMS [yr]",
+    "model": 0.6600611508356479,
+    "ref": 0.0,
+    "err": 1.6501528770891196
+   },
+   {
+    "group": "A",
+    "id": "A3",
+    "label": "age step tropics -> 50-70 deg, 55 hPa [yr]",
+    "model": 2.4306377611257264,
+    "ref": 2.7934887409210205,
+    "err": 0.7257019595905883
+   },
+   {
+    "group": "A",
+    "id": "A4",
+    "label": "transit 70 -> 10 hPa [yr]",
+    "model": 2.126215978429296,
+    "ref": [
+     2.3,
+     3.2
+    ],
+    "err": 1.3861867146015638
+   },
+   {
+    "group": "B",
+    "id": "B1-100",
+    "label": "w* 100 hPa [mm/s]",
+    "model": 0.1627449985110443,
+    "ref": 0.3984196583508234,
+    "err": 2.983364269541427
+   },
+   {
+    "group": "B",
+    "id": "B1-70",
+    "label": "w* 70 hPa [mm/s]",
+    "model": 0.19554974650934964,
+    "ref": 0.21136452402445519,
+    "err": 0.2591411193012067
+   },
+   {
+    "group": "B",
+    "id": "B1-50",
+    "label": "w* 50 hPa [mm/s]",
+    "model": 0.29332999346115357,
+    "ref": 0.20051906910484224,
+    "err": 1.26752103233939
+   },
+   {
+    "group": "B",
+    "id": "B1-30",
+    "label": "w* 30 hPa [mm/s]",
+    "model": 0.34473964291536363,
+    "ref": 0.25502792362496607,
+    "err": 1.0043712689673672
+   },
+   {
+    "group": "B",
+    "id": "B1-10",
+    "label": "w* 10 hPa [mm/s]",
+    "model": 0.425378615498961,
+    "ref": 0.46861187469866544,
+    "err": 0.3225383304537866
+   },
+   {
+    "group": "B",
+    "id": "B2-100",
+    "label": "mass flux 100 hPa [1e9 kg/s]",
+    "model": 9.607938353353985,
+    "ref": 10.853474304,
+    "err": 0.6685746581197479
+   },
+   {
+    "group": "B",
+    "id": "B2-70",
+    "label": "mass flux 70 hPa [1e9 kg/s]",
+    "model": 6.812762034287648,
+    "ref": 6.053461504,
+    "err": 0.6481261307058587
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N",
+    "label": "jet NH 50 hPa [m/s]",
+    "model": 17.0,
+    "ref": 16.4,
+    "err": 0.12000000000000029
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N-lat",
+    "label": "jet NH 50 hPa latitude [deg]",
+    "model": 47.6,
+    "ref": 56.9,
+    "err": 2.3249999999999993
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N",
+    "label": "jet NH 10 hPa [m/s]",
+    "model": 18.9,
+    "ref": 25.2,
+    "err": 1.2600000000000002
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N-lat",
+    "label": "jet NH 10 hPa latitude [deg]",
+    "model": 53.2,
+    "ref": 62.5,
+    "err": 2.3249999999999993
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S",
+    "label": "jet SH 50 hPa [m/s]",
+    "model": 41.3,
+    "ref": 46.7,
+    "err": 1.0800000000000012
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S-lat",
+    "label": "jet SH 50 hPa latitude [deg]",
+    "model": -55.0,
+    "ref": -56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S",
+    "label": "jet SH 10 hPa [m/s]",
+    "model": 58.9,
+    "ref": 71.9,
+    "err": 2.6000000000000014
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S-lat",
+    "label": "jet SH 10 hPa latitude [deg]",
+    "model": -56.9,
+    "ref": -56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C2-N",
+    "label": "polar-cap T bias 50 hPa N [K]",
+    "model": -3.25,
+    "ref": 0.0,
+    "err": 1.625
+   },
+   {
+    "group": "C",
+    "id": "C2-S",
+    "label": "polar-cap T bias 50 hPa S [K]",
+    "model": 1.4,
+    "ref": 0.0,
+    "err": 0.7
+   }
+  ],
+  "groups": {
+   "A": 1.1817059793418425,
+   "B": 1.0219481156326835,
+   "C": 1.2510000000000001
+  },
+  "combined": 1.1515513649915088
+ },
+ "LAL7": {
+  "metrics": [
+   {
+    "group": "A",
+    "id": "A1",
+    "label": "entry age 55 hPa tropics [yr]",
+    "model": 0.6311994294548307,
+    "ref": 1.1068947315216064,
+    "err": 1.9027812082671032
+   },
+   {
+    "group": "A",
+    "id": "A2",
+    "label": "2-D age RMSE vs CLaMS [yr]",
+    "model": 1.126238487962813,
+    "ref": 0.0,
+    "err": 2.815596219907032
+   },
+   {
+    "group": "A",
+    "id": "A3",
+    "label": "age step tropics -> 50-70 deg, 55 hPa [yr]",
+    "model": 1.972697830497787,
+    "ref": 2.7934887409210205,
+    "err": 1.6415818208464672
+   },
+   {
+    "group": "A",
+    "id": "A4",
+    "label": "transit 70 -> 10 hPa [yr]",
+    "model": 1.9896112968977704,
+    "ref": [
+     2.3,
+     3.2
+    ],
+    "err": 1.6897526735605095
+   },
+   {
+    "group": "B",
+    "id": "B1-100",
+    "label": "w* 100 hPa [mm/s]",
+    "model": 0.17974789012094375,
+    "ref": 0.3984196583508234,
+    "err": 2.6522440145446895
+   },
+   {
+    "group": "B",
+    "id": "B1-70",
+    "label": "w* 70 hPa [mm/s]",
+    "model": 0.24598439308765946,
+    "ref": 0.21136452402445519,
+    "err": 0.505436604779498
+   },
+   {
+    "group": "B",
+    "id": "B1-50",
+    "label": "w* 50 hPa [mm/s]",
+    "model": 0.3248998182784321,
+    "ref": 0.20051906910484224,
+    "err": 1.6081311166885455
+   },
+   {
+    "group": "B",
+    "id": "B1-30",
+    "label": "w* 30 hPa [mm/s]",
+    "model": 0.317229577256716,
+    "ref": 0.25502792362496607,
+    "err": 0.7272554041114911
+   },
+   {
+    "group": "B",
+    "id": "B1-10",
+    "label": "w* 10 hPa [mm/s]",
+    "model": 0.43114214712154875,
+    "ref": 0.46861187469866544,
+    "err": 0.2776932616591153
+   },
+   {
+    "group": "B",
+    "id": "B2-100",
+    "label": "mass flux 100 hPa [1e9 kg/s]",
+    "model": 9.4899519591561,
+    "ref": 10.853474304,
+    "err": 0.7363456800777257
+   },
+   {
+    "group": "B",
+    "id": "B2-70",
+    "label": "mass flux 70 hPa [1e9 kg/s]",
+    "model": 7.171980007132897,
+    "ref": 6.053461504,
+    "err": 0.9299586578979213
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N",
+    "label": "jet NH 50 hPa [m/s]",
+    "model": 20.4,
+    "ref": 16.4,
+    "err": 0.8
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N-lat",
+    "label": "jet NH 50 hPa latitude [deg]",
+    "model": 56.9,
+    "ref": 56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N",
+    "label": "jet NH 10 hPa [m/s]",
+    "model": 29.1,
+    "ref": 25.2,
+    "err": 0.7800000000000005
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N-lat",
+    "label": "jet NH 10 hPa latitude [deg]",
+    "model": 64.4,
+    "ref": 62.5,
+    "err": 0.4750000000000014
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S",
+    "label": "jet SH 50 hPa [m/s]",
+    "model": 47.9,
+    "ref": 46.7,
+    "err": 0.23999999999999916
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S-lat",
+    "label": "jet SH 50 hPa latitude [deg]",
+    "model": -55.0,
+    "ref": -56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S",
+    "label": "jet SH 10 hPa [m/s]",
+    "model": 77.3,
+    "ref": 71.9,
+    "err": 1.0799999999999983
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S-lat",
+    "label": "jet SH 10 hPa latitude [deg]",
+    "model": -55.0,
+    "ref": -56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C2-N",
+    "label": "polar-cap T bias 50 hPa N [K]",
+    "model": -1.24,
+    "ref": 0.0,
+    "err": 0.62
+   },
+   {
+    "group": "C",
+    "id": "C2-S",
+    "label": "polar-cap T bias 50 hPa S [K]",
+    "model": -1.05,
+    "ref": 0.0,
+    "err": 0.525
+   }
+  ],
+  "groups": {
+   "A": 2.0124279806452776,
+   "B": 1.0624378199655695,
+   "C": 0.5469999999999999
+  },
+  "combined": 1.2072886002036156
+ },
+ "QBO30": {
+  "metrics": [
+   {
+    "group": "A",
+    "id": "A1",
+    "label": "entry age 55 hPa tropics [yr]",
+    "model": 0.9440501797853074,
+    "ref": 1.1068947315216064,
+    "err": 0.6513782069451963
+   },
+   {
+    "group": "A",
+    "id": "A2",
+    "label": "2-D age RMSE vs CLaMS [yr]",
+    "model": 0.6065795977923502,
+    "ref": 0.0,
+    "err": 1.5164489944808752
+   },
+   {
+    "group": "A",
+    "id": "A3",
+    "label": "age step tropics -> 50-70 deg, 55 hPa [yr]",
+    "model": 2.3161237068784257,
+    "ref": 2.7934887409210205,
+    "err": 0.9547300680851896
+   },
+   {
+    "group": "A",
+    "id": "A4",
+    "label": "transit 70 -> 10 hPa [yr]",
+    "model": 2.2660386925162497,
+    "ref": [
+     2.3,
+     3.2
+    ],
+    "err": 1.0754695721861114
+   },
+   {
+    "group": "B",
+    "id": "B1-100",
+    "label": "w* 100 hPa [mm/s]",
+    "model": 0.1798256518110111,
+    "ref": 0.3984196583508234,
+    "err": 2.650802777807083
+   },
+   {
+    "group": "B",
+    "id": "B1-70",
+    "label": "w* 70 hPa [mm/s]",
+    "model": 0.21381202597601323,
+    "ref": 0.21136452402445519,
+    "err": 0.03836329438903389
+   },
+   {
+    "group": "B",
+    "id": "B1-50",
+    "label": "w* 50 hPa [mm/s]",
+    "model": 0.2699895186127511,
+    "ref": 0.20051906910484224,
+    "err": 0.9912337091686512
+   },
+   {
+    "group": "B",
+    "id": "B1-30",
+    "label": "w* 30 hPa [mm/s]",
+    "model": 0.315322051201081,
+    "ref": 0.25502792362496607,
+    "err": 0.7071583143861643
+   },
+   {
+    "group": "B",
+    "id": "B1-10",
+    "label": "w* 10 hPa [mm/s]",
+    "model": 0.4031111792839337,
+    "ref": 0.46861187469866544,
+    "err": 0.5016999650266338
+   },
+   {
+    "group": "B",
+    "id": "B2-100",
+    "label": "mass flux 100 hPa [1e9 kg/s]",
+    "model": 9.760311184109067,
+    "ref": 10.853474304,
+    "err": 0.5822732068110809
+   },
+   {
+    "group": "B",
+    "id": "B2-70",
+    "label": "mass flux 70 hPa [1e9 kg/s]",
+    "model": 6.901483340430353,
+    "ref": 6.053461504,
+    "err": 0.7190927382874645
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N",
+    "label": "jet NH 50 hPa [m/s]",
+    "model": 13.9,
+    "ref": 16.4,
+    "err": 0.49999999999999967
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N-lat",
+    "label": "jet NH 50 hPa latitude [deg]",
+    "model": 53.2,
+    "ref": 56.9,
+    "err": 0.9249999999999989
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N",
+    "label": "jet NH 10 hPa [m/s]",
+    "model": 18.1,
+    "ref": 25.2,
+    "err": 1.4199999999999995
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N-lat",
+    "label": "jet NH 10 hPa latitude [deg]",
+    "model": 58.8,
+    "ref": 62.5,
+    "err": 0.9250000000000007
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S",
+    "label": "jet SH 50 hPa [m/s]",
+    "model": 43.6,
+    "ref": 46.7,
+    "err": 0.6200000000000003
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S-lat",
+    "label": "jet SH 50 hPa latitude [deg]",
+    "model": -56.9,
+    "ref": -56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S",
+    "label": "jet SH 10 hPa [m/s]",
+    "model": 66.1,
+    "ref": 71.9,
+    "err": 1.1600000000000024
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S-lat",
+    "label": "jet SH 10 hPa latitude [deg]",
+    "model": -58.8,
+    "ref": -56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C2-N",
+    "label": "polar-cap T bias 50 hPa N [K]",
+    "model": -0.88,
+    "ref": 0.0,
+    "err": 0.44
+   },
+   {
+    "group": "C",
+    "id": "C2-S",
+    "label": "polar-cap T bias 50 hPa S [K]",
+    "model": 1.36,
+    "ref": 0.0,
+    "err": 0.68
+   }
+  ],
+  "groups": {
+   "A": 1.049506710424343,
+   "B": 0.8843748579823016,
+   "C": 0.7145000000000001
+  },
+  "combined": 0.8827938561355483
+ },
+ "QBO10d": {
+  "metrics": [
+   {
+    "group": "A",
+    "id": "A1",
+    "label": "entry age 55 hPa tropics [yr]",
+    "model": 0.9463106511167045,
+    "ref": 1.1068947315216064,
+    "err": 0.6423363216196076
+   },
+   {
+    "group": "A",
+    "id": "A2",
+    "label": "2-D age RMSE vs CLaMS [yr]",
+    "model": 0.6062421308114678,
+    "ref": 0.0,
+    "err": 1.5156053270286696
+   },
+   {
+    "group": "A",
+    "id": "A3",
+    "label": "age step tropics -> 50-70 deg, 55 hPa [yr]",
+    "model": 2.3134840514159665,
+    "ref": 2.7934887409210205,
+    "err": 0.9600093790101081
+   },
+   {
+    "group": "A",
+    "id": "A4",
+    "label": "transit 70 -> 10 hPa [yr]",
+    "model": 2.158496794144069,
+    "ref": [
+     2.3,
+     3.2
+    ],
+    "err": 1.3144515685687348
+   },
+   {
+    "group": "B",
+    "id": "B1-100",
+    "label": "w* 100 hPa [mm/s]",
+    "model": 0.1706108018355381,
+    "ref": 0.3984196583508234,
+    "err": 2.8260844361858495
+   },
+   {
+    "group": "B",
+    "id": "B1-70",
+    "label": "w* 70 hPa [mm/s]",
+    "model": 0.19814476240620724,
+    "ref": 0.21136452402445519,
+    "err": 0.2152128281500874
+   },
+   {
+    "group": "B",
+    "id": "B1-50",
+    "label": "w* 50 hPa [mm/s]",
+    "model": 0.2631401809965666,
+    "ref": 0.20051906910484224,
+    "err": 0.9056094262774849
+   },
+   {
+    "group": "B",
+    "id": "B1-30",
+    "label": "w* 30 hPa [mm/s]",
+    "model": 0.31443283911558967,
+    "ref": 0.25502792362496607,
+    "err": 0.6977482747901664
+   },
+   {
+    "group": "B",
+    "id": "B1-10",
+    "label": "w* 10 hPa [mm/s]",
+    "model": 0.42434832939224904,
+    "ref": 0.46861187469866544,
+    "err": 0.33061878925927735
+   },
+   {
+    "group": "B",
+    "id": "B2-100",
+    "label": "mass flux 100 hPa [1e9 kg/s]",
+    "model": 9.70978214341423,
+    "ref": 10.853474304,
+    "err": 0.6107417976119235
+   },
+   {
+    "group": "B",
+    "id": "B2-70",
+    "label": "mass flux 70 hPa [1e9 kg/s]",
+    "model": 6.904063210051916,
+    "ref": 6.053461504,
+    "err": 0.7211426546129868
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N",
+    "label": "jet NH 50 hPa [m/s]",
+    "model": 13.7,
+    "ref": 16.4,
+    "err": 0.5399999999999998
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N-lat",
+    "label": "jet NH 50 hPa latitude [deg]",
+    "model": 49.4,
+    "ref": 56.9,
+    "err": 1.875
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N",
+    "label": "jet NH 10 hPa [m/s]",
+    "model": 16.1,
+    "ref": 25.2,
+    "err": 1.8199999999999996
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N-lat",
+    "label": "jet NH 10 hPa latitude [deg]",
+    "model": 55.0,
+    "ref": 62.5,
+    "err": 1.875
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S",
+    "label": "jet SH 50 hPa [m/s]",
+    "model": 43.4,
+    "ref": 46.7,
+    "err": 0.6600000000000008
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S-lat",
+    "label": "jet SH 50 hPa latitude [deg]",
+    "model": -56.9,
+    "ref": -56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S",
+    "label": "jet SH 10 hPa [m/s]",
+    "model": 65.6,
+    "ref": 71.9,
+    "err": 1.2600000000000022
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S-lat",
+    "label": "jet SH 10 hPa latitude [deg]",
+    "model": -58.8,
+    "ref": -56.9,
+    "err": 0.47499999999999964
+   },
+   {
+    "group": "C",
+    "id": "C2-N",
+    "label": "polar-cap T bias 50 hPa N [K]",
+    "model": -0.48,
+    "ref": 0.0,
+    "err": 0.24
+   },
+   {
+    "group": "C",
+    "id": "C2-S",
+    "label": "polar-cap T bias 50 hPa S [K]",
+    "model": 1.55,
+    "ref": 0.0,
+    "err": 0.775
+   }
+  ],
+  "groups": {
+   "A": 1.1081006490567802,
+   "B": 0.9010226009839678,
+   "C": 0.9520000000000003
+  },
+  "combined": 0.9870410833469161
+ }
+}
