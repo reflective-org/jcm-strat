@@ -41,7 +41,7 @@ DESIGN = [  # rows of the design grid: correction label, run with P20b's nudging
 ]
 COLORS = {"P20b": "#242729", "AL7": "#6f382a", "AL7h": "#b18e63", "AL7t": "#5e7227", "L0": "#25a3b2", "LAL7": "#6f6194", "QBO30": "#d1495b",
           "QBO10d": "#2b59c3"}
-GROUPS = {"A": "Age of air", "B": "Residual circulation", "C": "Polar vortex"}
+GROUPS = {"A": "Age of air", "B": "Residual circulation", "C": "Polar vortex", "D": "Variability and relations"}
 BOUNDS = [  # group, id, metric, reference ({X} = that metric's reference value from the scores), bound
     ("A", "A1", "Tropical (10&deg;S&ndash;10&deg;N) entry age at 55 hPa (clock reset below 150 hPa)", "WACCM6 entry age ({A1} yr)", "&plusmn; 0.25 yr"),
     ("A", "A2", "Entry age over the whole stratosphere, 100&ndash;5 hPa, RMS error", "CLaMS (ERA5-driven)", "&lt; 0.4 yr"),
@@ -51,6 +51,13 @@ BOUNDS = [  # group, id, metric, reference ({X} = that metric's reference value 
     ("B", "B2", "Upward mass flux at 100 and 70 hPa (2 metrics)", "WACCM6 ({B2-100} and {B2-70} &times; 10<sup>9</sup> kg/s)", "&plusmn; 20 %"),
     ("C", "C1", "Winter jet maximum (30&ndash;90&deg;) at 50 and 10 hPa, both hemispheres: strength and latitude (8 metrics)", "ERA5, same months", "&plusmn; 5 m/s, &plusmn; 4&deg;"),
     ("C", "C2", "Winter polar-cap (60&ndash;90&deg;) temperature bias at 50 hPa, DJF north / JJA south (2 metrics)", "ERA5, same months", "&plusmn; 2 K"),
+    ("D", "D1", "Year-to-year spread: standard deviation over winters of the winter-mean wind at 10 hPa, 55&ndash;65&deg; (DJF north, JJA south; 2 metrics)", "ERA5, same winters", "within a factor of 1.5"),
+    ("D", "D2", "Daily spread: standard deviation of daily wind anomalies at 60&deg;, 10 hPa, in winter (2 metrics)", "ERA5, same days", "within a factor of 1.35"),
+    ("D", "D3", "Number of northern major sudden stratospheric warmings (wind at 60&deg;N, 10 hPa turning easterly in winter)", "ERA5, same winters", "&plusmn; 1 event"),
+    ("D", "D4", "Seasonal cycle: final-warming date at 60&deg;, 10 hPa (2 metrics) and the annual-cycle amplitude of tropical w* at 70 hPa", "ERA5", "&plusmn; 10 days; factor 1.35"),
+    ("D", "D5", "Daily variability of the upward wave forcing: standard deviation of the daily 100 hPa eddy heat flux, 45&ndash;75&deg;, in winter (2 metrics)", "ERA5, same days", "within a factor of 1.35"),
+    ("D", "D6", "Heat flux &rarr; vortex: slope of the 50 hPa polar-cap temperature on the heat flux of the previous 40 days (Newman et al. 2001; 2 metrics)", "ERA5, same days", "within a factor of 1.35"),
+    ("D", "D7", "Age &harr; upwelling: slope of the monthly tropical age anomaly at 55 hPa on the 70 hPa w* anomaly of the previous 3 months", "CLaMS age, ERA5 w*", "within a factor of 1.5"),
 ]
 DIAG = [("age_seasonal_aoa150.png", "Entry age, DJF and JJA, against WACCM6"),
         ("age_seasonal_aoa_sfc.png", "Surface-clock age, DJF and JJA, against CLaMS"),
@@ -126,6 +133,8 @@ def run_tag(n):
 
 
 def fmt(v):
+    if isinstance(v, int):
+        return str(v)
     if isinstance(v, list):
         return f"{v[0]:g}-{v[1]:g}"
     if v == 0:
@@ -139,6 +148,7 @@ def main():
     runs = dict(a.split("=", 1) for a in sys.argv[4:])
     S = json.load(open(sj)); names = list(runs)
     best = min(names, key=lambda n: S[n]["combined"])
+    hasD = all("D_metrics" in S[n] for n in names)                 # Phase 28: group D, reported beside the combined score
     for n, dd in runs.items():                                   # copy each run's diagnostic plots next to the page
         os.makedirs(os.path.join(rep, "runs", n), exist_ok=True)
         for f, _ in DIAG:
@@ -153,14 +163,16 @@ def main():
     H.append('<header class="col"><p class="eyebrow">jcm-strat &middot; dry model &middot; tracer transport</p>'
              '<h1>Stratospheric transport scorecard</h1>'
              f'<p class="lede">{["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"][len(names) - 1]} configurations of the dry JCM model, scored against CLaMS, WACCM6 and ERA5 on age of air, '
-             f'the residual circulation and the polar vortex, {y0}&ndash;{y1}.</p></header>')
+             f'the residual circulation and the polar vortex, {y0}&ndash;{y1}'
+             + (', with a separate group on variability and two physical relations' if hasD else '') + '.</p></header>')
     H.append(f'<div class="findings col">{open(fh).read()}</div>')
 
     # --- scorecard summary
     H.append('<section><h2>Scores at a glance</h2><p class="col">Each metric&rsquo;s error is divided by its bound, so 1 is the edge '
              'of acceptable. A group score is the mean over its metrics; the combined score is the mean of the three groups. '
              'Lower is better; the marker on each bar is 1.</p><div class="tablewrap"><table><thead><tr><th>Run</th>'
-             + "".join(f'<th>{GROUPS[g]}</th>' for g in "ABC") + '<th>Combined</th><th class="num">Metrics passed</th></tr></thead><tbody>')
+             + "".join(f'<th>{GROUPS[g]}</th>' for g in "ABC") + '<th>Combined</th><th class="num">Metrics passed</th>'
+             + ('<th>D: variability</th><th class="num">D passed</th>' if hasD else '') + '</tr></thead><tbody>')
     scale = max(max(S[n]["groups"][g] for g in "ABC") for n in names) * 1.05
     for n in names:
         cells = ""
@@ -171,8 +183,12 @@ def main():
         npass = sum(m["err"] <= 1 for m in S[n]["metrics"])
         cls = ' class="best"' if n == best else ""
         H.append(f'<tr{cls}><td>{run_tag(n)}</td>{cells}<td><span class="score">{S[n]["combined"]:.2f}</span></td>'
-                 f'<td class="num">{npass} / {len(S[n]["metrics"])}</td></tr>')
-    H.append('</tbody></table></div></section>')
+                 f'<td class="num">{npass} / {len(S[n]["metrics"])}</td>'
+                 + (f'<td><span class="score">{S[n]["D"]:.2f}</span></td><td class="num">'
+                    f'{sum(m["err"] <= 1 for m in S[n]["D_metrics"])} / {len(S[n]["D_metrics"])}</td>' if hasD else '') + '</tr>')
+    H.append('</tbody></table></div>' + ('<p class="col small muted">Group D (variability, SSWs, seasonal cycle and two relations) is '
+             'scored the same way but kept out of the combined score, so the combined score stays comparable with earlier versions.</p>'
+             if hasD else '') + '</section>')
 
     # --- runs and metrics
     H.append(f'<section><h2>The runs</h2><p class="col">All {len(names)} runs are the same dry model (T63, 95 levels; relaxation to an '
@@ -203,6 +219,8 @@ def main():
     ref = {m["id"]: m["ref"] for m in S[names[0]]["metrics"]}
     rows, grp = "", None
     for g, i, metric, r, bound in BOUNDS:
+        if g == "D" and not hasD:
+            continue
         if g != grp:
             grp = g; rows += f'<tr><td colspan="4"><b>{g}: {GROUPS[g]}</b></td></tr>'
         r = re.sub(r"\{([^}]+)\}", lambda m: f"{ref[m.group(1)]:.3g}", r)
@@ -219,6 +237,8 @@ def main():
              f'<li>There are <b>{nm} metrics</b> in total ({per["A"]} + {per["B"]} + {per["C"]}); &ldquo;passed&rdquo; counts how many '
              'are at or below 1.</li>'
              '<li>The bounds are &ldquo;moderate&rdquo;: roughly the size of the disagreement between CLaMS and WACCM6.</li>'
+             + (f'<li>Group D&rsquo;s {len(S[names[0]]["D_metrics"])} metrics are scored the same way and reported as their own '
+                'group, outside the combined score.</li>' if hasD else '') +
              f'<li>All metrics are computed over {y0}&ndash;{y1}.</li></ul></section>')
 
     def gallery(sec, files, label):
@@ -272,6 +292,26 @@ def main():
     H.append(gallery("vortex", {"vortex_jets.png", "wind_seasonal.png"}, "Jets and seasonal winds by run"))
     H.append(_metric_table(S, names, "C") + '</section>')
 
+    # --- variability and relations (Phase 28)
+    if hasD:
+        H.append('<section><h2>Variability and relations</h2><p class="col">Groups A&ndash;C score multi-year means. Group D asks '
+                 'whether the model also varies like the atmosphere: how much the vortex changes from day to day and from winter to '
+                 'winter, how often it breaks down, when it breaks down in spring, and whether two physical links have the observed '
+                 'strength. The links are the response of the polar vortex to the waves coming up from the troposphere, and the '
+                 'response of the tropical age of air to changes in upwelling. ERA5 here is the full stratospheric reanalysis from '
+                 'the Copernicus Climate Data Store, reduced to daily zonal means.</p>'
+                 '<figure><img src="variability_vortex.png" alt="Daily zonal-mean wind at 60 degrees and 10 hPa for each run and ERA5">'
+                 '<figcaption>Daily zonal-mean wind at 60&deg;, 10 hPa, north and south. Dotted lines mark the ERA5 major sudden '
+                 'warmings.</figcaption></figure><div class="figs2">'
+                 '<figure><img src="variability_heatflux.png" alt="Polar-cap temperature against the heat flux of the previous 40 days">'
+                 '<figcaption>D6: 50 hPa polar-cap temperature anomaly against the 100 hPa heat flux of the previous 40 days. The '
+                 'slope is how strongly the vortex warms for a given wave forcing.</figcaption></figure>'
+                 '<figure><img src="variability_age_wstar.png" alt="Tropical age anomaly against w* anomaly"><figcaption>D7: monthly '
+                 'tropical age anomaly at 55 hPa against the 70 hPa upwelling anomaly of the previous three months.</figcaption></figure>'
+                 '</div><figure class="col"><img src="variability_seasonal.png" alt="Seasonal cycle of tropical w* at 70 hPa">'
+                 '<figcaption>D4: seasonal cycle of tropical (15S&ndash;15N) w* at 70 hPa.</figcaption></figure>')
+        H.append(_metric_table(S, names, "D") + '</section>')
+
     H.append(open(os.path.join(rep, "notes.html")).read() if os.path.exists(os.path.join(rep, "notes.html")) else "")
     H.append('</div>')
     H.append("""<script>
@@ -284,12 +324,13 @@ document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener
 
 
 def _metric_table(S, names, g):
-    first = S[names[0]]["metrics"]
+    key = "D_metrics" if g == "D" else "metrics"
+    first = S[names[0]][key]
     rows = []
     for i, m in enumerate(first):
         if m["group"] != g:
             continue
-        cells = "".join(f'<td class="num">{fmt(S[n]["metrics"][i]["model"])} {pill(S[n]["metrics"][i]["err"])}</td>' for n in names)
+        cells = "".join(f'<td class="num">{fmt(S[n][key][i]["model"])} {pill(S[n][key][i]["err"])}</td>' for n in names)
         rows.append(f'<tr><td><b>{m["id"].split("-")[0]}</b> {html.escape(m["label"])}</td><td class="num">{fmt(m["ref"])}</td>{cells}</tr>')
     head = "".join(f'<th class="num">{run_tag(n)}</th>' for n in names)
     return (f'<h3>Scores: {GROUPS[g].lower()}</h3><div class="tablewrap"><table><thead><tr><th>Metric</th><th class="num">Reference</th>'

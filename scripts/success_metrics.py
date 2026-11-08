@@ -24,7 +24,9 @@ Metrics and bounds ("moderate": about the size of the CLaMS - WACCM6 disagreemen
   C2  winter polar-cap (60-90) T bias at 50 hPa vs ERA5, DJF N / JJA S                          +- 2 K
 
 Combined score: mean err within each group (A, B, C), then the mean of the three groups - lower is better, <= 1 means
-"on average inside the bounds". ERA5 TEM w* (1996-2001, the years on disk) is shown for context, not scored.
+"on average inside the bounds". With --variability (Phase 28, scripts/variability_score.py) the group D rows
+(variability and the heat-flux and age-w* relations, against ERA5/CLaMS for the same days) are added as their own group;
+the combined score stays the mean of A, B and C. ERA5 TEM w* (1996-2001, the years on disk) is shown for context, not scored.
 """
 from __future__ import annotations
 
@@ -99,6 +101,7 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("outdir"); ap.add_argument("runs", nargs="+")
     ap.add_argument("--t0", default="2006-01-01"); ap.add_argument("--t1", default="2008-01-01")
     ap.add_argument("--window-years", type=float, default=2.0)
+    ap.add_argument("--variability", default=None, help="variability.json of scripts/variability_score.py (group D)")
     a = ap.parse_args(); os.makedirs(a.outdir, exist_ok=True)
     runs = [r.split("=", 1) for r in a.runs]
     res = {n: metrics(*raw_scores(n, p, a.outdir, a.t0, a.t1, a.window_years)) for n, p in runs}
@@ -126,9 +129,19 @@ def main():
         L.append(f"| {lab}, mean err | " + " | ".join(f"{summ[n][0][k]:.2f}" for n in names) + " |")
     L.append("| **combined score** | " + " | ".join(f"**{summ[n][1]:.2f}**" for n in names) + " |")
     L.append("| passed (✅) / total | " + " | ".join(f"{sum(e <= 1 for *_, e in res[n])} / {len(res[n])}" for n in names) + " |")
+    V = json.load(open(a.variability))["runs"] if a.variability else {}
+    if V:
+        L += ["", "Group D, variability and relations (ERA5 / CLaMS for the same days; not in the combined score):", "",
+              "| metric | reference | " + " | ".join(names) + " |", "|---|---|" + "---|" * len(names)]
+        for i, m in enumerate(V[names[0]]["metrics"]):
+            L.append(f"| **{m['id']}** {m['label']} | {fmt(m['ref'])} | " +
+                     " | ".join(f"{status(V[n]['metrics'][i]['err'])} {fmt(V[n]['metrics'][i]['model'])}" for n in names) + " |")
+        L.append("| **D variability, mean err** | | " + " | ".join(f"**{V[n]['D']:.2f}**" for n in names) + " |")
+        L.append("| passed (✅) / total | | " + " | ".join(f"{sum(m['err'] <= 1 for m in V[n]['metrics'])} / {len(V[n]['metrics'])}" for n in names) + " |")
     open(os.path.join(a.outdir, "success_table.md"), "w").write("\n".join(L) + "\n")
     json.dump({n: {"metrics": [dict(group=g, id=i, label=l, model=mo, ref=r, err=e) for g, i, l, mo, r, e in res[n]],
-                   "groups": summ[n][0], "combined": summ[n][1]} for n in names},
+                   "groups": summ[n][0], "combined": summ[n][1],
+                   **({"D": V[n]["D"], "D_metrics": V[n]["metrics"]} if V else {})} for n in names},
               open(os.path.join(a.outdir, "success_metrics.json"), "w"), indent=1, default=float)
     print("\n".join(L))
 
