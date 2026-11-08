@@ -43,7 +43,7 @@ import jcm.predictions as _predictions
 import jcm.runners as _runners
 from jcm.dycore.dinosaur import dycore as _dycore
 
-from jcm_strat import levels
+from jcm_strat import levels, nudging_lat
 
 _ORIG_FIX = _dycore.DinosaurDycore._fix_nodal_tracer_mass
 _ORIG_INIT = _dycore.DinosaurDycore.__init__
@@ -235,6 +235,7 @@ def main(cfg: DictConfig) -> None:
     di = cfg.get("sl_departure_iterations", None)
     install_sl_options({"departure_iterations": int(di) if di is not None else None})
     install_calendar(cfg.get("calendar", None))
+    nudging_lat.install_lat_top(cfg.get("nudging", {}).get("lat_top", None))
     check_jcm3_run_keys(cfg)
     log_dot_precision()
     install_output_policy(_as_list(cfg.get("output_drop", None)), _as_list(cfg.get("output_keep", None)))

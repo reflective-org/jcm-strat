@@ -1,0 +1,9 @@
+<p class="eyebrow">Key findings</p>
+<p><b>No configuration yet gets both the polar vortex and the age of air right. AL7 comes closest (combined score 0.82, 17 of 21 metrics passed).</b> It fixes the vortex but makes stratospheric air about half a year too young.</p>
+<ol>
+<li><b>The vortex is solved by the extratropical temperature correction.</b> AL7's winter jets match ERA5 in both hemispheres within 1&ndash;2 m/s; without the correction (P20b) the southern jet is 8&ndash;17 m/s too weak.</li>
+<li><b>The same correction makes the air too young.</b> Mean entry-age bias against CLaMS: P20b &minus;0.14 years, AL7 &minus;0.55. All corrected runs have an upward mass flux at 70 hPa 14&ndash;26 % above WACCM6, while P20b matches it, so the faster ageing goes with a stronger lower-stratospheric circulation.</li>
+<li><b>Half the correction (AL7h) gives about half of each effect.</b> Age bias &minus;0.37 years, 70 hPa mass flux 6.9 (P20b 6.4, AL7 7.2 &times;10<sup>9</sup> kg/s), southern 10 hPa jet 67 m/s (P20b 57, AL7 75, ERA5 74). It scores 0.93 with 14 passes: better than every run except AL7, but it does not get the vortex without the young air either. Its northern jet above 10 hPa is the weakest of all runs, probably sampling: only two northern winters.</li>
+<li><b>Keeping the correction out of the subtropics (AL7t) does not help.</b> Starting it at 35&ndash;50&deg; instead of 25&ndash;35&deg; leaves the ages unchanged (bias &minus;0.54) and weakens the northern vortex at 10 hPa (18 vs 26 m/s in ERA5).</li>
+<li><b>Upwelling at 100 hPa is too weak in every run</b> (0.13&ndash;0.18 against 0.40&ndash;0.44 mm/s), while the 100 hPa mass flux is close. Nudging the tropical upper troposphere (L0, LAL7) raises it by 18&ndash;32 % but also makes the air younger.</li>
+</ol>

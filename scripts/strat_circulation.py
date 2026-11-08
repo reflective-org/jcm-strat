@@ -161,6 +161,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("rundir"); ap.add_argument("outdir")
     ap.add_argument("--years", default="2005-2009"); ap.add_argument("--label", default=None)
+    ap.add_argument("--age-var", default="aoa", help="model clock for section 3 (minimal-output runs keep only aoa150/aoa_sfc)")
     a = ap.parse_args(); os.makedirs(a.outdir, exist_ok=True)
     y0, y1 = map(int, a.years.split("-")); years = list(range(y0, y1 + 1))
     label = a.label or os.path.basename(a.rundir.rstrip("/"))
@@ -241,7 +242,7 @@ def main():
         lines.append(f"| {src} | {seas} | {f[0]:.1f} | {f[1]:.1f} | {f[2]:.1f} | {f[3]:.2f} |")
 
     # ---------------- 3. tropical ascent from age of air
-    pm, latm, am, _ = aoa.model_age(a.rundir)
+    pm, latm, am, _ = aoa.model_age(a.rundir, var=a.age_var)
     pc, latc, ac = aoa.clams_age(years)
     pw, latw, aw = aoa.waccm_age(years)
     def trop(p, lat, age, targets):
@@ -251,7 +252,7 @@ def main():
     targets = (70, 50, 30, 20, 10)
     tm, tc, tw = trop(pm, latm, am, targets), trop(pc, latc, ac, targets), trop(pw, latw, aw, targets)
     dz = 7.0 * np.log(70 / 10)                                    # km between 70 and 10 hPa
-    lines += ["", "## Tropical ascent from age of air (10S-10N)", "",
+    lines += ["", f"## Tropical ascent from age of air (10S-10N; model clock {a.age_var})", "",
               "| source | age at 70 / 50 / 30 / 20 / 10 hPa [yr] | transit 70 -> 10 hPa [yr] | mean ascent 70 -> 10 hPa [mm/s] |", "|---|---|---|---|"]
     for name, t in (("model: " + label, tm), ("CLaMS v3.1 / ERA5 (surface clock)", tc), ("WACCM6 REF-D1 (entry age)", tw)):
         tr = t[10] - t[70]; w = dz * 1e6 / (tr * 365.25 * 86400) if tr > 0 else float("nan")
