@@ -2,10 +2,11 @@
 """Group D of the success metrics (Phase 28): variability and two relations, model runs against ERA5 for the same days.
 
     python scripts/variability_score.py OUTDIR NAME=<daily_zm.npz> [NAME=...] --era5-dir DIR --t0 2006-01-01 --t1 2011-01-01
-        [--long 1990-2022]
+        [--long 1990-2022 --long-dir LDIR]
 
-Inputs are the daily zonal means of scripts/daily_zm.py: one npz per run over the window and one per ERA5 year
-(DIR/era5_<year>.npz, the L95 nudging target on the model grid, so model and reference go through the same code).
+Inputs are daily zonal means: one npz per run over the window (scripts/daily_zm.py) and one per ERA5 year
+(DIR/era5_<year>.npz from scripts/fetch_era5_daily_zm.py: CDS ERA5, 2.5 deg, 1-250 hPa; LDIR holds the 10/50/100 hPa
+years for --long). NOT the L95 nudging windows: they are WeatherBench2 data and constant above 50 hPa.
 The age reference is CLaMS v3.1 (ERA5-driven), monthly. Every anomaly is taken against the dataset's OWN day-of-year
 (or monthly) climatology over the window, so the seasonal cycle is removed separately from the model and from ERA5.
 
@@ -298,7 +299,7 @@ def status(e):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("outdir"); ap.add_argument("runs", nargs="+")
     ap.add_argument("--era5-dir", required=True); ap.add_argument("--t0", default="2006-01-01"); ap.add_argument("--t1", default="2011-01-01")
-    ap.add_argument("--long", default=None)
+    ap.add_argument("--long", default=None); ap.add_argument("--long-dir", default=None)
     a = ap.parse_args(); os.makedirs(a.outdir, exist_ok=True)
     y0, y1 = int(a.t0[:4]), int(a.t1[:4])
     yrs = list(range(y0, y1))
@@ -312,7 +313,7 @@ def main():
     long = None
     if a.long:
         l0, l1 = map(int, a.long.split("-"))
-        lz = Z.load([os.path.join(a.era5_dir, f"era5_{y}.npz") for y in range(l0, l1 + 1)])
+        lz = Z.load([os.path.join(a.long_dir or a.era5_dir, f"era5_{y}.npz") for y in range(l0, l1 + 1)])
         lq = {}   # long ERA5 context: D1, D2, D5, D6, SSWs (no D7: CLaMS starts 2004)
         y, mo = lz.months()
         for h, H in HEMI.items():

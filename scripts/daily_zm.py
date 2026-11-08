@@ -3,6 +3,8 @@
 
     python scripts/daily_zm.py OUT.npz --run runs/<agg>  --t0 2006-01-01 --t1 2011-01-01
     python scripts/daily_zm.py OUT.npz --era5 1990       (one calendar year from the 192x96 L95 nudging windows)
+    (--era5 is NOT a stratospheric reference: the windows are WeatherBench2 data, constant above 50 hPa; Phase 28 uses
+     scripts/fetch_era5_daily_zm.py instead)
 
 Every 6-hourly frame is reduced on the GPU (jax): zonal means of u, v, T, theta and the eddy covariance v'theta'
 formed within each snapshot (stride 1, Phase 15), plus aoa150 and aoa_sfc for a model run. The four frames of a
