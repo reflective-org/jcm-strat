@@ -1,13 +1,21 @@
 <p class="eyebrow">Key findings</p>
-<p><b>QBO30, AL7h with the QBO nudging starting at 50 hPa instead of 90 hPa, is still the best configuration: 0.88 on age, circulation and vortex (16 of 21 metrics passed), and second on the new variability group D.</b> Group D shows what the means hide: the seasonal cycle is right, but the stratosphere varies too little, because the northern vortex responds only half as strongly as in ERA5 to the waves coming up from the troposphere. No configuration yet gets both the polar vortex and the age of air right.</p>
+<p><b>QBO30, AL7h with the QBO nudging starting at 50 hPa instead of 90 hPa, is still the best configuration: 0.88 on age, circulation and vortex (16 of 21 metrics passed), and second on the variability group D.</b> The new run LQBO10d (QBO10d with the tropical ERA5 nudging raised to 150 hPa) has the best circulation and a much better northern vortex, but its air is much too young and it varies even less, so it scores 1.01. Group D shows what the means hide: the seasonal cycle is right, but the stratosphere varies too little, because the northern vortex responds only half as strongly as in ERA5 to the waves coming up from the troposphere. No configuration yet gets both the polar vortex and the age of air right.</p>
 <ol>
+<li><b>Higher tropical nudging on QBO10d (Phase 29, LQBO10d).</b> The two changes do not combine into a better configuration: 1.01 on A&ndash;C (QBO10d 0.99) and 1.61 on D (QBO10d 1.04).
+<ul>
+<li>The circulation group is the best of any run (0.77). w* at 100 hPa rises to 0.21 mm/s, the highest so far but still half of WACCM6&rsquo;s 0.40.</li>
+<li>The vortex group improves from 0.95 to 0.53. The northern jet at 10 hPa is back at ERA5&rsquo;s latitude and nearly its strength (22.7 m/s at 62.5&deg;N, against 25.2), but the northern polar cap at 50 hPa is 2.4 K too cold.</li>
+<li>The air gets much younger, as it did for L0 and LAL7: the tropical entry age at 55 hPa falls from 0.95 to 0.69 years (CLaMS 1.11), and the age group goes from 1.11 to 1.71.</li>
+<li>On D it has only 2 major sudden warmings (ERA5 8), the annual cycle of tropical upwelling shrinks as in L0 (0.13 against 0.19 mm/s), and the southern wind spread and heat-flux response fail where QBO10d passed.</li>
+<li>The semiannual oscillation at 1 hPa recovers (26.1 against QBO10d&rsquo;s 12.9 m/s, ERA5 32.4). The QBO below 3 hPa is unchanged.</li>
+</ul></li>
 <li><b>Variability and relations (Phase 28, group D, kept out of the combined score).</b>
 <ul>
 <li>The seasonal cycle is right. The vortex breaks down in spring within 10 days of ERA5 in almost every run, and the annual cycle of tropical upwelling at 70 hPa matches ERA5&rsquo;s.</li>
 <li>The stratosphere varies too little. The 10 hPa wind at 60&deg; swings 9&ndash;13 m/s from day to day in northern winter against ERA5&rsquo;s 15. The corrected runs have 3&ndash;6 major sudden warmings in 2006&ndash;2010, against ERA5&rsquo;s 8. P20b, with its weak vortex, has 12.</li>
 <li>The waves coming up from the nudged troposphere are right in every run. But the northern polar cap warms only about half as much per unit of wave forcing as in ERA5 (0.47&ndash;0.62 against 0.97 K per K m/s), so the vortex is too stiff. In the south the corrected and QBO runs pass.</li>
 <li>The tropical age responds 1.6&ndash;4.4 times too weakly to changes in upwelling. The upwelling varies about as much as in ERA5, but the model&rsquo;s age varies three times less than CLaMS&rsquo;s. Part of that may be because the two ages are defined differently.</li>
-<li>On group D the QBO runs score best: QBO10d 1.04 and QBO30 1.09. LAL7 scores worst (1.64).</li>
+<li>On group D the QBO runs score best: QBO10d 1.04 and QBO30 1.09. LAL7 (1.64) and LQBO10d (1.61) score worst.</li>
 </ul></li>
 <li><b>Lighter QBO nudging (Phase 27).</b> QBO30 and QBO10d are AL7h with the QBO nudging loosened in two ways: QBO30 starts the nudging window higher, and QBO10d nudges ten times more gently.
 <ul>
@@ -34,5 +42,5 @@
 <li>Entry-age bias over 2006&ndash;2010: P20b &minus;0.15 years, AL7h &minus;0.43, AL7 &minus;0.64.</li>
 <li>Half the correction (AL7h) gives about half of each effect. Moving it poleward (AL7t) does not help the age.</li>
 </ul></li>
-<li><b>Upwelling at 100 hPa is too weak in every run</b> (0.13&ndash;0.18 against 0.40 mm/s), while the 100 hPa mass flux is close to WACCM6&rsquo;s. Nudging the tropical upper troposphere (L0, LAL7) raises it, but it also makes the air younger, and LAL7 scores worst (1.21).</li>
+<li><b>Upwelling at 100 hPa is too weak in every run</b> (0.13&ndash;0.18 against 0.40 mm/s), while the 100 hPa mass flux is close to WACCM6&rsquo;s. Nudging the tropical upper troposphere (L0, LAL7) raises it, but it also makes the air younger, and LAL7 scores worst (1.21). LQBO10d does the same on top of QBO10d (Phase 29).</li>
 </ol>
