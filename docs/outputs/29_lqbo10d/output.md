@@ -93,3 +93,28 @@ Selected metrics (reference in brackets):
   the restart (Phase 26). This applies equally to QBO10d and L0, so the comparison is fair, but the absolute ages are
   biased young.
 - Five winters is a small sample for D1 and D3. See Phase 28.
+
+## Relative scorecard (Susanne, 2026-11-09)
+
+Susanne asked for a second scorecard with every metric in relative terms, and with QBO30 left out because its QBO is
+unacceptable. It was made with `scripts/relative_scores.py` and written to `relative/`, and it is published as a
+separate page: https://claude.ai/artifact/2kndRHGuQKhXBQSXS1ZzDB.
+- Each metric's deviation is model / reference - 1. Its error is that deviation divided by one common tolerance of
+  25 %, with the old pass / near / fail thresholds.
+- A4 is taken against the middle of its 2.3-3.2 yr range.
+- Four kinds of metric have no meaningful relative form, and keep their absolute bounds (Susanne's choice):
+  - A2, the 2-D age RMSE;
+  - C1, the jet latitudes;
+  - C2, the polar-cap T bias;
+  - D4, the final-warming dates.
+
+| | P20b | AL7 | AL7h | AL7t | L0 | LAL7 | QBO10d | LQBO10d |
+|---|---|---|---|---|---|---|---|---|
+| combined (A-C) | 0.90 | 0.84 | **0.81** | 0.84 | 1.00 | 1.09 | 0.86 | 0.90 |
+| passed / 21 | 12 | **17** | **17** | 14 | 13 | 15 | 15 | 13 |
+| D variability | 1.34 | 1.27 | 1.10 | 1.28 | 1.17 | 1.46 | **0.92** | 1.39 |
+
+- In relative terms AL7h is the best configuration on A-C, with AL7 and AL7t close behind.
+- QBO10d is the best on D and the only run inside the tolerance on average there.
+- The ranking is the same as in the absolute scorecard once QBO30 is removed. Every score is lower because a 25 %
+  tolerance is looser than most of the absolute bounds.
