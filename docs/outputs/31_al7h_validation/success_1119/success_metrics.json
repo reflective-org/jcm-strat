@@ -1,0 +1,290 @@
+{
+ "AL7h": {
+  "metrics": [
+   {
+    "group": "A",
+    "id": "A1",
+    "label": "entry age 55 hPa tropics [yr]",
+    "model": 1.0220466305571245,
+    "ref": 1.105019450187683,
+    "err": 0.3318912785222343
+   },
+   {
+    "group": "A",
+    "id": "A2",
+    "label": "2-D age RMSE vs CLaMS [yr]",
+    "model": 0.68283836933687,
+    "ref": 0.0,
+    "err": 1.707095923342175
+   },
+   {
+    "group": "A",
+    "id": "A3",
+    "label": "age step tropics -> 50-70 deg, 55 hPa [yr]",
+    "model": 2.1824102490917863,
+    "ref": 2.8196293115615845,
+    "err": 1.2744381249395964
+   },
+   {
+    "group": "A",
+    "id": "A4",
+    "label": "transit 70 -> 10 hPa [yr]",
+    "model": 2.1289587977212,
+    "ref": [
+     2.3,
+     3.2
+    ],
+    "err": 1.3800915606195547
+   },
+   {
+    "group": "B",
+    "id": "B1-100",
+    "label": "w* 100 hPa [mm/s]",
+    "model": 0.1384804733939236,
+    "ref": 0.3984196583508234,
+    "err": 3.5213607687646946
+   },
+   {
+    "group": "B",
+    "id": "B1-70",
+    "label": "w* 70 hPa [mm/s]",
+    "model": 0.21193894071175381,
+    "ref": 0.21136452402445519,
+    "err": 0.00904342301116755
+   },
+   {
+    "group": "B",
+    "id": "B1-50",
+    "label": "w* 50 hPa [mm/s]",
+    "model": 0.29073856160528355,
+    "ref": 0.20051906910484224,
+    "err": 1.237952064032269
+   },
+   {
+    "group": "B",
+    "id": "B1-30",
+    "label": "w* 30 hPa [mm/s]",
+    "model": 0.31996859876733535,
+    "ref": 0.25502792362496607,
+    "err": 0.7559025228492513
+   },
+   {
+    "group": "B",
+    "id": "B1-10",
+    "label": "w* 10 hPa [mm/s]",
+    "model": 0.4261052363202483,
+    "ref": 0.46861187469866544,
+    "err": 0.316851256418886
+   },
+   {
+    "group": "B",
+    "id": "B2-100",
+    "label": "mass flux 100 hPa [1e9 kg/s]",
+    "model": 9.4362706462461,
+    "ref": 10.853474304,
+    "err": 0.7674594277241182
+   },
+   {
+    "group": "B",
+    "id": "B2-70",
+    "label": "mass flux 70 hPa [1e9 kg/s]",
+    "model": 6.755045792642479,
+    "ref": 6.053461504,
+    "err": 0.601462024249805
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N",
+    "label": "jet NH 50 hPa [m/s]",
+    "model": 16.8,
+    "ref": 18.2,
+    "err": 0.2799999999999997
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_N-lat",
+    "label": "jet NH 50 hPa latitude [deg]",
+    "model": 58.8,
+    "ref": 58.8,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N",
+    "label": "jet NH 10 hPa [m/s]",
+    "model": 24.0,
+    "ref": 29.0,
+    "err": 1.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_N-lat",
+    "label": "jet NH 10 hPa latitude [deg]",
+    "model": 62.5,
+    "ref": 62.5,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S",
+    "label": "jet SH 50 hPa [m/s]",
+    "model": 44.6,
+    "ref": 48.2,
+    "err": 0.7200000000000003
+   },
+   {
+    "group": "C",
+    "id": "C1-jet50_S-lat",
+    "label": "jet SH 50 hPa latitude [deg]",
+    "model": -56.9,
+    "ref": -56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S",
+    "label": "jet SH 10 hPa [m/s]",
+    "model": 66.3,
+    "ref": 75.1,
+    "err": 1.7599999999999993
+   },
+   {
+    "group": "C",
+    "id": "C1-jet10_S-lat",
+    "label": "jet SH 10 hPa latitude [deg]",
+    "model": -56.9,
+    "ref": -56.9,
+    "err": 0.0
+   },
+   {
+    "group": "C",
+    "id": "C2-N",
+    "label": "polar-cap T bias 50 hPa N [K]",
+    "model": -1.03,
+    "ref": 0.0,
+    "err": 0.515
+   },
+   {
+    "group": "C",
+    "id": "C2-S",
+    "label": "polar-cap T bias 50 hPa S [K]",
+    "model": 1.42,
+    "ref": 0.0,
+    "err": 0.71
+   }
+  ],
+  "groups": {
+   "A": 1.17337922185589,
+   "B": 1.0300044981500274,
+   "C": 0.49849999999999994
+  },
+  "combined": 0.9006279066686392,
+  "D": 1.2737959265425212,
+  "D_metrics": [
+   {
+    "group": "D",
+    "id": "D1-N",
+    "label": "year-to-year std of winter u 55-65N 10 hPa [m/s]",
+    "model": 4.519639579227082,
+    "ref": 10.487145553774262,
+    "err": 2.0759320736026106
+   },
+   {
+    "group": "D",
+    "id": "D1-S",
+    "label": "year-to-year std of winter u 55-65S 10 hPa [m/s]",
+    "model": 1.4143806864262498,
+    "ref": 2.615513029950064,
+    "err": 1.5162056993147452
+   },
+   {
+    "group": "D",
+    "id": "D2-N",
+    "label": "daily std of winter u 60N 10 hPa [m/s]",
+    "model": 11.911504165522311,
+    "ref": 16.459191766535355,
+    "err": 1.077555724130072
+   },
+   {
+    "group": "D",
+    "id": "D2-S",
+    "label": "daily std of winter u 60S 10 hPa [m/s]",
+    "model": 3.831982672395997,
+    "ref": 5.633814096342869,
+    "err": 1.2842333758962279
+   },
+   {
+    "group": "D",
+    "id": "D3",
+    "label": "NH major SSWs in the window [number]",
+    "model": 6,
+    "ref": 4,
+    "err": 2.0
+   },
+   {
+    "group": "D",
+    "id": "D4-fwN",
+    "label": "final warming N, days after 1 Mar",
+    "model": 45.77777777777778,
+    "ref": 38.666666666666664,
+    "err": 0.7111111111111115
+   },
+   {
+    "group": "D",
+    "id": "D4-fwS",
+    "label": "final warming S, days after 1 Sep",
+    "model": 77.66666666666667,
+    "ref": 75.22222222222223,
+    "err": 0.2444444444444443
+   },
+   {
+    "group": "D",
+    "id": "D4-w",
+    "label": "annual-cycle amplitude of tropical w* 70 hPa [mm/s]",
+    "model": 0.15530005363653826,
+    "ref": 0.19265245312063806,
+    "err": 0.718178709844439
+   },
+   {
+    "group": "D",
+    "id": "D5-N",
+    "label": "daily std of 100 hPa heat flux N [K m/s]",
+    "model": 11.739059849340016,
+    "ref": 11.802385752888409,
+    "err": 0.017926960805885156
+   },
+   {
+    "group": "D",
+    "id": "D5-S",
+    "label": "daily std of 100 hPa heat flux S [K m/s]",
+    "model": 7.131164107977648,
+    "ref": 7.041759973159001,
+    "err": 0.04203985978309479
+   },
+   {
+    "group": "D",
+    "id": "D6-N",
+    "label": "heat flux -> polar-cap T slope N [K per K m/s]",
+    "model": 0.646664495081712,
+    "ref": 1.0549835252014876,
+    "err": 1.6309408016936975
+   },
+   {
+    "group": "D",
+    "id": "D6-S",
+    "label": "heat flux -> polar-cap T slope S [K per K m/s]",
+    "model": 0.6883722399229555,
+    "ref": 1.2337339870027162,
+    "err": 1.9442250741743883
+   },
+   {
+    "group": "D",
+    "id": "D7",
+    "label": "age vs w* slope [yr per mm/s]",
+    "model": -1.0447314198841546,
+    "ref": -3.9764805401783305,
+    "err": 3.296553210252056
+   }
+  ]
+ }
+}
