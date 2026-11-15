@@ -30,6 +30,8 @@ RUNS_INFO = {  # what changes from P20b, why the run was made
     "QBO10d": ("As AL7h, with the QBO nudging ten times weaker: relaxation timescale 10 days instead of 1 day (WACCM6 uses "
                "10 days). Same window as AL7h.",
                "Does gentler QBO nudging over the whole window help in the same way?"),
+    "LQBO10d": ("As QBO10d (AL7h with 10-day QBO nudging), with L0&rsquo;s higher tropical ERA5 nudging (up to 150 hPa).",
+                "Do the gentler QBO nudging and the higher tropical nudging combine?"),
 }
 DESIGN = [  # rows of the design grid: correction label, run with P20b's nudging, run with the higher tropical nudging
     ("None", "P20b", "L0"),
@@ -37,10 +39,10 @@ DESIGN = [  # rows of the design grid: correction label, run with P20b's nudging
     ("Half strength", "AL7h", None),
     ("Full, moved poleward", "AL7t", None),
     ("Half strength, QBO nudging from 30 hPa", "QBO30", None),
-    ("Half strength, QBO nudging at 10 days", "QBO10d", None),
+    ("Half strength, QBO nudging at 10 days", "QBO10d", "LQBO10d"),
 ]
 COLORS = {"P20b": "#242729", "AL7": "#6f382a", "AL7h": "#b18e63", "AL7t": "#5e7227", "L0": "#25a3b2", "LAL7": "#6f6194", "QBO30": "#d1495b",
-          "QBO10d": "#2b59c3"}
+          "QBO10d": "#2b59c3", "LQBO10d": "#e08e0b"}
 GROUPS = {"A": "Age of air", "B": "Residual circulation", "C": "Polar vortex", "D": "Variability and relations"}
 BOUNDS = [  # group, id, metric, reference ({X} = that metric's reference value from the scores), bound
     ("A", "A1", "Tropical (10&deg;S&ndash;10&deg;N) entry age at 55 hPa (clock reset below 150 hPa)", "WACCM6 entry age ({A1} yr)", "&plusmn; 0.25 yr"),
@@ -199,8 +201,8 @@ def main():
              'polar vortex.</li>'
              '<li><b>How high the ERA5 nudging reaches</b>: up to 400 hPa everywhere, or up to 150 hPa in the tropics.</li>'
              '<li><b>The QBO nudging</b>: the tropical (15&deg;S&ndash;15&deg;N, fading out by 25&deg;) zonal-mean wind is relaxed '
-             'towards ERA5&rsquo;s monthly mean so that the model has the observed QBO. In all runs but QBO30 and QBO10d it acts from '
-             '90 to 1 hPa with a 1-day timescale. QBO30 raises the bottom of that window to 50 hPa; QBO10d lengthens the timescale '
+             'towards ERA5&rsquo;s monthly mean so that the model has the observed QBO. In all runs but QBO30, QBO10d and LQBO10d it acts from '
+             '90 to 1 hPa with a 1-day timescale. QBO30 raises the bottom of that window to 50 hPa; QBO10d and LQBO10d lengthen the timescale '
              'to 10 days.</li></ul>'
              f'<p class="col">P20b has run since 1990. The other {len(names) - 1} start from P20b&rsquo;s state at the end of 2004 and run '
              f'2005&ndash;{y1}; the scores leave out the first year after that restart.</p>')
