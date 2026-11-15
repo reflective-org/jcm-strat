@@ -12,7 +12,8 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO"
 # shellcheck disable=SC1091
 source "$REPO/scripts/env.sh"
-LOG="$REPO/runs/pipeline.log"; mkdir -p "$REPO/runs"
+rdir() { python3 "$REPO/scripts/runs_layout.py" dir "$1"; }
+LOG="$REPO/runs/logs/misc/pipeline.log"; mkdir -p "$(dirname "$LOG")"
 ERA5_TAPE=/home/susanne/docs/AIDE-atmosphere_validation/AIDE-atmosphere/output/era5_monthly_tape.nc
 ALL_MONTHS=1,2,3,4,5,6,7,8,9,10,11,12
 
@@ -23,7 +24,7 @@ g() { for _ in $(seq 1 60); do if out=$(git "$@" 2>&1); then [ -n "$out" ] && ec
 # run_model <name> <hydra overrides...>  -- foreground, GPU 0, skipped if finished
 run_model() {
   local name="$1"; shift
-  local rundir="$REPO/runs/$name"
+  local rundir; rundir="$(rdir "$name")"
   if grep -q '\[launch\].*exit=0' "$rundir/log.txt" 2>/dev/null; then step "skip $name (done)"; return 0; fi
   while tmux ls 2>/dev/null | grep '^strat_' | grep -qv strat_pipeline; do sleep 30; done
   mkdir -p "$rundir"; step "run $name: $*"
@@ -36,17 +37,17 @@ run_model() {
 wait_for_session() { while tmux has-session -t "$1" 2>/dev/null; do sleep 30; done; }
 
 analyse() {  # analyse <run> <outdir> <label> <title>
-  local run="$1" out="$2" label="$3" title="$4"
+  local run="$1" out="$2" label="$3" title="$4" rd; rd="$(rdir "$1")"
   mkdir -p "$out"
   { echo; echo "### $run"; echo; echo '```'
-    python scripts/throughput.py "runs/$run" --label "$label" --grid T63L95 --csv docs/outputs/throughput.csv | grep -vE 'appended'
-    python scripts/run_summary.py "runs/$run" "$out/${run}_summary.png" --last-days 60 | grep -v wrote
-    python scripts/plot_zonal_mean.py "runs/$run/longrun_day365.nc" "$out/${run}_zonal_mean.png" \
+    python scripts/throughput.py "$rd" --label "$label" --grid T63L95 --csv docs/outputs/throughput.csv | grep -vE 'appended'
+    python scripts/run_summary.py "$rd" "$out/${run}_summary.png" --last-days 60 | grep -v wrote
+    python scripts/plot_zonal_mean.py "$rd/longrun_day365.nc" "$out/${run}_zonal_mean.png" \
         --era5-tape "$ERA5_TAPE" --months "$ALL_MONTHS" --title "$title" | grep -v wrote
     echo '```'; echo
     echo "![summary](${run}_summary.png)"; echo "![zonal mean](${run}_zonal_mean.png)"; echo
   } >> "$out/output.md"
-  cp "runs/$run/.hydra/config.yaml" "docs/resolved_configs/$run.yaml"
+  cp "$rd/.hydra/config.yaml" "docs/resolved_configs/$run.yaml"
 }
 
 open_pr() {  # open_pr <branch> <base> <title> <bodyfile>

@@ -19,9 +19,10 @@ import os
 import re
 import zoneinfo
 
+from runs_layout import PHASE_DIR, family   # same family rule as the launchers
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKIP = {"logs", "archive", "__pycache__"}
-SUFFIX = re.compile(r"(_spinup(_\d{8})?|_\d{8}|_\d{4}_\d{4}|_\d+yr|_agg|_\d{4}|_prefetch)$")
 
 # Status notes, first match wins. Keep these short; the phase record has the detail.
 NOTES = [
@@ -38,16 +39,6 @@ NOTES = [
     (r"^p21(echam|free)", "full physics on the current jcm: reference"),
     (r"^p2[3-9]|^p30", "2005-2010 restart run: scorecard input"),
 ]
-
-
-def family(name):
-    base = name[4:] if name.startswith("old_") else name
-    while True:
-        new = SUFFIX.sub("", base)
-        if new == base:
-            break
-        base = new
-    return ("old_" if name.startswith("old_") else "") + base
 
 
 def phase_of(fam):
@@ -113,9 +104,22 @@ def main():
     out = a.out or os.path.join(runs, "INDEX.md")
 
     fams = collections.defaultdict(lambda: dict(seg=0, agg=0, link=0, other=0, bytes=0, years=set(), comp=set()))
-    for name in sorted(os.listdir(runs)):
-        p = os.path.join(runs, name)
-        if name in SKIP or name.startswith(".") or not os.path.isdir(p):
+    entries = []   # (run name, path): runs/<phase>/<family>/<name>, plus any flat leftovers at the top
+    for top in sorted(os.listdir(runs)):
+        tp = os.path.join(runs, top)
+        if top in SKIP or top.startswith(".") or not os.path.isdir(tp) or os.path.islink(tp):
+            if os.path.islink(tp):
+                entries.append((top, tp))
+            continue
+        if PHASE_DIR.match(top):
+            for fam in sorted(os.listdir(tp)):
+                fp = os.path.join(tp, fam)
+                if os.path.isdir(fp) and not os.path.islink(fp):
+                    entries += [(n, os.path.join(fp, n)) for n in sorted(os.listdir(fp))]
+        else:
+            entries.append((top, tp))
+    for name, p in entries:
+        if not os.path.isdir(p):
             continue
         f = fams[family(name)]
         f["years"].update(int(y) for y in re.findall(r"(?<!\d)(19[5-9]\d|20[0-4]\d)(?:\d{4})?(?!\d)", name[len(family(name)):]))
@@ -143,7 +147,7 @@ def main():
 
     L = [f"# runs/ index\n",
          f"Generated {now} by `scripts/runs_index.py` (regenerate after adding or deleting runs). "
-         f"{len(fams)} run families, {total / 1e12:.1f} TB of real files. Pipeline logs are in `logs/<phase>/`, "
+         f"{len(fams)} run families, {total / 1e12:.1f} TB of real files. Runs are in `<phase>/<family>/<run name>/` (scripts/runs_layout.py); pipeline logs in `logs/<phase>/`, "
          f"cleanup manifests in `archive/`.\n",
          "Kinds: **seg** = segments holding data, **agg** = aggregates made of links to segments, "
          "**link** = top-level links to another run (shared spin-up years), **other** = no chunk files "

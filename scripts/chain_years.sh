@@ -7,12 +7,13 @@
 #   EXPERIMENT=p8_qbo PREFIX=p8 EXTRA_PER_YEAR="physics.terms.held_suarez.qbo.year={year}" tmux new-session -d -s strat_p8_chain 'bash scripts/chain_years.sh'
 #
 # EXPERIMENT (default p4_5yr) is the hydra experiment; PREFIX (default p4) names the runs
-# runs/<PREFIX>_<year> and the aggregate runs/<PREFIX>_5yr.
-# Restartable: a finished segment (exit=0 in its log) is skipped. Progress: runs/<PREFIX>_chain.log
+# runs/<phase>/<PREFIX>/<PREFIX>_<year> and the aggregate <PREFIX>_5yr beside them (scripts/runs_layout.py).
+# Restartable: a finished segment (exit=0 in its log) is skipped. Progress: runs/logs/<phase>/<PREFIX>_chain.log
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 # shellcheck disable=SC1091
 source "$REPO/scripts/env.sh"
+rdir() { python3 "$REPO/scripts/runs_layout.py" dir "$1"; }
 EXPERIMENT="${EXPERIMENT:-p4_5yr}"; PREFIX="${PREFIX:-p4}"
 # EXTRA_PER_YEAR: optional extra hydra overrides per segment; the literal {year} is replaced by the
 # segment's calendar year, e.g. EXTRA_PER_YEAR="physics.terms.held_suarez.qbo.year={year}".
@@ -20,7 +21,7 @@ EXTRA_PER_YEAR="${EXTRA_PER_YEAR:-}"
 # GPU: which card to run on (default 0, the project default; 1 or 2 only by agreement, see the
 # GPU rule in the README). The chain refuses to start if that card already has a process.
 GPU="${GPU:-0}"; export CUDA_VISIBLE_DEVICES="$GPU"
-LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"
+LOG="$(python3 "$REPO/scripts/runs_layout.py" logdir "$PREFIX")/${PREFIX}_chain.log"; mkdir -p "$(dirname "$LOG")"
 step() { echo "[chain] $(date -Is) $*" | tee -a "$LOG"; }
 if nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
   step "refusing: GPU $GPU is busy"; exit 1
@@ -30,7 +31,7 @@ step "GPU $GPU"
 YEARS=(2005 2006 2007 2008 2009)
 prev=""
 for y in "${YEARS[@]}"; do
-  name="${PREFIX}_$y"; rundir="$REPO/runs/$name"
+  name="${PREFIX}_$y"; rundir="$(rdir "$name")"
   days=$(python3 -c "import datetime as d; print((d.date($y+1,1,1)-d.date($y,1,1)).days)")
   if grep -q '\[launch\].*exit=0' "$rundir/log.txt" 2>/dev/null; then step "skip $name (done)"; prev="$rundir"; continue; fi
   mkdir -p "$rundir"
@@ -47,16 +48,16 @@ for y in "${YEARS[@]}"; do
 done
 
 # one virtual run with cumulative day numbers
-agg="$REPO/runs/${PREFIX}_5yr"; mkdir -p "$agg"; rm -f "$agg"/longrun_day*.nc
+agg="$(rdir "${PREFIX}_5yr")"; mkdir -p "$agg"; rm -f "$agg"/longrun_day*.nc
 offset=0
 for y in "${YEARS[@]}"; do
-  for f in "$REPO/runs/${PREFIX}_$y"/longrun_day*.nc; do
+  for f in "$(rdir "${PREFIX}_$y")"/longrun_day*.nc; do
     d=$(basename "$f" | sed -E 's/longrun_day([0-9]+)\.nc/\1/')
     ln -s "$f" "$agg/longrun_day$((offset + d)).nc"
   done
   offset=$((offset + $(python3 -c "import datetime as d; print((d.date($y+1,1,1)-d.date($y,1,1)).days)")))
 done
-cp "$REPO/runs/${PREFIX}_2005/.hydra" -r "$agg/" 2>/dev/null
-cat "$REPO"/runs/${PREFIX}_20??/log.txt > "$agg/log.txt"
-step "linked $(ls "$agg"/longrun_day*.nc | wc -l) chunk files into runs/${PREFIX}_5yr ($offset days)"
+cp "$(rdir "${PREFIX}_2005")/.hydra" -r "$agg/" 2>/dev/null
+for y in "${YEARS[@]}"; do cat "$(rdir "${PREFIX}_$y")/log.txt"; done > "$agg/log.txt"
+step "linked $(ls "$agg"/longrun_day*.nc | wc -l) chunk files into $agg ($offset days)"
 step "chain finished"
