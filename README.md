@@ -55,6 +55,21 @@ nudging target for one year sits on the GPU, so one long run does not fit). Befo
 (`scripts/restore_nvidia_dev.sh` on the Phase 12 branch recreates them; `chain_segments.sh`
 refuses to start without a GPU).
 
+## Worktrees and where data lives
+
+The main checkout `/data/JCM_stripped/jcm-strat` stays on `dev` and holds the only real `runs/`,
+`cache/`, `scratch/` and `.venv/`. Work on a phase branch in a worktree next to it:
+
+```bash
+bash scripts/new_worktree.sh phase32-topic      # -> ../jcm-strat-phase32-topic, branched from origin/dev
+bash scripts/drop_worktree.sh phase32-topic --delete-branch   # once its PR is merged
+```
+
+`new_worktree.sh` symlinks the four directories straight to the main checkout (never to another
+worktree), so every run lands in the one `runs/`. `drop_worktree.sh` refuses while anything would
+be lost: uncommitted or unpushed work, a real `runs/` directory, or other ignored files (`git
+worktree remove` deletes ignored files). Keep one worktree per open PR and drop it when the PR merges.
+
 ## Unattended pipelines
 
 Each phase runs unattended in tmux from a `scripts/phase<N>_*.sh` pipeline (runs, diagnostics,

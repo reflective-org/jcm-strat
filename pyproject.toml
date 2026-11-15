@@ -16,7 +16,7 @@ authors = [{name = "Susanne Baur", email = "susanne@reflective.org"}]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest", "matplotlib", "pyyaml", "reportlab"]
+dev = ["pytest", "matplotlib", "pyyaml", "reportlab", "cdsapi"]  # cdsapi: scripts/fetch_era5_*.py (CDS)
 
 [tool.setuptools.packages.find]
 include = ["jcm_strat*"]

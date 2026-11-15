@@ -12,6 +12,7 @@ babel==2.18.0
 beautifulsoup4==4.15.0
 bokeh==3.9.2
 cattrs==26.2.1
+cdsapi==0.7.7
 certifi==2026.7.22
 cffi==2.1.1
 cftime==1.6.6
@@ -29,6 +30,7 @@ dinosaur==1.5.0
 distributed==2026.8.0
 docutils==0.22.4
 donfig==0.8.1.post1
+ecmwf-datastores-client==0.5.3
 etils==1.14.0
 execnet==2.1.2
 filelock==4.0.12
@@ -72,8 +74,8 @@ jax-datetime==0.1.2
 jax-rrtmgp==0.5.0
 jax-solar==0.1.1
 jaxlib==0.10.2
--e file:///data/JCM_stripped/jcm-strat-phase19/external/jax-gcm
--e file:///data/JCM_stripped/jcm-strat-phase19
+-e file:///data/JCM_stripped/jcm-strat/external/jax-gcm
+-e file:///data/JCM_stripped/jcm-strat
 jinja2==3.1.6
 joblib==1.6.0
 kiwisolver==1.5.1
@@ -89,6 +91,7 @@ mdurl==0.1.2
 ml-dtypes==0.6.0
 msgpack==1.2.3
 multidict==6.9.1
+multiurl==0.3.9
 mypy-extensions==1.1.0
 myst-parser==5.1.0
 narwhals==2.26.0
@@ -138,6 +141,7 @@ pytest==9.1.1
 pytest-cov==7.1.0
 pytest-xdist==3.8.0
 python-dateutil==2.9.0.post0
+pytz==2026.5
 pyyaml==6.0.3
 reportlab==5.0.1
 requests==2.34.2
