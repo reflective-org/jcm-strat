@@ -44,6 +44,10 @@ W_LEVELS = (100.0, 70.0, 50.0, 30.0, 10.0)
 FLUX_LEVELS = (100.0, 70.0, 30.0, 10.0)
 MESO_LEVELS = (5.0, 2.0, 1.0, 0.5)
 CLAMS_YEARS = list(range(2005, 2010))
+# Phase 31: the age references (CLaMS, WACCM6 entry age) for the window's own years, e.g. SCORE_REF_YEARS=2011-2019
+if os.environ.get("SCORE_REF_YEARS"):
+    _y0, _y1 = (int(v) for v in os.environ["SCORE_REF_YEARS"].split("-")); CLAMS_YEARS = list(range(_y0, _y1 + 1))
+_REF_SUFFIX = "" if CLAMS_YEARS == list(range(2005, 2010)) else f"_{CLAMS_YEARS[0]}_{CLAMS_YEARS[-1]}"
 WACCM_YEARS = list(range(1996, 2015))
 # normalisation of the composite: "acceptable" size of each error (PLANS Phase 13 acceptance)
 NORM = dict(age=0.5, w=np.log(1.5), u=5.0, T=5.0)
@@ -171,7 +175,7 @@ def era5_wstar(years):
 
 
 def clams_ref():
-    f = os.path.join(REF_DIR, "clams_age.npz")
+    f = os.path.join(REF_DIR, f"clams_age{_REF_SUFFIX}.npz")
     if os.path.exists(f):
         z = np.load(f); return z["p"], z["lat"], z["age"]
     os.makedirs(REF_DIR, exist_ok=True)
@@ -180,7 +184,7 @@ def clams_ref():
 
 
 def waccm_age_ref():
-    f = os.path.join(REF_DIR, "waccm_entry_age.npz")
+    f = os.path.join(REF_DIR, f"waccm_entry_age{_REF_SUFFIX}.npz")
     if os.path.exists(f):
         z = np.load(f); return z["p"], z["lat"], z["age"]
     os.makedirs(REF_DIR, exist_ok=True)

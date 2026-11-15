@@ -9,6 +9,7 @@ Writes to OUTDIR:
                              aoa150 (reset below 150 hPa, entry age) is compared with WACCM6 REF-D1 AOA (also an
                              age relative to the tropopause region); aoa_sfc (surface reset) with CLaMS v3.1 (ERA5).
   wind_seasonal.png          rows DJF / JJA; columns model, ERA5 (same months), model - ERA5 (1000-1 hPa).
+  temp_seasonal.png          the same for zonal-mean temperature (Phase 31).
   seasonal_metrics.md        ages at 55 / 12 hPa (tropics 10S-10N, 50-70 N and S) and u at 10 hPa 60N/60S per season.
 Seasons are monthly-mean seasons of the selected years: DJF = Dec, Jan, Feb of those years (calendar months, so the
 December of the last year belongs to that year's DJF, as in strat_compare.py). Model fields: every 6-hourly frame in the
@@ -40,7 +41,7 @@ def files(rundir):
 
 def model_seasonal(rundir, years):
     """Season -> dict(var -> (level, lat) zonal mean) over every frame of the selected years; level in hPa (ascending p)."""
-    want = ["u_wind"] + list(CLOCKS)
+    want = ["u_wind", "temperature"] + list(CLOCKS)
     acc = {s: {v: 0.0 for v in want} for s in SEASONS}; cnt = {s: 0 for s in SEASONS}
     p_hpa = lat = None
     for f in files(rundir):
@@ -97,14 +98,14 @@ def waccm_seasonal(years):
     return out
 
 
-def era5_seasonal_u(years, lat_out):
+def era5_seasonal_u(years, lat_out, var="uzm"):
     fs = [os.path.join(ERA5_DIR, f"era5_zm_monthly_{y}.nc") for y in years]
     fs = [f for f in fs if os.path.exists(f)]
     if not fs:
         return None
     ds = xr.open_mfdataset(fs, combine="by_coords")
     tname = [c for c in ds.coords if c.startswith("time") or c == "valid_time"][0]
-    u = ds["uzm"].rename({tname: "time"}).interp(lat=lat_out).load()
+    u = ds[var].rename({tname: "time"}).interp(lat=lat_out).load()
     return {s: (np.asarray(u.level, float), lat_out, u.where(u.time.dt.month.isin(list(m)), drop=True).mean("time").values)
             for s, m in SEASONS.items()}
 
@@ -192,6 +193,29 @@ def main():
         fig.colorbar(c2, ax=axs[:, 2], label="model - ERA5 [m/s]", pad=0.01)
     fig.suptitle(f"Zonal-mean zonal wind by season, {a.years}: {a.label} vs ERA5 (same months)")
     fig.savefig(os.path.join(a.outdir, "wind_seasonal.png"), dpi=110); plt.close(fig)
+    if "temperature" in m["DJF"]:
+        et = era5_seasonal_u(years, lat_g, "tzm")
+        fig, axs = plt.subplots(2, 3, figsize=(15, 8), sharey=True)
+        lines += ["\n## Zonal-mean temperature [K]\n", "| season | T 50 hPa 70-90N model / ERA5 | T 50 hPa 70-90S | T 100 hPa tropics | T 1 hPa tropics |",
+                  "|---|---|---|---|---|"]
+        for i, s in enumerate(SEASONS):
+            mg = on_grid(p_hpa, lat, m[s]["temperature"], lat_g)
+            c0 = panel(axs[i, 0], lat_g, P_OUT, mg, np.arange(180, 291, 5), "RdYlBu_r", f"{a.label} T, {s}", 1, 1000)
+            if et is not None:
+                eg = on_grid(et[s][0], et[s][1], et[s][2], lat_g)
+                panel(axs[i, 1], lat_g, P_OUT, eg, np.arange(180, 291, 5), "RdYlBu_r", f"ERA5 T, {s}", 1, 1000)
+                c2 = panel(axs[i, 2], lat_g, P_OUT, mg - eg, np.arange(-10, 10.1, 1), "RdBu_r", f"model - ERA5, {s}", 1, 1000)
+                k = {lv: np.argmin(abs(P_OUT - lv)) for lv in (50, 100, 1)}
+                lines.append(f"| {s} | {band(lat_g, mg[k[50]], 70, 90):.1f} / {band(lat_g, eg[k[50]], 70, 90):.1f} | "
+                             f"{band(lat_g, mg[k[50]], -90, -70):.1f} / {band(lat_g, eg[k[50]], -90, -70):.1f} | "
+                             f"{band(lat_g, mg[k[100]], -10, 10):.1f} / {band(lat_g, eg[k[100]], -10, 10):.1f} | "
+                             f"{band(lat_g, mg[k[1]], -10, 10):.1f} / {band(lat_g, eg[k[1]], -10, 10):.1f} |")
+            axs[i, 0].set_ylabel("hPa")
+        fig.colorbar(c0, ax=axs[:, :2], label="T [K]", pad=0.01)
+        if et is not None:
+            fig.colorbar(c2, ax=axs[:, 2], label="model - ERA5 [K]", pad=0.01)
+        fig.suptitle(f"Zonal-mean temperature by season, {a.years}: {a.label} vs ERA5 (same months)")
+        fig.savefig(os.path.join(a.outdir, "temp_seasonal.png"), dpi=110); plt.close(fig)
     open(os.path.join(a.outdir, "seasonal_metrics.md"), "w").write("\n".join(lines) + "\n")
     print("\n".join(lines))
 
