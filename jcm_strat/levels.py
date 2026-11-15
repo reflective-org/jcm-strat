@@ -42,6 +42,8 @@ _L95_NLEV = 95
 # L95 interface indices (TOA first, 0..95). 22 is the 1.08 hPa interface, 52 the 30 hPa one,
 # 69 the 159 hPa one (26 layers below it); the L95 sponge (10 levels) ends at interface 10 (0.165 hPa).
 _I_1HPA, _I_30HPA, _I_159HPA = 22, 52, 69
+# Phase 30: 79 is the 402 hPa interface, the top of the ERA5-nudged troposphere (nudging.min_pressure_hpa 400).
+_I_400HPA = 79
 _SPONGE_BOTTOM_L95 = 10
 
 # The L95 lmidatm profiles (jcm/diffusion.py) as (count, order) runs, TOA first.
@@ -65,17 +67,24 @@ def interface_indices(nlevels: int) -> np.ndarray:
         idx = _thin(0, _I_1HPA, 8) + list(range(_I_1HPA, _I_159HPA + 1)) + tropo
     elif nlevels == 81:      # Phase 12: strat63 with the full L95 troposphere
         idx = _thin(0, _I_1HPA, 8) + list(range(_I_1HPA, _L95_NLEV + 1))
+    # Phase 30 (runtime): thin only what is nudged or above the 1 hPa clock lid; 1.08-402 hPa stays L95.
+    elif nlevels == 84:      # mesosphere 22 -> 11 (every other L95 interface above 1.08 hPa)
+        idx = _thin(0, _I_1HPA, 11) + list(range(_I_1HPA, _L95_NLEV + 1))
+    elif nlevels == 87:      # nudged troposphere below 402 hPa 16 -> 8
+        idx = list(range(0, _I_400HPA + 1)) + _thin(_I_400HPA, _L95_NLEV, 8)
+    elif nlevels == 76:      # both
+        idx = _thin(0, _I_1HPA, 11) + list(range(_I_1HPA, _I_400HPA + 1)) + _thin(_I_400HPA, _L95_NLEV, 8)
     elif nlevels == 47:
         idx = (_thin(0, _I_1HPA, 7) + list(range(_I_1HPA, _I_30HPA + 1, 2))
                + list(range(_I_30HPA, _I_159HPA + 1)) + tropo)
     else:
-        raise ValueError(f"no strat level table for {nlevels} levels (have 47, 63, 81)")
+        raise ValueError(f"no strat level table for {nlevels} levels (have {TABLES})")
     out = np.unique(np.asarray(idx, dtype=int))
     assert out.size == nlevels + 1, (nlevels, out.size)
     return out
 
 
-TABLES = (47, 63, 81)
+TABLES = (47, 63, 76, 81, 84, 87)
 
 
 def strat_table(nlevels: int):
