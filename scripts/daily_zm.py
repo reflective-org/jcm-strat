@@ -68,8 +68,9 @@ def run_files(rundir):
     return sorted(fs, key=lambda q: int(re.search(r"_day(\d+)\.nc$", q).group(1)))
 
 
-def ref_levels():
-    f = run_files(os.path.join(REPO, "runs", "p26_AL7h_0610"))[0]
+def ref_levels(rundir=None):
+    # a run's own levels (Phase 30: thinned tables); ERA5 windows go on the L95 reference run's
+    f = run_files(rundir or os.path.join(REPO, "runs", "p26_AL7h_0610"))[0]
     with xr.open_dataset(f) as d:
         return d.level.values * P0, d.lat.values
 
@@ -101,7 +102,7 @@ def main():
     ap.add_argument("--t0"); ap.add_argument("--t1")
     a = ap.parse_args()
     print("[daily_zm] devices", jax.devices(), flush=True)
-    p, lat = ref_levels()
+    p, lat = ref_levels(a.run)
     fac = jnp.asarray(((1000.0 / p) ** KAPPA).astype(np.float32))
     acc = Acc(); tic = time.time()
     if a.era5:

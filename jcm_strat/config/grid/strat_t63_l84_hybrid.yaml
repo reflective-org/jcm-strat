@@ -1,0 +1,6 @@
+# T63 / 84 hybrid levels — Phase 30 runtime table (jcm_strat/levels.py): L95 subset, 1.08-402 hPa kept exactly.
+# Needs the top-level key ``level_table: strat``.
+vertical: hybrid
+layers: 84
+spectral_truncation: 63
+spmd_mesh: null
