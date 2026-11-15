@@ -70,6 +70,10 @@ worktree), so every run lands in the one `runs/`. `drop_worktree.sh` refuses whi
 be lost: uncommitted or unpushed work, a real `runs/` directory, or other ignored files (`git
 worktree remove` deletes ignored files). Keep one worktree per open PR and drop it when the PR merges.
 
+`runs/INDEX.md` lists every run family with its phase, years, size and status; regenerate it with
+`python scripts/runs_index.py` after adding or deleting runs. Finished pipelines' logs live in
+`runs/logs/<phase>/`, cleanup manifests in `runs/archive/`.
+
 ## Unattended pipelines
 
 Each phase runs unattended in tmux from a `scripts/phase<N>_*.sh` pipeline (runs, diagnostics,
