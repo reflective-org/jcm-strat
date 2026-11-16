@@ -6,7 +6,7 @@
 #
 # Project policy: GPU 0 only, one run at a time. This script refuses to start if a
 # strat_* tmux session already exists or if GPU 0 has a process on it.
-# Output goes to runs/<session>/ (log.txt, .hydra/, netCDF), never into the tree.
+# Output goes to runs/<phase>/<family>/<session>/ (log.txt, .hydra/, netCDF; scripts/runs_layout.py), never into the tree.
 set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 [ $# -ge 1 ] || { echo "usage: $0 <session> <hydra overrides...>"; exit 2; }
@@ -20,7 +20,7 @@ if nvidia-smi -i 0 --query-compute-apps=pid --format=csv,noheader 2>/dev/null | 
   echo "refusing: GPU 0 is busy:"; nvidia-smi -i 0 --query-compute-apps=pid,process_name,used_memory --format=csv; exit 1
 fi
 
-rundir="$REPO/runs/$name"
+rundir="$(python3 "$REPO/scripts/runs_layout.py" dir "$name")"
 mkdir -p "$rundir"
 overrides=""
 for a in "$@"; do overrides+=" $(printf '%q' "$a")"; done

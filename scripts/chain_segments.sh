@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Phase 9/10: run a range of years as chained segments whose length fits the GPU-resident ERA5
 # nudging target at the run's resolution (jcm_strat/segments.py: year | half | quarter | bimonth |
-# calendar), then link the segment outputs into runs/<AGG> with cumulative day numbers so every
+# calendar), then link the segment outputs into runs/<phase>/<PREFIX>/<AGG> with cumulative day numbers so every
 # analysis script sees one run. Generalises chain_years.sh (which stays as it is).
 #
 #   PREFIX=p9_t85l95 SCHEME=half EXTRA="grid=echam_t85_l95_hybrid run.time_step=9" \
@@ -11,7 +11,7 @@
 #
 # Environment:
 #   EXPERIMENT     hydra experiment (default p9_res; p9_l63 / p9_l47 for the vertical axis; p10_prod)
-#   PREFIX         run names: runs/<PREFIX>_<YYYYMMDD> per segment
+#   PREFIX         run names: runs/<phase>/<PREFIX>/<PREFIX>_<YYYYMMDD> per segment (scripts/runs_layout.py)
 #   AGG            aggregate run name (default <PREFIX>_<N>yr, N = number of years)
 #   SCHEME         year | half | quarter | bimonth | calendar (default year; calendar = true 365/366-day
 #                  years, needs a save interval that divides one day)
@@ -26,7 +26,7 @@
 #   FIRST_SEG_EXTRA overrides for the FIRST segment only; unset = for p10_* experiments the flag that
 #                  makes the production tracers inject their WACCM initial state, empty otherwise
 #   SPINUP         "<YYYY-MM-DD> <days>" (Phase 19, default empty = none): run a discarded spin-up segment
-#                  runs/<PREFIX>_spinup_<YYYYMMDD> from ERA5 before the first segment, which then starts from
+#                  runs/<phase>/<PREFIX>/<PREFIX>_spinup_<YYYYMMDD> from ERA5 before the first segment, which then starts from
 #                  its checkpoint (dynamics carried over) with FIRST_SEG_EXTRA, so the tracers are
 #                  (re)initialised on the first segment's first step exactly as without a spin-up. The
 #                  spin-up gets the per-segment override for ITS year, no FIRST_SEG_EXTRA, and is not linked
@@ -42,11 +42,12 @@
 # Every segment's ERA5 zonal-mean QBO target year must exist in cache/era5_ref (checked up front:
 # qbo_nudging.py would otherwise refuse the segment hours into the chain).
 # Restartable: a finished segment (exit=0 in its log) is skipped; a crashed one resumes from its
-# checkpoint.ckpt. Progress: runs/<PREFIX>_chain.log.
+# checkpoint.ckpt. Progress: runs/logs/<phase>/<PREFIX>_chain.log.
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$REPO"
 # shellcheck disable=SC1091
 source "$REPO/scripts/env.sh"
+rdir() { python3 "$REPO/scripts/runs_layout.py" dir "$1"; }   # runs/<phase>/<family>/<name> (scripts/runs_layout.py)
 EXPERIMENT="${EXPERIMENT:-p9_res}"; PREFIX="${PREFIX:?PREFIX is required}"
 SCHEME="${SCHEME:-year}"; YEARS="${YEARS:-2005-2009}"; GPU="${GPU:-0}"; SAVE_INTERVAL="${SAVE_INTERVAL:-5}"
 EXTRA="${EXTRA:-}"
@@ -60,7 +61,7 @@ if [ -z "${FIRST_SEG_EXTRA+x}" ]; then      # unset: the production experiments 
   case "$EXPERIMENT" in p10_*|p1[1-9]*|p2[0-9]*) FIRST_SEG_EXTRA="physics.terms.production_tracers.first_segment=true" ;; *) FIRST_SEG_EXTRA="" ;; esac
 fi
 export CUDA_VISIBLE_DEVICES="$GPU"
-LOG="$REPO/runs/${PREFIX}_chain.log"; mkdir -p "$REPO/runs"
+LOG="$(python3 "$REPO/scripts/runs_layout.py" logdir "$PREFIX")/${PREFIX}_chain.log"; mkdir -p "$(dirname "$LOG")"
 step() { echo "[chain] $(date -Is) $*" | tee -a "$LOG"; }
 
 # LINK_ONLY=1 (Phase 19): every segment is already finished and only an aggregate is (re)linked - no GPU needed, so the
@@ -100,7 +101,7 @@ first_real=1
 for seg in "${ALLSEGS[@]}"; do
   read -r d days y kind <<< "$seg"
   if [ "${kind:-}" = spinup ]; then name="${PREFIX}_spinup_${d//-/}"; else name="${PREFIX}_${d//-/}"; fi
-  rundir="$REPO/runs/$name"
+  rundir="$(rdir "$name")"
   # done = a clean exit AND no health stop (jcm's bail_on_unhealthy ends a run early with exit 0 - Phase 19: the dry chains
   # spliced partial years that way)
   if grep -q '\[launch\].*exit=0' "$rundir/log.txt" 2>/dev/null && ! grep -q "atmosphere unhealthy" "$rundir/log.txt"; then
@@ -126,14 +127,14 @@ for seg in "${ALLSEGS[@]}"; do
   [ "${kind:-}" = spinup ] || first_real=0
   if [ "${kind:-}" = spinup ] && [ "${SPINUP_ONLY:-0}" = 1 ]; then step "spin-up done, SPINUP_ONLY=1 - stopping"; exit 0; fi
   if [ "$COMPACT" = 1 ]; then
-    step "compacting $name in the background (runs/$name/compact.log)"
+    step "compacting $name in the background ($rundir/compact.log)"
     ( JAX_PLATFORMS=cpu nohup bash "$REPO/scripts/memcap.sh" -m 96G -- python "$REPO/scripts/compact_run.py" "$rundir" >> "$rundir/compact.log" 2>&1 & )
   fi
   prev="$rundir"
 done
 
 # one virtual run with cumulative day numbers (calendar offsets, so dates match chain_years.sh)
-agg="$REPO/runs/$AGG"; mkdir -p "$agg"; rm -f "$agg"/longrun_day*.nc "$agg/segments.txt"
+agg="$(rdir "$AGG")"; mkdir -p "$agg"; rm -f "$agg"/longrun_day*.nc "$agg/segments.txt"
 year_offset=0; cur_year=""; seg_offset=0; first=""
 for seg in "${SEGS[@]}"; do
   read -r d days y <<< "$seg"
@@ -141,7 +142,7 @@ for seg in "${SEGS[@]}"; do
     if [ -n "$cur_year" ]; then year_offset=$(( year_offset + $(python3 -c "import datetime as d; print((d.date($cur_year+1,1,1)-d.date($cur_year,1,1)).days)") )); fi
     cur_year="$y"; seg_offset=0
   fi
-  rundir="$REPO/runs/${PREFIX}_${d//-/}"; [ -n "$first" ] || first="$rundir"
+  rundir="$(rdir "${PREFIX}_${d//-/}")"; [ -n "$first" ] || first="$rundir"
   for f in "$rundir"/longrun_day*.nc; do
     n=$(basename "$f" | sed -E 's/longrun_day([0-9]+)\.nc/\1/')
     ln -s "$f" "$agg/longrun_day$((year_offset + seg_offset + n)).nc"
@@ -150,6 +151,6 @@ for seg in "${SEGS[@]}"; do
   seg_offset=$(( seg_offset + days ))
 done
 cp -r "$first/.hydra" "$agg/" 2>/dev/null
-: > "$agg/log.txt"; for seg in "${SEGS[@]}"; do read -r d days y <<< "$seg"; cat "$REPO/runs/${PREFIX}_${d//-/}/log.txt" >> "$agg/log.txt"; done
-step "linked $(ls "$agg"/longrun_day*.nc | wc -l) chunk files into runs/$AGG"
+: > "$agg/log.txt"; for seg in "${SEGS[@]}"; do read -r d days y <<< "$seg"; cat "$(rdir "${PREFIX}_${d//-/}")/log.txt" >> "$agg/log.txt"; done
+step "linked $(ls "$agg"/longrun_day*.nc | wc -l) chunk files into $agg"
 step "chain finished"

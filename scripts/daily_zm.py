@@ -70,7 +70,8 @@ def run_files(rundir):
 
 def ref_levels(rundir=None):
     # a run's own levels (Phase 30: thinned tables); ERA5 windows go on the L95 reference run's
-    f = run_files(rundir or os.path.join(REPO, "runs", "p26_AL7h_0610"))[0]
+    from runs_layout import run_dir   # scripts/ is on sys.path when run as scripts/daily_zm.py
+    f = run_files(rundir or run_dir("p26_AL7h_0610"))[0]
     with xr.open_dataset(f) as d:
         return d.level.values * P0, d.lat.values
 

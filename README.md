@@ -47,7 +47,7 @@ tmux attach -t strat_smoke_hs   # C-b d to detach
 
 Every model run goes through `scripts/launch.sh`: it runs in a detached tmux session named
 `strat_<session>`, on **GPU 0** by default (other cards only when released for a phase), writing
-to `runs/<session>/`. Multi-year runs are chains of one-calendar-year segments
+to `runs/<phase>/<family>/<session>/`. Multi-year runs are chains of one-calendar-year segments
 (`scripts/chain_segments.sh`, restart from the previous segment's checkpoint; the whole ERA5
 nudging target for one year sits on the GPU, so one long run does not fit). Before any launch,
 `python -c "import jax; print(jax.devices())"` must show a `CudaDevice`: this node loses its
@@ -70,6 +70,15 @@ worktree), so every run lands in the one `runs/`. `drop_worktree.sh` refuses whi
 be lost: uncommitted or unpushed work, a real `runs/` directory, or other ignored files (`git
 worktree remove` deletes ignored files). Keep one worktree per open PR and drop it when the PR merges.
 
+Inside `runs/`, every run sits in `<phase>/<family>/<run name>/`, e.g.
+`runs/p31/p31_AL7h70/p31_AL7h70_19700101/`: each chain's segments, spin-up and aggregate share one folder,
+and names without a `p<N>` prefix go under `misc/`. `scripts/runs_layout.py` defines the mapping, and
+every launcher uses it (`python3 scripts/runs_layout.py dir <name>` prints a run's folder), so new runs land
+in the right place. Chain and pipeline logs go to `runs/logs/<phase>/`, cleanup manifests to
+`runs/archive/`. `runs/INDEX.md` lists every run family with its phase, years, size and status; regenerate
+it with `python scripts/runs_index.py` after adding or deleting runs. Phase scripts written before
+2026-11-15 (`scripts/phase*_*.sh`) still assume the old flat `runs/<name>`; use the helper in new ones.
+
 ## Unattended pipelines
 
 Each phase runs unattended in tmux from a `scripts/phase<N>_*.sh` pipeline (runs, diagnostics,
@@ -77,7 +86,7 @@ output records, commits, PRs) so the session that started it can be closed. Chec
 
 ```bash
 tmux ls                                  # strat_<name> present = still running
-tail -f runs/<name>.log                  # one line per step
+tail -f runs/logs/<phase>/<name>.log     # one line per step
 tmux attach -t strat_<name>              # live console (C-b d to detach)
 gh pr list --repo reflective-org/jcm-strat
 ```

@@ -4,7 +4,7 @@
 #
 #   scripts/launch_gpu.sh <gpu> <session> <hydra overrides...>
 #
-# Same contract as launch.sh (runs/<session>/, log.txt, .hydra/) but the tmux session is named
+# Same contract as launch.sh (runs/<phase>/<family>/<session>/, log.txt, .hydra/) but the tmux session is named
 # strat<gpu>_<session> so launch.sh's strat_* guard for GPU 0 is not triggered, and the busy check
 # is per GPU: it refuses if that GPU already has a process or a strat<gpu>_* session.
 set -euo pipefail
@@ -19,7 +19,7 @@ fi
 if nvidia-smi -i "$gpu" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -q .; then
   echo "refusing: GPU $gpu is busy:"; nvidia-smi -i "$gpu" --query-compute-apps=pid,process_name,used_memory --format=csv; exit 1
 fi
-rundir="$REPO/runs/$name"; mkdir -p "$rundir"
+rundir="$(python3 "$REPO/scripts/runs_layout.py" dir "$name")"; mkdir -p "$rundir"
 overrides=""; for a in "$@"; do overrides+=" $(printf '%q' "$a")"; done
 cmd="source $REPO/scripts/env.sh && export CUDA_VISIBLE_DEVICES=$gpu && cd $rundir && \
 echo \"[launch] \$(date -Is) jcm-strat \$(git -C $REPO rev-parse --short HEAD) session=$session GPU=$gpu\" && \
